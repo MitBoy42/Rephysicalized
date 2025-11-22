@@ -1,0 +1,24 @@
+{
+    "CarpetTile": {
+        "CrudByproduct": {
+            "MainTex": "carpet_crudbyproduct_main",
+            "TopTex": "carpet_crudbyproduct_top"
+        }
+
+    },
+
+    "Tile": {
+        "CrudByproduct": {
+            "MainTex": "tile_crudbyproduct_main",
+            "TopTex": "tile_crudbyproduct_top"
+        }
+
+    },
+    "InsulationTile": {
+        "CrudByproduct": {
+            "MainTex": "insulation_crudbyproduct_main"
+
+        }
+
+    }
+}

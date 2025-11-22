@@ -1,0 +1,32 @@
+id: "DISTILLABLE"
+title: STRINGS.MISC.TAGS.DISTILLABLE
+category: "ELEMENTTYPES"
+parentId: "ELEMENTTYPES"
+contentContainers:
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.DISTILLABLE
+          style: Title
+      - !CodexDividerLine
+          preferredWidth: -1
+      - !CodexImage
+          elementIcon: SLIMEMOLD
+          preferredWidth: 128
+          preferredHeight: 128
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.DISTILLABLE_DESC
+          style: Body
+      - !CodexElementCategoryList
+          categoryTag: DISTILLABLE
+
+contentMadeAndUsed:
+  - tag: DISTILLABLE

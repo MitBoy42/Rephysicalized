@@ -1,0 +1,187 @@
+{
+  "version": 3,
+  "targets": {
+    ".NETFramework,Version=v4.8": {
+      "Aze.Publicise.MSBuild.Task/1.1.0": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "Microsoft.Build.Framework",
+          "Microsoft.Build.Utilities.v4.0"
+        ],
+        "build": {
+          "build/Aze.Publicise.MSBuild.Task.props": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/Aze.Publicise.MSBuild.Task.props": {}
+        }
+      },
+      "ILRepack.Lib.MSBuild.Task/2.0.44.1": {
+        "type": "package",
+        "build": {
+          "build/ILRepack.Lib.MSBuild.Task.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.targets": {}
+        }
+      },
+      "PLib/4.17.1": {
+        "type": "package",
+        "dependencies": {
+          "ILRepack.Lib.MSBuild.Task": "2.0.26"
+        },
+        "compile": {
+          "lib/net471/PLib.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net471/PLib.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "UtilLibs/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.8",
+        "dependencies": {
+          "PLib": "4.17.1"
+        },
+        "compile": {
+          "bin/placeholder/UtilLibs.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/UtilLibs.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Aze.Publicise.MSBuild.Task/1.1.0": {
+      "sha512": "cW6x9pPL5l8f5eueBC1N4uUstz3VScyPEgNap4mqC+sSSCZ7GPcJAMWJv862CuErmtZ75Qtq1u7utxjX+7RKBw==",
+      "type": "package",
+      "path": "aze.publicise.msbuild.task/1.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "aze.publicise.msbuild.task.1.1.0.nupkg.sha512",
+        "aze.publicise.msbuild.task.nuspec",
+        "build/Aze.Publicise.MSBuild.Task.props",
+        "buildMultiTargeting/Aze.Publicise.MSBuild.Task.props",
+        "tasks/net46/Aze.Publicise.MSBuild.Task.dll"
+      ]
+    },
+    "ILRepack.Lib.MSBuild.Task/2.0.44.1": {
+      "sha512": "3XeHBO90AI5ggjmSeaSCVWuMuVWvNj+67ghtjTlOjhFSwhsFOJ3YU0GB/Zk19DG1grgHcJY195SIxCFVRiWf9Q==",
+      "type": "package",
+      "path": "ilrepack.lib.msbuild.task/2.0.44.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/ILRepack.Lib.MSBuild.Task.dll",
+        "build/ILRepack.Lib.MSBuild.Task.targets",
+        "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.dll",
+        "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.targets",
+        "ilrepack.lib.msbuild.task.2.0.44.1.nupkg.sha512",
+        "ilrepack.lib.msbuild.task.nuspec"
+      ]
+    },
+    "PLib/4.17.1": {
+      "sha512": "0Gi1kszwolS33rYvMHM6jBnjga+GrsaJgzbyTTkKj+84Oj3uqbz3QySpQsWYMG0r1zT4M39u1RCEnXqPjE7jjw==",
+      "type": "package",
+      "path": "plib/4.17.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "icon.png",
+        "lib/net471/PLib.dll",
+        "lib/net471/PLib.xml",
+        "plib.4.17.1.nupkg.sha512",
+        "plib.nuspec"
+      ]
+    },
+    "UtilLibs/1.0.0": {
+      "type": "project",
+      "path": "../UtilLibs/UtilLibs.csproj",
+      "msbuildProject": "../UtilLibs/UtilLibs.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    ".NETFramework,Version=v4.8": [
+      "Aze.Publicise.MSBuild.Task >= *",
+      "ILRepack.Lib.MSBuild.Task >= *",
+      "UtilLibs >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\MitBoy\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+      "projectName": "Rephysicalized",
+      "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+      "packagesPath": "C:\\Users\\MitBoy\\.nuget\\packages\\",
+      "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\obj\\",
+      "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\MitBoy\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net48"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net48": {
+          "targetAlias": "net48",
+          "projectReferences": {
+            "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
+              "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.300"
+    },
+    "frameworks": {
+      "net48": {
+        "targetAlias": "net48",
+        "dependencies": {
+          "Aze.Publicise.MSBuild.Task": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[*, )"
+          },
+          "ILRepack.Lib.MSBuild.Task": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[*, )"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306\\RuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

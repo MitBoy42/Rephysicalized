@@ -1,0 +1,16 @@
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.csproj.AssemblyReference.cache
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.GeneratedMSBuildEditorConfig.editorconfig
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.AssemblyInfoInputs.cache
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.AssemblyInfo.cs
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.csproj.CoreCompileInputs.cache
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\Rephysicalized.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\Rephysicalized.pdb
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\mod.yaml
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\mod_info.yaml
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\LauncherMetadata.json
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\PLib.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\UtilLibs.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\net48\UtilLibs.pdb
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysic.F0F5DBA7.Up2Date
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.pdb

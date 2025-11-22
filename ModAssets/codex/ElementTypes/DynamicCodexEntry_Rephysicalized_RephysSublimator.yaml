@@ -1,0 +1,32 @@
+id: "REPHYSSUBLIMATOR"
+title: STRINGS.MISC.TAGS.REPHYSSUBLIMATOR
+category: "ELEMENTTYPES"
+parentId: "ELEMENTTYPES"
+contentContainers:
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.REPHYSSUBLIMATOR
+          style: Title
+      - !CodexDividerLine
+          preferredWidth: -1
+      - !CodexImage
+          elementIcon: TOXICSAND
+          preferredWidth: 128
+          preferredHeight: 128
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.REPHYSSUBLIMATOR_DESC
+          style: Body
+      - !CodexElementCategoryList
+          categoryTag: REPHYSSUBLIMATOR
+
+contentMadeAndUsed:
+  - tag: REPHYSSUBLIMATOR

@@ -1,0 +1,58 @@
+---
+elements:
+  - elementId: AshByproduct
+    specificHeatCapacity: 1.3
+    thermalConductivity: 0.13
+    solidSurfaceAreaMultiplier: 1
+    liquidSurfaceAreaMultiplier: 1
+    gasSurfaceAreaMultiplier: 1
+    strength: 0.6
+    highTemp: 4600
+    highTempTransitionTarget: MoltenCarbon
+    highTempTransitionOreId: Hydrogen
+    highTempTransitionOreMassConversion: 0.06
+    defaultTemperature: 296.15
+    defaultMass: 600
+    maxMass: 600
+    hardness: 2
+    molarMass: 12
+    lightAbsorptionFactor: 1
+    radiationAbsorptionFactor: 0.5
+    radiationPer1000Mass: 0
+    materialCategory: Filter
+    tags:
+    - Unstable
+   
+    buildMenuSort: 6
+    isDisabled: false
+    state: Solid
+    localizationID: STRINGS.ELEMENTS.ASHBYPRODUCT.NAME
+    dlcId: ""
+  - elementId: CrudByproduct
+    specificHeatCapacity: 1
+    thermalConductivity: 2
+    solidSurfaceAreaMultiplier: 1
+    liquidSurfaceAreaMultiplier: 1
+    gasSurfaceAreaMultiplier: 1
+    strength: 0.6
+    highTemp: 1683
+    highTempTransitionTarget: Magma
+    highTempTransitionOreId: CarbonDioxide
+    highTempTransitionOreMassConversion: 0.2
+    defaultTemperature: 296.15
+    defaultMass: 1840
+    maxMass: 1840
+    hardness: 25
+    molarMass: 50
+    lightAbsorptionFactor: 1
+    radiationAbsorptionFactor: 0.5
+    radiationPer1000Mass: 0
+    materialCategory: Other
+    tags:
+    - BuildableAny
+   
+    buildMenuSort: 2
+    isDisabled: false
+    state: Solid
+    localizationID: STRINGS.ELEMENTS.CRUDBYPRODUCT.NAME
+    dlcId: ""

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "J7LK4tqiMRk=",
+  "success": true,
+  "projectFilePath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\MitBoy\\.nuget\\packages\\aze.publicise.msbuild.task\\1.1.0\\aze.publicise.msbuild.task.1.1.0.nupkg.sha512",
+    "C:\\Users\\MitBoy\\.nuget\\packages\\ilrepack.lib.msbuild.task\\2.0.44.1\\ilrepack.lib.msbuild.task.2.0.44.1.nupkg.sha512",
+    "C:\\Users\\MitBoy\\.nuget\\packages\\plib\\4.17.1\\plib.4.17.1.nupkg.sha512"
+  ],
+  "logs": []
+}

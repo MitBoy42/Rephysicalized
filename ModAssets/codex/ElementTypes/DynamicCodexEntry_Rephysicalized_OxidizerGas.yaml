@@ -1,0 +1,32 @@
+id: "OXIDIZERGAS"
+title: STRINGS.MISC.TAGS.OXIDIZERGAS
+category: "ELEMENTTYPES"
+parentId: "ELEMENTTYPES"
+contentContainers:
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.OXIDIZERGAS
+          style: Title
+      - !CodexDividerLine
+          preferredWidth: -1
+      - !CodexImage
+          elementIcon: OXYGEN
+          preferredWidth: 128
+          preferredHeight: 128
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.OXIDIZERGAS_DESC
+          style: Body
+      - !CodexElementCategoryList
+          categoryTag: OXIDIZERGAS
+
+contentMadeAndUsed:
+  - tag: OXIDIZERGAS

@@ -1,0 +1,11 @@
+Extended env cookable widget to cover elements and other items other than food and plants.
+
+
+-Make scale growth, egg production and brackene drinking more integrated with critter mass?
+-Consideration for adjusting how wild plants are balanced - make them drain mass from the planted tiles?
+-Add dissolving mechanics, such as salt dissolving in water?
+-Add cooling from space radiation?
+-Make research mass neutral?
+-Make element conversion ratios more realistic?
+ 
+

@@ -1,0 +1,32 @@
+id: "RICHSOIL"
+title: STRINGS.MISC.TAGS.RICHSOIL
+category: "ELEMENTTYPES"
+parentId: "ELEMENTTYPES"
+contentContainers:
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.RICHSOIL
+          style: Title
+      - !CodexDividerLine
+          preferredWidth: -1
+      - !CodexImage
+          elementIcon: DIRT
+          preferredWidth: 128
+          preferredHeight: 128
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.RICHSOIL_DESC
+          style: Body
+      - !CodexElementCategoryList
+          categoryTag: RICHSOIL
+
+contentMadeAndUsed:
+  - tag: RICHSOIL
