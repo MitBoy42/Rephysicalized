@@ -14,3 +14,4 @@ D:\Мастерская Творческого Потенциала\Sgt_Imalas-O
 D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysic.F0F5DBA7.Up2Date
 D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.dll
 D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.pdb
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\net48\Rephysicalized.sourcelink.json

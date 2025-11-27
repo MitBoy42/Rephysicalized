@@ -253,7 +253,7 @@ namespace Rephysicalized
             // Use DoDamage (not DidDamage) as requested
             if (mass > 0.0f && !AcceptsAny && !accepted)
             {
-                this.Trigger((int)GameHashes.DoBuildingDamage, new BuildingHP.DamageSourceInfo() { damage = 1, source = BUILDINGS.DAMAGESOURCES.BAD_INPUT_ELEMENT, popString = UI.GAMEOBJECTEFFECTS.DAMAGE_POPS.WRONG_ELEMENT });
+                this.BoxingTrigger((int)GameHashes.DoBuildingDamage, new BuildingHP.DamageSourceInfo() { damage = 1, source = BUILDINGS.DAMAGESOURCES.BAD_INPUT_ELEMENT, popString = UI.GAMEOBJECTEFFECTS.DAMAGE_POPS.WRONG_ELEMENT });
             }
 
             if (accepted || wrongElementResult == ConduitConsumer.WrongElementResult.Store || contents.element == SimHashes.Vacuum || AcceptsAny)
@@ -354,3 +354,4 @@ namespace Rephysicalized
         }
     }
 }
+//Decompile of original conduit consumer. 

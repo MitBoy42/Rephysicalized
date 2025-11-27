@@ -8,11 +8,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Threading.Tasks;
+
 using UnityEngine;
-using UnityEngine;
+
 using UtilLibs;
-using UtilLibs;
+
 using static ElementLoader;
 using static Rephysicalized.STRINGS.ELEMENTS;
 
@@ -20,10 +20,6 @@ using static Rephysicalized.STRINGS.ELEMENTS;
 
 namespace Rephysicalized.ModElements
 {
-
-
-
-
 
 
     public class ElementPatches
@@ -165,8 +161,6 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
             [HarmonyPriority(Priority.LowerThanNormal)]
             public static void Postfix(List<ElementEntry> __result)
             {
-                if (__result == null)
-                    return;
 
                   
 					var elementIds = new[]
@@ -186,25 +180,28 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
                      
                     }
                 
-          
-
 
                 // Resolve the modded AshByproduct ID string for YAML (Enum.ToString is patched, but use util for safety)
                 string ashByproductId = "AshByProduct";
 
-                // 1) WoodLog: add AshByproduct as secondary byproduct (0.5)
+       
                 SetHighTempSecondary(__result, nameof(SimHashes.WoodLog), ashByproductId, 0.5f);
+                SetHighTempSecondary(__result, nameof(SimHashes.FabricatedWood), ashByproductId, 0.5f);
 
-                // 2) Sucrose: add AshByproduct as secondary byproduct (0.2)
+   
                 SetHighTempSecondary(__result, nameof(SimHashes.MoltenSucrose), ashByproductId, 0.2f);
 
-                // 3) Rust: add Oxygen as part of high-temp transition (0.25)
+           
                 SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Oxygen), 0.50f);
               
                 SetHighTempSecondary(__result, nameof(SimHashes.Cinnabar), nameof(SimHashes.SulfurGas), 0.14f);
 
-                // 4) LiquidGunk: add RefinedCarbon as part of high-temp transition (0.20)
+               
                 SetHighTempSecondary(__result, nameof(SimHashes.LiquidGunk), nameof(SimHashes.RefinedCarbon), 0.20f);
+
+                SetHighTempPrimary(__result, nameof(SimHashes.OxyRock), nameof(SimHashes.Iridium));
+                SetSublimation(__result, nameof(SimHashes.OxyRock), 1f);
+                SetHighTempSecondary(__result, nameof(SimHashes.OxyRock), nameof(SimHashes.Oxygen), 0.12f);
             }
               
                 }
@@ -218,6 +215,24 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
 
             entry.highTempTransitionOreId = oreId;
             entry.highTempTransitionOreMassConversion = oreMassConversion;
+        }
+        private static void SetHighTempPrimary(List<ElementEntry> entries, string elementId, string oreId)
+        {
+            var entry = entries?.FirstOrDefault(e => e.elementId == elementId);
+            if (entry == null)
+                return;
+
+            entry.highTempTransitionTarget = oreId;
+        
+        }
+        private static void SetSublimation(List<ElementEntry> entries, string elementId, float SublimateEfficiency)
+        {
+            var entry = entries?.FirstOrDefault(e => e.elementId == elementId);
+            if (entry == null)
+                return;
+
+            entry.sublimateEfficiency = SublimateEfficiency;
+
         }
     }
 }

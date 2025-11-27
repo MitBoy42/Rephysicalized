@@ -7,20 +7,6 @@ namespace Rephysicalized.Content.Plant_patches
 {
     
 
-    // Register SaltPlant with PMT: 100% Salt yield, no real harvest mass subtraction
-    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    internal static class SaltPlant_PMT_Registration
-    {
-        private static void Postfix()
-        {
-            PlantMassTrackerRegistry.ApplyToCrop(
-                plantPrefabId: "SaltPlant",
-                yields: new List<MaterialYield> { new MaterialYield("Salt", 1f) },
-                realHarvestSubtractKg: 30f
-            );
-        }
-    }
-
     // Set vanilla Salt crop yield to 0 so only PMT governs harvest output
     [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
     internal static class Salt_ZeroYieldPatch

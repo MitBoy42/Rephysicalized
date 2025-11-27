@@ -52,7 +52,7 @@ namespace Rephysicalized
             }
         }
 
-        // Optional: Register PMT for SpaceTree trunk (example: Mud)
+
         [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
         internal static class SpaceTree_PMT_Registration
         {

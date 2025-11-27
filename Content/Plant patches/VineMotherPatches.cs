@@ -10,21 +10,7 @@ namespace Rephysicalized
 {
    
 
-    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    internal static class VineMother_Registration
-    {
-        private static void Postfix()
-        {
-            PlantMassTrackerRegistry.ApplyToCrop(
-                plantPrefabId: "VineMother",
-                yields: new List<MaterialYield>
-                {
-                    new MaterialYield("Mud", 1f),
-                },
-                realHarvestSubtractKg: 0f
-            );
-        }
-    }
+
     // Tracks which Harvestable triggered PlantFiber so we can apply extra loss on the same harvest.
     internal static class PlantFiberHarvestTracker
     {
@@ -129,7 +115,7 @@ namespace Rephysicalized
     internal static class VineBranch_Instance_SpawnHarvestedFruit_Patch
     {
         private const float ExtraFlatLossKg = 1f;
-        private const float PercentageLoss = 0.10f;
+        private const float PercentageLoss = 0.20f;
 
         private static void Postfix(VineBranch.Instance __instance)
         {

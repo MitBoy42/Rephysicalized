@@ -154,20 +154,7 @@ namespace Rephysicalized.Content.Animal_patches
             }
             catch { }
 
-            // Try element by SimHashes
-            try
-            {
-                if (Enum.TryParse<SimHashes>(id, true, out var hash))
-                {
-                    var elem = ElementLoader.FindElementByHash(hash);
-                    if (elem != null)
-                    {
-                        tag = elem.tag;
-                        return true;
-                    }
-                }
-            }
-            catch { }
+          
 
             return false;
         }
@@ -227,7 +214,7 @@ namespace Rephysicalized.Content.Animal_patches
 
         private static List<ICodexWidget> GetWidgets(ContentContainer container)
         {
-            if (container == null) return null;
+  
 
             var tc = HarmonyLib.Traverse.Create(container);
             List<ICodexWidget> list = null;
@@ -240,3 +227,5 @@ namespace Rephysicalized.Content.Animal_patches
         }
     }
 }
+
+

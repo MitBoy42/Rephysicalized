@@ -45,15 +45,12 @@ namespace Rephysicalized.ModElements
         {
             public static void Postfix()
             {
-                try
-                {
+             
                     ModElementRegistration.ConfigureElements();
-                }
-                catch (Exception ex)
-                {
+           
                 }
             }
-        }
+        
 
 
         // Add debug logging only; no functional changes.

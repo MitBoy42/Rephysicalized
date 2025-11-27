@@ -52,7 +52,7 @@ namespace Rephysicalized
             {
                 // Apply BEFORE DB initializes amounts so dependent maxima rebuild correctly
                 baseStats.OXYGEN_USED_PER_SECOND = baseStats.OXYGEN_USED_PER_SECOND * DuplicantOxygenUse;
-                baseStats.OXYGEN_TO_CO2_CONVERSION = baseStats.OXYGEN_USED_PER_SECOND / DuplicantOxygenUse;
+                baseStats.OXYGEN_TO_CO2_CONVERSION = baseStats.OXYGEN_USED_PER_SECOND / DuplicantOxygenUse / 2.5f;
                 baseStats.MAX_CALORIES = 6_000_000f;
             }
         }

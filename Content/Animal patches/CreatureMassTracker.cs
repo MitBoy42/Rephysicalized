@@ -48,7 +48,7 @@ namespace Rephysicalized
         // Compile-time defaults (bump these in code when you want new defaults)
         private const bool DEFAULT_ENABLE_VISUAL_SCALING = true;
         private const float DEFAULT_SCALE_AT_START_MASS = 0.9f;
-        private const float DEFAULT_SCALE_AT_100X_MASS = 1.35f;
+        private const float DEFAULT_SCALE_AT_100X_MASS = 1.2f;
         private const float DEFAULT_MAX_MULTIPLE_FOR_MAX_SCALE = 100f;
         private const bool DEFAULT_ANCHOR_DOWNWARD = true;
 

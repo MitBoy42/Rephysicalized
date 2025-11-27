@@ -9,24 +9,7 @@ namespace Rephysicalized
     internal sealed class DinofernStoragePoolId { }
     internal sealed class DinofernRemoverStoragePoolId { }
 
-    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    internal static class Dinofern_Registration
-    {
-        public static void Postfix()
-        {
-            // Assuming these types exist in your project:
-            // PlantMassTrackerRegistry, MaterialYield
-            PlantMassTrackerRegistry.ApplyToCrop(
-                plantPrefabId: "Dinofern",
-                yields: new List<MaterialYield>
-                {
-                    new MaterialYield("Sand", 0.5f),
-                    new MaterialYield("BleachStone", 0.5f),
-                },
-                realHarvestSubtractKg: 36f
-            );
-        }
-    }
+  
 
     [HarmonyPatch(typeof(Dinofern), nameof(Dinofern.OnSpawn))]
     public static class Dinofern_OnSpawn_Patch

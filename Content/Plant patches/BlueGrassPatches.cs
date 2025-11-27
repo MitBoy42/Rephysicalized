@@ -27,18 +27,7 @@ namespace Rephysicalized
         }
     }
 
-    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    internal static class BlueGrass_Registration
-    {
-        private static void Postfix()
-        {
-            PlantMassTrackerRegistry.ApplyToCrop(
-                plantPrefabId: "BlueGrass",
-                yields: new List<MaterialYield> { new MaterialYield("OxyRock", 1f) },
-                realHarvestSubtractKg: 20f
-            );
-        }
-    }
+
 
     [HarmonyPatch(typeof(BlueGrassConfig), nameof(BlueGrassConfig.CreatePrefab))]
     internal static class BlueGrassConfig_CreatePrefab_Patch
@@ -166,7 +155,7 @@ namespace Rephysicalized
     {
         private const float BASE_DOMESTICATED = 1f / 500f; // 0.002 kg/s
         private const float BASE_WILD = 0.0005f;           // 0.0005 kg/s
-        private const float MAX_FACTOR_AT_100K_LUX = 100f; // scale up to 100x
+        private const float MAX_FACTOR = 100f; // scale up to 200x
 
         private readonly List<ElementConsumer> _consumers = new List<ElementConsumer>();
         [MyCmpGet] private ReceptacleMonitor _receptacle;
@@ -186,8 +175,8 @@ namespace Rephysicalized
             float baseRate = (_receptacle != null && _receptacle.Replanted) ? BASE_DOMESTICATED : BASE_WILD;
             int cell = Grid.PosToCell(transform.GetPosition());
             int lux = (Grid.IsValidCell(cell) ? Grid.LightIntensity[cell] : 0);
-            float t = Mathf.Clamp01(lux / 100000f);
-            float mult = Mathf.Lerp(1f, MAX_FACTOR_AT_100K_LUX, t);
+            float t = Mathf.Clamp01(lux / 200000f);
+            float mult = Mathf.Lerp(1f, MAX_FACTOR, t);
             float desired = baseRate * mult;
 
             var actualRates = new List<string>(_consumers.Count);
@@ -435,7 +424,7 @@ namespace Rephysicalized
             // Scale converter output by lux
             int cell = Grid.PosToCell(transform.GetPosition());
             int lux = (Grid.IsValidCell(cell) ? Grid.LightIntensity[cell] : 0);
-            float t = Mathf.Clamp01(lux / 100000f);
+            float t = Mathf.Clamp01(lux / 200000f);
             float prodMult = Mathf.Lerp(1f, MAX_FACTOR_AT_100K_LUX, t);
 
             _converter.OutputMultiplier = prodMult;
@@ -533,7 +522,7 @@ namespace Rephysicalized
 
                 int cell = Grid.PosToCell(__instance.transform.GetPosition());
                 int lux = (Grid.IsValidCell(cell) ? Grid.LightIntensity[cell] : 0);
-                float t = Mathf.Clamp01(lux / 100000f);
+                float t = Mathf.Clamp01(lux / 200000f);
                 float mult = Mathf.Lerp(1f, 100f, t);
                 float desired = baseRate * mult;
 

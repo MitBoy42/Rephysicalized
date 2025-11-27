@@ -183,6 +183,7 @@ namespace Rephysicalized
                 public static LocString COOLANTCONTAMINATION = "Coolant Contamination";
                 public static LocString ENVIROMENTCOOKING = "Rephysicalized Cooking";
                 public static LocString EXTRADROPS = "Rephysicalized Drops";
+                public static LocString ANIMALPEE = "Rephysicalized Pee";
                 public static LocString FUELEDDIET = "Rephysicalized Metabolism";
             }
 

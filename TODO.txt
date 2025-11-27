@@ -1,5 +1,9 @@
 Extended env cookable widget to cover elements and other items other than food and plants.
 
+- fix refilling on water cooler
+- make creatures max size smaller
+- 
+
 
 -Make scale growth, egg production and brackene drinking more integrated with critter mass?
 -Consideration for adjusting how wild plants are balanced - make them drain mass from the planted tiles?

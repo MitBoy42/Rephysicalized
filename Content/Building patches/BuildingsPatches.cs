@@ -11,9 +11,53 @@ using System.Reflection;
 using System.Reflection.Emit;
 using TUNING;
 using UnityEngine;
-namespace Rephysicalized
-{
 
+
+namespace Rephysicalized.Content.Building_patches
+{
+    // Patch ClusterTelescopeEnclosedConfig.CreateBuildingDef to require both metal (same mass) and 100kg of Glass
+    [HarmonyPatch(typeof(ClusterTelescopeEnclosedConfig), nameof(ClusterTelescopeEnclosedConfig.CreateBuildingDef))]
+    public static class ClusterTelescopeEnclosed_MaterialsPatch
+    {
+        private const float GlassMassKg = 100f;
+
+        // We’ll wrap the original call by intercepting the BuildingDef after it’s created and overwrite its mass/materials.
+        public static void Postfix(ref BuildingDef __result)
+        {
+            if (__result == null)
+                return;
+
+            // Use the existing arrays; in this branch they are named Mass and MaterialCategory.
+            var oldMats = __result.MaterialCategory;
+            var oldMass = __result.Mass;
+
+            // Safety guards
+            if (oldMats == null || oldMass == null || oldMats.Length != oldMass.Length || oldMats.Length == 0)
+            {
+                // Fallback: keep vanilla TIER4 metals mass + add Glass
+                __result.MaterialCategory = new[] { MATERIALS.ALL_METALS[0], MATERIALS.GLASS };
+                __result.Mass = new[] { BUILDINGS.CONSTRUCTION_MASS_KG.TIER4[0], GlassMassKg };
+                return;
+            }
+
+            // Build new arrays with one extra slot for Glass
+            var newMats = new string[oldMats.Length + 1];
+            var newMass = new float[oldMass.Length + 1];
+
+            for (int i = 0; i < oldMats.Length; i++)
+            {
+                newMats[i] = oldMats[i];
+                newMass[i] = oldMass[i];
+            }
+
+            // Append Glass
+            newMats[oldMats.Length] = MATERIALS.GLASS;
+            newMass[oldMass.Length] = GlassMassKg;
+
+            __result.MaterialCategory = newMats;
+            __result.Mass = newMass;
+        }
+    }
 
     // CampfireConfig: Patch to require both wood and oxygen as inputs
     [HarmonyPatch(typeof(CampfireConfig), "ConfigureBuildingTemplate")]
@@ -102,7 +146,7 @@ namespace Rephysicalized
 
     }
 
-  
+
 
     //SmokerConfig
     // SmokerConfig: Add oxidizer storage + dual gas consumer + fueled fabricator
@@ -125,7 +169,7 @@ namespace Rephysicalized
             // Ensure the dispenser only outputs CO2, so stored oxygen isn't pumped out
             if (dispenser != null)
                 dispenser.elementFilter = new SimHashes[] { SimHashes.CarbonDioxide };
-           
+
             // Dual gas consumer stores into the same storage so the converter can consume from it
             DualGasElementConsumer dualGasConsumer = go.AddOrGet<DualGasElementConsumer>();
             dualGasConsumer.capacityKG = 1f;
@@ -187,7 +231,7 @@ namespace Rephysicalized
             }
         }
     }
-    
 }
+
 
 

@@ -53,9 +53,20 @@ namespace Rephysicalized
             new Entry("BeanPlant", 12f,
                 new MaterialYield("ToxicMud", 0.98f),
                 new MaterialYield("Methane", 0.02f)
+
+            ),
+                 new Entry("SaltPlant", 30f,
+                new MaterialYield("Salt", 1f)
+            ),
+                      new Entry("VineMother", 0f,
+                new MaterialYield("Mud", 1f)
             ),
             new Entry("WormPlant", 1f,
                 new MaterialYield("Sand", 1f)
+            ),
+               new Entry("Dinofern", 36f,
+                new MaterialYield("Sand", 0.5f),
+                    new MaterialYield("BleachStone", 0.5f)
             ),
             new Entry("SuperWormPlant", 8f,
                 new MaterialYield("Sand", 0.95f),
@@ -96,6 +107,10 @@ namespace Rephysicalized
             ),
                                                         new Entry("ColdBreather", 0f,
                 new MaterialYield("PlantFIber", 1f)
+
+            ),
+                                                                new Entry("BlueGrass", 20f,
+                new MaterialYield("Oxyrock", 1f)
 
             ),
         };
