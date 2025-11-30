@@ -29,11 +29,21 @@ namespace Rephysicalized
         [Limit(0.1f, 1f)]
         public float DuplicantOxygenUse { get; set; }
 
+        [Option("STRINGS.MODCONFIG.BUILDINGHEATEXCHANGE.NAME", "STRINGS.MODCONFIG.BUILDINGHEATEXCHANGE.TOOLTIP")]
+        [JsonProperty]
+        public bool BuildingFoundationTemperatureExchange { get; set; }
+
+        [Option("STRINGS.MODCONFIG.LIGHTSINUTILITY.NAME", "STRINGS.MODCONFIG.LIGHTSINUTILITY.TOOLTIP")]
+        [JsonProperty]
+        public bool LightsInUtility { get; set; }
+
         public Config()
         {
             WaterGeyserOutput = 0.25f;
             SolidMassMult = 0.25f;
             DuplicantOxygenUse = 0.5f;
+            BuildingFoundationTemperatureExchange = false;
+            LightsInUtility = false;
         }
     }
 }

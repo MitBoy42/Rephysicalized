@@ -21,20 +21,17 @@ namespace Rephysicalized
         public const float SwampfruitMultiplier = 5f;
         public const float CarrotMultiplier = 4f;
         public const float FriesCarrotMultiplier = 6f;
-
-        // Ingredient tags
-        internal static readonly Tag PrickleTag = new Tag(PrickleFruitConfig.ID);
-        internal static readonly Tag SwampTag = new Tag(SwampFruitConfig.ID);
-        internal static readonly Tag CarrotTag = new Tag(CarrotConfig.ID);
-        internal static readonly Tag FriesCarrotTag = new Tag(FriesCarrotConfig.ID);
+        public const float MushBarMultiplier = 5f;
 
         // Map ingredient/result tag -> multiplier
         internal static readonly Dictionary<Tag, float> IngredientMultipliers = new Dictionary<Tag, float>
         {
-            { PrickleTag, PricklefruitMultiplier },
-            { SwampTag,   SwampfruitMultiplier   },
-            { CarrotTag,  CarrotMultiplier       },
-            { FriesCarrotTag,  FriesCarrotMultiplier  },
+            { "PrickleFruit", PricklefruitMultiplier },
+            { "SwampFruit",   SwampfruitMultiplier   },
+            { "Carrot",  CarrotMultiplier       },
+            { "FriesCarrot",  FriesCarrotMultiplier  },
+                     { "MushBar",  MushBarMultiplier  },
+                             { "FriedMushBar",  MushBarMultiplier  },
         };
 
         // Fabricator IDs (Tags) to scale; names must match building IDs
@@ -140,6 +137,8 @@ namespace Rephysicalized
                 AdjustFoodCalories(FOOD.FOOD_TYPES.CARROT, FoodDensityRebalance.CarrotMultiplier, "CARROT");
                 // FriesCarrot 
                 AdjustFoodCalories(FOOD.FOOD_TYPES.FRIES_CARROT, FoodDensityRebalance.FriesCarrotMultiplier, "FRIES_CARROT");
+                AdjustFoodCalories(FOOD.FOOD_TYPES.MUSHBAR, FoodDensityRebalance.MushBarMultiplier, "MUSHBAR");
+                AdjustFoodCalories(FOOD.FOOD_TYPES.FRIEDMUSHBAR, FoodDensityRebalance.MushBarMultiplier, "FRIEDMUSHBAR");
             }
             catch (Exception ex)
             {

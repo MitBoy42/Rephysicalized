@@ -160,51 +160,31 @@ internal static class BaseCreatureDefaultMassPatch
         }
     }
 
-    // Ensure wooddeer uses ConsumedMass mode with MASS_RATIO=1 so we can apply per-food ratios cleanly.
-    [HarmonyPatch(typeof(BaseDeerConfig), nameof(BaseDeerConfig.BaseDeer))]
-    internal static class WoodDeer_MassTracker_DeerSetup_Postfix
-    {
-        [HarmonyPostfix]
-        private static void Post(ref GameObject __result)
-        {
-            if (__result == null) return;
 
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-
-            // Freeze current computed mass as baseline and switch to mass mode
-            tracker.SetAccumulationMode(CreatureMassTracker.AccumulationMode.ConsumedMass, keepCurrentMassAsBaseline: true);
-
-            // Global MASS_RATIO must be 1 since we handle ratios per-food below.
-            tracker.MASS_RATIO = 1f;
-        }
-    }
 
     // Apply deer-specific mass-gain per food by intercepting the tracker’s event handler for deer only.
     [HarmonyPatch(typeof(CreatureMassTracker), "OnCaloriesConsumed")]
     internal static class WoodDeer_PerFoodMassGain_Prefix
     {
-        private static readonly Tag HardSkinBerryItem = new Tag("HardSkinBerry");
-        private static readonly Tag PrickleFruitItem = new Tag("PrickleFruit");
-        private static readonly Tag Katairite = new Tag("Katairite");
-        private static readonly Tag HardSkinBerryPlant = new Tag("HardSkinBerryPlant");
-        private static readonly Tag PrickleFlowerPlantA = new Tag("PrickleFlower");
-     
 
         // Return false to skip original when we handle the event here.
         private static bool Prefix(CreatureMassTracker __instance, object data)
         {
-            try
-            {
+           
                 // Only handle wooddeer while in mass mode
                 var go = __instance.gameObject;
                 if (!IsWoodDeer(go) || __instance.Mode != CreatureMassTracker.AccumulationMode.ConsumedMass)
                     return true;
 
-                if (data is not CreatureCalorieMonitor.CaloriesConsumedEvent evt || evt.calories <= 0f)
-                    return true;
+            if (data is not Boxed<CreatureCalorieMonitor.CaloriesConsumedEvent> boxed)
+                return true;
 
-                // Resolve the consumed kg via the diet entry used
-                var smi = go.GetSMI<CreatureCalorieMonitor.Instance>();
+            var evt = boxed.value;
+            if (evt.calories <= 0f)
+                return true;
+
+            // Resolve the consumed kg via the diet entry used
+            var smi = go.GetSMI<CreatureCalorieMonitor.Instance>();
                 var diet = smi?.stomach?.diet;
                 var info = diet?.GetDietInfo(evt.tag);
                 if (info == null)
@@ -223,13 +203,8 @@ internal static class BaseCreatureDefaultMassPatch
 
                 // We’ve handled this event for deer; skip the original to avoid double-counting
                 return false;
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[Rephysicalized] WoodDeer_PerFoodMassGain_Prefix failed: {e}");
-                // Fall through to original in case of any issue
-                return true;
-            }
+            
+           
         }
 
         private static bool IsWoodDeer(GameObject go)
@@ -249,14 +224,13 @@ internal static class BaseCreatureDefaultMassPatch
       
 
             // Plants:
-            if (consumedTag == HardSkinBerryPlant)
+            if (consumedTag == "HardSkinBerryPlant")
                 return 0.3334f; // ~1/3
-            if (consumedTag == PrickleFlowerPlantA )
+            if (consumedTag == "PrickleFlower")
                 return 1f / 12f; // ~0.0833333
-            if (consumedTag == Katairite)
+            if (consumedTag == "Katairite")
                 return 0.005f;
 
-            // Default: no special scaling (treat as 1:1)
             return 1f;
         }
     }
@@ -278,8 +252,8 @@ internal static class BaseCreatureDefaultMassPatch
             tracker.ExtraDrops = new List<CreatureMassTracker.ExtraDropSpec>
             {
 
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.75f },
-                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.25f },
+                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.66f },
+                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.34f },
             };
             var kpid = __result.GetComponent<KPrefabID>();
             CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
@@ -302,8 +276,8 @@ internal static class BaseCreatureDefaultMassPatch
             {
 
 
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.75f },
-                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.25f },
+                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.66f },
+                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.34f },
             };
             var kpid = __result.GetComponent<KPrefabID>();
             CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
@@ -327,8 +301,8 @@ internal static class BaseCreatureDefaultMassPatch
             tracker.ExtraDrops = new List<CreatureMassTracker.ExtraDropSpec>
             {
 
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.75f },
-                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.25f },
+                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.66f },
+                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.34f },
             };
             var kpid = __result.GetComponent<KPrefabID>();
             CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
@@ -351,59 +325,41 @@ internal static class BaseCreatureDefaultMassPatch
             {
 
 
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.75f },
-                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.25f },
+                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.66f },
+                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.34f },
             };
             var kpid = __result.GetComponent<KPrefabID>();
             CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
         }
     }
 
-    // Ensure IceBelly uses ConsumedMass mode with MASS_RATIO=1 so we can apply per-food ratios cleanly.
-    [HarmonyPatch(typeof(BaseBellyConfig), nameof(BaseBellyConfig.BaseBelly))]
-    internal static class IceBelly_MassTracker_IceBellySetup_Postfix
-    {
-        [HarmonyPostfix]
-        private static void Post(ref GameObject __result)
-        {
-            if (__result == null) return;
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-
-            // Freeze current computed mass as baseline and switch to mass mode
-            tracker.SetAccumulationMode(CreatureMassTracker.AccumulationMode.ConsumedMass, keepCurrentMassAsBaseline: true);
-
-            // Global MASS_RATIO must be 1 since we handle ratios per-food below.
-            tracker.MASS_RATIO = 1f;
-        }
-    }
+  
 
     // Apply belly-specific mass-gain per food by intercepting the tracker’s event handler for belly only.
     [HarmonyPatch(typeof(CreatureMassTracker), "OnCaloriesConsumed")]
     internal static class IceBelly_PerFoodMassGain_Prefix
     {
-        private static readonly Tag Carrot = new Tag(CarrotConfig.ID);
-        private static readonly Tag Bean = new Tag("BeanPlantSeed");
 
-        private static readonly Tag CarrotPlant = new Tag("CarrotPlant");
-        private static readonly Tag BeanPlant = new Tag("BeanPlant");
 
 
         // Return false to skip original when we handle the event here.
         private static bool Prefix(CreatureMassTracker __instance, object data)
         {
-            try
-            {
+         
                 // Only handle wooddeer while in mass mode
                 var go = __instance.gameObject;
                 if (!IsBelly(go) || __instance.Mode != CreatureMassTracker.AccumulationMode.ConsumedMass)
                     return true;
 
-                if (data is not CreatureCalorieMonitor.CaloriesConsumedEvent evt || evt.calories <= 0f)
-                    return true;
+            if (data is not Boxed<CreatureCalorieMonitor.CaloriesConsumedEvent> boxed)
+                return true;
 
-                // Resolve the consumed kg via the diet entry used
-                var smi = go.GetSMI<CreatureCalorieMonitor.Instance>();
+            var evt = boxed.value;
+            if (evt.calories <= 0f)
+                return true;
+
+            // Resolve the consumed kg via the diet entry used
+            var smi = go.GetSMI<CreatureCalorieMonitor.Instance>();
                 var diet = smi?.stomach?.diet;
                 var info = diet?.GetDietInfo(evt.tag);
                 if (info == null)
@@ -414,7 +370,7 @@ internal static class BaseCreatureDefaultMassPatch
                     return false;
 
                 // Apply belly-specific per-food ratios
-                float ratio = GetDeerPerFoodMassGainRatio(evt.tag);
+                float ratio = GetBellyPerFoodMassGainRatio(evt.tag);
                 if (ratio <= 0f)
                     return false;
 
@@ -422,13 +378,8 @@ internal static class BaseCreatureDefaultMassPatch
 
                 // We’ve handled this event for belly; skip the original to avoid double-counting
                 return false;
-            }
-            catch (Exception e)
-            {
-                //Debug.LogWarning($"[Rephysicalized] Belly_PerFoodMassGain_Prefix failed: {e}");
-                // Fall through to original in case of any issue
-                return true;
-            }
+            
+          
         }
 
         private static bool IsBelly(GameObject go)
@@ -443,17 +394,14 @@ internal static class BaseCreatureDefaultMassPatch
             return id.IndexOf("Belly", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static float GetDeerPerFoodMassGainRatio(Tag consumedTag)
+        private static float GetBellyPerFoodMassGainRatio(Tag consumedTag)
         {
-     
 
-            // Plants:
-            if (consumedTag == CarrotPlant)
+            if (consumedTag == "CarrotPlant")
                 return 0.033334f;
-            if (consumedTag == BeanPlant)
+            if (consumedTag == "BeanPlant")
                 return 0.033334f;
 
-            // Default: no special scaling (treat as 1:1)
             return 1f;
         }
     }
@@ -526,10 +474,13 @@ internal static class BaseCreatureDefaultMassPatch
 
 
                  // Raptors
-            new Entry(typeof(RaptorConfig), nameof(RaptorConfig.CreatePrefab), startMass: 4f, cal: 80000f, maxMult: 100f, addLink: true,
-                      drops: new[] { new Drop("DinosaurMeat", 0.2f), new Drop("RotPile", 0.8f) }),
-            new Entry(typeof(BabyRaptorConfig), nameof(BabyRaptorConfig.CreatePrefab), startMass: 4f, cal: 800000f, maxMult: 100f,
-                      drops: new[] { new Drop("DinosaurMeat", 0.2f), new Drop("RotPile", 0.8f) }),
+            new Entry(typeof(RaptorConfig), nameof(RaptorConfig.CreatePrefab), startMass: 4f, cal: 1600000f, maxMult: 100f, addLink: true
+                 //    , drops: new[] { new Drop("DinosaurMeat", 0.1f), new Drop("RotPile", 0.9f) }
+                      ),
+            new Entry(typeof(BabyRaptorConfig), nameof(BabyRaptorConfig.CreatePrefab), startMass: 4f, cal: 1600000f, maxMult: 100f
+             //      ,   drops: new[] { new Drop("DinosaurMeat", 0.1f), new Drop("RotPile", 0.9f) }
+                      ),
+
                 
             // Seals
             new Entry(typeof(SealConfig), nameof(SealConfig.CreatePrefab), startMass: 1f, cal: 12500f, maxMult: 700f, addLink: true,
@@ -538,9 +489,9 @@ internal static class BaseCreatureDefaultMassPatch
                       drops: new[] { new Drop("Tallow", 1f) }),
                 // PrehistoricPacu
             new Entry(typeof(PrehistoricPacuConfig), nameof(PrehistoricPacuConfig.CreatePrefab), startMass: 2f, cal: 50000f, maxMult: 100f, addLink: true,
-                      drops: new[] { new Drop("PrehistoricPacuFillet", 0.75f), new Drop("RotPile", 0.25f) }),
+                      drops: new[] { new Drop("PrehistoricPacuFillet", 0.65f), new Drop("RotPile", 0.35f) }),
             new Entry(typeof(PrehistoricPacuConfig), nameof(PrehistoricPacuConfig.CreatePrefab), startMass: 2f, cal: 50000f, maxMult: 100f,
-                      drops: new[] { new Drop("PrehistoricPacuFillet", 0.75f), new Drop("RotPile", 0.25f)  }),
+                      drops: new[] { new Drop("PrehistoricPacuFillet", 0.65f), new Drop("RotPile", 0.35f)  }),
 
             // Drecko (base)
             new Entry(typeof(DreckoConfig), nameof(DreckoConfig.CreatePrefab), startMass: 1f, cal: 2000000f, maxMult: 150f, addLink: true),
@@ -702,13 +653,13 @@ internal static class BaseCreatureDefaultMassPatch
 
             // Stego (uses CreateStego)
             new Entry(typeof(StegoConfig), "CreateStego", startMass: 4f, mass: 1f, addLink: true,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f), new Drop("RotPile", 0.88f)  }),
+                      drops: new[] { new Drop("DinosaurMeat", 0.10f), new Drop("RotPile", 0.9f)  }),
             new Entry(typeof(BabyStegoConfig), nameof(BabyStegoConfig.CreatePrefab), startMass: 4f, mass: 1f,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f),  new Drop("RotPile", 0.88f) }),
+                      drops: new[] { new Drop("DinosaurMeat", 0.10f),  new Drop("RotPile", 0.9f) }),
                  new Entry(typeof(AlgaeStegoConfig), "CreateStego", startMass: 4f, mass: 1f, addLink: true,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f), new Drop("RotPile", 0.88f)  }),
+                      drops: new[] { new Drop("DinosaurMeat", 0.10f), new Drop("RotPile", 0.9f)  }),
             new Entry(typeof(BabyAlgaeStegoConfig), nameof(BabyAlgaeStegoConfig.CreatePrefab), startMass: 4f, mass: 1f,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f),  new Drop("RotPile", 0.88f) }),
+                      drops: new[] { new Drop("DinosaurMeat", 0.10f),  new Drop("RotPile", 0.90f) }),
  //Morb
             new Entry(typeof(GlomConfig), nameof(GlomConfig.CreatePrefab), startMass: 1f, mass: 1f, maxMult: 100f,
                       drops: new[] { new Drop("Slime", 0f) }),

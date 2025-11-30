@@ -186,7 +186,7 @@ namespace Rephysicalized.Content.System_Patches
                 var comp = __result.AddComponent<EnviromentCookablePatch>();
                 comp.temperature = CookTemperatureK;
                 comp.ID = FOOD.FOOD_TYPES.FRIEDMUSHBAR.Id;
-                comp.massConversionRatio = 1.0f;
+                comp.massConversionRatio = 1f;
             }
             [HarmonyPatch(typeof(SwampFruitConfig), nameof(SwampFruitConfig.CreatePrefab))]
             [HarmonyPostfix]

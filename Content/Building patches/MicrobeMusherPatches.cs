@@ -79,7 +79,7 @@ namespace Rephysicalized
                 var newResults = new List<ComplexRecipe.RecipeElement>
             {
                 new ComplexRecipe.RecipeElement("MushBar".ToTag(), 1f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
-                new ComplexRecipe.RecipeElement("Mud".ToTag(), 149f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
+                new ComplexRecipe.RecipeElement("Mud".ToTag(), 145f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
 
             };
                 Traverse.Create(recipe).Field("results").SetValue(newResults.ToArray());

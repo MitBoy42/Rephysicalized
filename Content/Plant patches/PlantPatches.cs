@@ -29,6 +29,25 @@ namespace Rephysicalized
         }
     }
 
+    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
+    internal static class DewDripYieldPatch
+    {
+        private static void Postfix()
+        {
+            var crops = TUNING.CROPS.CROP_TYPES;
+            string oxyId = DewDripConfig.ID;
+            for (int i = 0; i < crops.Count; i++)
+            {
+                if (crops[i].cropId == oxyId)
+                {
+                    var c = crops[i];
+                    crops[i] = new Crop.CropVal(c.cropId, c.cropDuration, 20);
+                    break;
+                }
+            }
+        }
+    }
+
     // All plants start at 1 kg when placed
     [HarmonyPatch]
     internal static class ForestTreePlacedEntityMassEarlyPatch

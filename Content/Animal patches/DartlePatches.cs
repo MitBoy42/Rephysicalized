@@ -30,7 +30,7 @@ namespace Rephysicalized
             // - Double number of drips eaten
             fDrips.SetValue(null, newDrips);
 
-            // - Halve calories per drip so the creature actually eats two drips to reach the same per-cycle calories
+            // - Halve calories per drip so the creature actually eats 20 to reach the same per-cycle calories
             fCalPerDrip.SetValue(null, (float)fCalPerDrip.GetValue(null) * scale);
 
             // - Keep poop per cycle the same by halving per-drip poop and min poop size
@@ -93,7 +93,7 @@ namespace Rephysicalized
                         // ldc.r4 2.0f
                         if (cj.opcode == OpCodes.Ldc_R4 && cj.operand is float f && (f == 2f || f == 2.0f))
                         {
-                            il[j] = new CodeInstruction(OpCodes.Ldc_R4, 1.0f);
+                            il[j] = new CodeInstruction(OpCodes.Ldc_R4, 0.1f);
                             replaced = true;
                             break;
                         }
@@ -102,7 +102,7 @@ namespace Rephysicalized
                         if (cj.opcode == OpCodes.Ldc_R8 && cj.operand is double d && (d == 2.0 || d == 2d))
                         {
                             // Use r8 1.0 to keep the numeric type consistent
-                            il[j] = new CodeInstruction(OpCodes.Ldc_R8, 1.0);
+                            il[j] = new CodeInstruction(OpCodes.Ldc_R8, 0.1);
                             replaced = true;
                             break;
                         }

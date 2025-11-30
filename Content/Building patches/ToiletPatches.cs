@@ -38,7 +38,7 @@ namespace Rephysicalized
                 return;
 
             // Always keep the timer at 1800f as requested
-            smi.monsterSpawnTime = 18f;
+            smi.monsterSpawnTime = 1800f;
 
             // Only keep respawning while the toilet is still in the "fullWaitingForClean" state,
             // which is the state where the game schedules the original spawn.

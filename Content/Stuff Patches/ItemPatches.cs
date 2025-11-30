@@ -1,12 +1,18 @@
 ﻿using HarmonyLib;
 using Klei.AI;
+using Rephysicalized;
 using STRINGS;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
+using HarmonyLib;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 
 
 namespace Rephysicalized
@@ -63,56 +69,6 @@ namespace Rephysicalized
     }
 
 
-
-    [HarmonyPatch]
-    public static class DewDripCookable
-    {
-        [HarmonyPatch(typeof(DewDripConfig), nameof(DewDripConfig.CreatePrefab))]
-        [HarmonyPostfix]
-        public static void DewDripConfig_CreatePrefab_Postfix(ref GameObject __result)
-        {
-            var comp = __result.AddComponent<EnviromentCookablePatch>();
-            comp.temperature = 80f + 273.15f;
-            comp.ID = "Milk";
-            comp.massConversionRatio = 1.0f;
-            var compF = __result.AddComponent<EnviromentCookablePatch>();
-            compF.enableFreezing = true;
-            compF.temperature = -40f + 273.15f;
-            compF.ID = "MilkIce";
-            compF.massConversionRatio = 1.0f;
-        }
-    }
-
-    [HarmonyPatch]
-    public static class EntityTemplates_CreateLooseEntity_DewDrip_Prefix
-    {
-        public static System.Reflection.MethodBase TargetMethod()
-        {
-
-            var types = new Type[] {
-            typeof(string), typeof(string), typeof(string), typeof(float), typeof(bool),
-            typeof(KAnimFile), typeof(string), typeof(Grid.SceneLayer),
-            typeof(EntityTemplates.CollisionShape), typeof(float), typeof(float),
-            typeof(bool), typeof(int), typeof(SimHashes), typeof(List<Tag>)
-        };
-            return AccessTools.Method(typeof(EntityTemplates), "CreateLooseEntity", types);
-        }
-
-        public static void Prefix(
-            string id,
-            ref float mass,
-            ref bool unitMass
-        )
-        {
-            // Adjust only DewDrip
-            if (string.Equals(id, "DewDrip", StringComparison.Ordinal))
-            {
-                mass = 20f;
-                unitMass = true;
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(FeatherFabricConfig))]
     [HarmonyPatch(MethodType.Constructor)]
     public static class FeatherFabricCtorTranspiler
@@ -154,31 +110,11 @@ namespace Rephysicalized
             }
             return code;
         }
-
-
-
-
-
-        //[HarmonyPatch(typeof(PlantFiberConfig), nameof(PlantFiberConfig.CreatePrefab))]
-        //internal static class PlantFiberConfig_CreatePrefab_Patch
-        //{
-        //    private static void Postfix(GameObject __result)
-        //    {
-
-        //        var primary = __result.GetComponent<PrimaryElement>() ?? __result.AddComponent<PrimaryElement>();
-
-        //        primary.SetElement(SimHashes.Dirt);
-
-        //    }
-
-
-
-
-
     }
+
     // Patch the prefab creation to override the primary element to CLay
     [HarmonyPatch(typeof(IceBellyPoopConfig), nameof(IceBellyPoopConfig.CreatePrefab))]
-    internal static class IceBellyPoopConfig_CreatePrefab_Patch
+    public static class IceBellyPoopConfig_CreatePrefab_Patch
     {
         private static void Postfix(GameObject __result)
         {
@@ -190,11 +126,12 @@ namespace Rephysicalized
             primary.SetElement(SimHashes.Clay);
 
         }
-    
+    }
 
-        [HarmonyPatch(typeof(CrabWoodShellConfig), nameof(CrabWoodShellConfig.CreatePrefab))]
-        [HarmonyPostfix]
-        public static void CrabWoodShell_CreatePrefab_Postfix(ref GameObject __result)
+    [HarmonyPatch(typeof(CrabWoodShellConfig), nameof(CrabWoodShellConfig.CreatePrefab))]
+    public static class CrabWoodShell_CreatePrefab_Patch
+    {
+        private static void Postfix(GameObject __result)
         {
             var comp = __result.AddComponent<EnviromentCookablePatch>();
 
@@ -203,9 +140,11 @@ namespace Rephysicalized
             comp.massConversionRatio = 1f;
             comp.pressureThreshold = 4000f;
         }
-        [HarmonyPatch(typeof(CrabShellConfig), nameof(CrabShellConfig.CreatePrefab))]
-        [HarmonyPostfix]
-        public static void CraShell_CreatePrefab_Postfix(ref GameObject __result)
+    }
+    [HarmonyPatch(typeof(CrabShellConfig), nameof(CrabShellConfig.CreatePrefab))]
+    public static class CrabShell_CreatePrefab_Patch
+    {
+        private static void Postfix(GameObject __result)
         {
             var comp = __result.AddComponent<EnviromentCookablePatch>();
 
@@ -214,4 +153,45 @@ namespace Rephysicalized
             comp.massConversionRatio = 1f;
             comp.pressureThreshold = 4000f;
         }
-    } }
+
+    }
+
+    [HarmonyPatch(typeof(DewDripConfig), nameof(DewDripConfig.CreatePrefab))]
+    public static class DewDripPatch
+    {
+        private static void Postfix(GameObject __result)
+        {
+            var comp = __result.AddComponent<EnviromentCookablePatch>();
+            comp.temperature = 80f + 273.15f;
+            comp.ID = "Milk";
+            comp.massConversionRatio = 1.0f;
+            var compF = __result.AddComponent<EnviromentCookablePatch>();
+            compF.enableFreezing = true;
+            compF.temperature = -40f + 273.15f;
+            compF.ID = "MilkIce";
+            compF.massConversionRatio = 1.0f;
+
+        }
+    }
+    [HarmonyPatch(typeof(KelpConfig), nameof(KelpConfig.CreatePrefab))]
+    public static class Kelp_CreatePrefab_Patch
+    {
+        private static void Postfix(GameObject __result)
+        {
+            var comp = __result.AddComponent<EnviromentCookablePatch>();
+
+            comp.temperature = 75f + 273.15f;
+            comp.ID = "PhytoOil";
+            comp.massConversionRatio = 4f;
+            comp.pressureThreshold = 1000f;
+            comp.triggeringElements = comp.triggeringElements ?? new List<SimHashes>();
+            comp.triggeringElements.Clear();
+            comp.triggeringElements.Add(SimHashes.Water);
+            comp.elementConsumedRatio = 0.75f;
+        }
+
+    }
+
+
+
+} 

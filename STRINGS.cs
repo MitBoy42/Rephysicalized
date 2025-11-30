@@ -173,7 +173,17 @@ namespace Rephysicalized
                 public static LocString NAME = "Duplicant Oxygen Use";
                 public static LocString TOOLTIP = "Adjusts the amount of Oxygen a Duplicant breathes.  \n\n Adjusted due to SPOM not being viable anymore and required Oxygen for combustion.";
             }
-           
+            public class BUILDINGHEATEXCHANGE
+            {
+                public static LocString NAME = "Buildings exchange heat with foundation tiles";
+                public static LocString TOOLTIP = "Also adds proper foundation to Solar Panel so it can exchange heat with surrounding elements. \n\n  IMPORTANT: Unfortunately, due to how sim works, buildings will exchange heat very rapidly with foundation tiles, on par with tempshiftplates.";
+            }
+            public class LIGHTSINUTILITY
+            {
+                public static LocString NAME = "Light Furniture in Utilities";
+                public static LocString TOOLTIP = "Moves Lamp buildings into Utilities category.";
+            }
+
         }
 
         public class CODEX

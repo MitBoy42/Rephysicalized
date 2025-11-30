@@ -1,8 +1,10 @@
-﻿using System;
+﻿using HarmonyLib;
+using Klei.AI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using HarmonyLib;
-using Klei.AI;
+using System.Reflection;
+using System.Reflection.Emit;
 using UnityEngine;
 
 namespace Rephysicalized.Content.Animal_patches
@@ -120,7 +122,7 @@ namespace Rephysicalized.Content.Animal_patches
                         consumed_tags: new HashSet<Tag>(info.consumedTags),
                         produced_element: info.producedElement,
                         calories_per_kg: info.caloriesPerKg,
-                        produced_conversion_rate: 0f, // no poop from calories for these entries
+                        produced_conversion_rate: 0.00f, // no poop from calories for these entries
                         disease_id: null,
                         disease_per_kg_produced: 0f,
                         produce_solid_tile: info.produceSolidTile,
@@ -134,34 +136,6 @@ namespace Rephysicalized.Content.Animal_patches
         }
     }
 
-    // Attach CreatureMassTracker and link on adult raptor prefab
-    [HarmonyPatch(typeof(RaptorConfig), nameof(RaptorConfig.CreatePrefab))]
-    internal static class RaptorMassTrackerAttach_Adult
-    {
-        static void Postfix(GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 4f;
-            tracker.CALORIE_RATIO = 80000f;
-            __result.AddOrGet<CreatureMassTrackerLink>();
-        }
-    }
-
-    // Attach CreatureMassTracker and link on baby raptor prefab
-    [HarmonyPatch(typeof(BabyRaptorConfig), nameof(BabyRaptorConfig.CreatePrefab))]
-    internal static class RaptorMassTrackerAttach_Baby
-    {
-        static void Postfix(GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 4f;
-            tracker.CALORIE_RATIO = 80000f;
-            __result.AddOrGet<CreatureMassTrackerLink>();
-
-        }
-    }
 
     // On prey consumption by a Raptor: compute and buffer extra poop = max(preyActualMass - preyStartingMass, 0)
     //  Also remove Butcherable so consumed prey cannot create drops.
@@ -328,4 +302,160 @@ namespace Rephysicalized.Content.Animal_patches
         }
     }
 
+
+    // Buffer component to hold pending extra poop mass for Raptors (using Meat/DinosaurMeat as solid poop)
+    public sealed class RaptorExtraPoopBuffer : MonoBehaviour
+    {
+        [NonSerialized] public Tag poopElement = Tag.Invalid; // Meat or DinosaurMeat
+        [NonSerialized] public float pendingKg = 0f;
+    }
+
+    internal static class RaptorPoopUtil
+    {
+        // Detect if a creature is a Raptor (reusing tag logic)
+        internal static bool IsRaptor(KPrefabID kpid)
+        {
+            if (kpid == null) return false;
+            return kpid.HasTag(GameTags.Creatures.Species.RaptorSpecies)
+                || kpid.HasTag((Tag)"Raptor")
+                || kpid.HasTag((Tag)"RaptorBaby");
+        }
+
+      
+    }
+
+    // On prey consumption: for Raptors, buffer extra poop mass equal to max(preyMass - 1f, 0)
+    // We hook into the same method as existing raptor patches but only accumulate buffer.
+    [HarmonyPatch(typeof(SolidConsumerMonitor.Instance), nameof(SolidConsumerMonitor.Instance.OnEatSolidComplete))]
+    internal static class RaptorExtraPoopOnEatPatch
+    {
+        [HarmonyPriority(Priority.First)]
+        static void Prefix(SolidConsumerMonitor.Instance __instance, object data)
+        {
+            try
+            {
+                var eaterGO = __instance?.smi?.gameObject;
+                if (eaterGO == null) return;
+
+                var eaterKpid = eaterGO.GetComponent<KPrefabID>();
+                if (!RaptorPoopUtil.IsRaptor(eaterKpid)) return;
+
+                // Resolve prey
+                KPrefabID prey = null;
+                if (data is KPrefabID kpid) prey = kpid;
+                else if (data is Component comp && comp != null) prey = comp.GetComponent<KPrefabID>();
+                else if (data is GameObject go && go != null) prey = go.GetComponent<KPrefabID>();
+                if (prey == null) return;
+
+                var diet = __instance.diet;
+                if (diet == null) return;
+
+                var dietInfo = diet.GetDietInfo(prey.PrefabTag);
+                if (dietInfo == null) return;
+
+                if (dietInfo.foodType != Diet.Info.FoodType.EatPrey &&
+                    dietInfo.foodType != Diet.Info.FoodType.EatButcheredPrey)
+                    return;
+
+                // Determine prey current mass
+                float preyMass = 0f;
+                var pe = prey.GetComponent<PrimaryElement>();
+                if (pe != null) preyMass = pe.Mass;
+
+                // Compute extra poop mass: preyMass - 1f
+                float extraPoopKg = Mathf.Max(preyMass - 1f, 0f);
+                if (extraPoopKg <= 0f) return;
+
+                // Buffer on the eater
+                var buffer = eaterGO.GetComponent<RaptorExtraPoopBuffer>() ?? eaterGO.AddComponent<RaptorExtraPoopBuffer>();
+                buffer.poopElement = SimHashes.BrineIce.CreateTag();
+                buffer.pendingKg += extraPoopKg;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"RaptorExtraPoopOnEatPatch Prefix failed: {e}");
+            }
+        }
+    }
+
+    // When the raptor poops (stomach event), spawn buffered extra poop mass as Meat/DinosaurMeat at owner location
+    [HarmonyPatch(typeof(CreatureCalorieMonitor.Stomach), nameof(CreatureCalorieMonitor.Stomach.Poop))]
+    internal static class RaptorStomachPoopExtraSpawnPatch
+    {
+        private static readonly FieldInfo OwnerField = AccessTools.Field(typeof(CreatureCalorieMonitor.Stomach), "owner");
+        private static readonly FieldInfo StorePoopField = AccessTools.Field(typeof(CreatureCalorieMonitor.Stomach), "storePoop");
+
+        static void Postfix(CreatureCalorieMonitor.Stomach __instance)
+        {
+            try
+            {
+                if (OwnerField == null) return;
+
+                var owner = OwnerField.GetValue(__instance) as GameObject;
+                if (owner == null) return;
+
+                var ownerKpid = owner.GetComponent<KPrefabID>();
+                if (!RaptorPoopUtil.IsRaptor(ownerKpid)) return;
+
+                var buffer = owner.GetComponent<RaptorExtraPoopBuffer>();
+                if (buffer == null || buffer.pendingKg <= 0f || !buffer.poopElement.IsValid)
+                    return;
+
+                int cell = Grid.PosToCell(owner.transform.GetPosition());
+                if (!Grid.IsValidCell(cell)) return;
+
+                var elem = ElementLoader.GetElement(buffer.poopElement);
+                if (elem == null) return;
+
+                float temperature = owner.GetComponent<PrimaryElement>()?.Temperature ?? 253.15f;
+
+                bool storePoop = false;
+                if (StorePoopField != null)
+                {
+                    try { storePoop = (bool)StorePoopField.GetValue(__instance); }
+                    catch { storePoop = false; }
+                }
+
+                // Raptors should generate solid drops. If the chosen tag is a prefab (Meat/DinosaurMeat), spawn as ore; if it's elemental, use storage/sim path.
+                if (storePoop)
+                {
+                    var storage = owner.GetComponent<Storage>();
+                    if (storage != null)
+                    {
+                        if (elem.IsLiquid)
+                            storage.AddLiquid(elem.id, buffer.pendingKg, temperature, byte.MaxValue, 0);
+                        else if (elem.IsGas)
+                            storage.AddGasChunk(elem.id, buffer.pendingKg, temperature, byte.MaxValue, 0, false);
+                        else
+                            storage.AddOre(elem.id, buffer.pendingKg, temperature, byte.MaxValue, 0);
+                    }
+                }
+                else
+                {
+                    if (elem.IsLiquid)
+                    {
+                        FallingWater.instance.AddParticle(cell, elem.idx, buffer.pendingKg, temperature, byte.MaxValue, 0, true);
+                    }
+                    else if (elem.IsGas)
+                    {
+                        SimMessages.AddRemoveSubstance(cell, elem.idx, CellEventLogger.Instance.ElementConsumerSimUpdate, buffer.pendingKg, temperature, byte.MaxValue, 0);
+                    }
+                    else
+                    {
+                        // Solid: spawn a resource at ore layer
+                        elem.substance.SpawnResource(Grid.CellToPosCCC(cell, Grid.SceneLayer.Ore), buffer.pendingKg, temperature, byte.MaxValue, 0);
+                    }
+                }
+
+                PopFXManager.Instance.SpawnFX(PopFXManager.Instance.sprite_Resource, elem.name, owner.transform);
+
+                // Clear buffer
+                buffer.pendingKg = 0f;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"RaptorStomachPoopExtraSpawnPatch Postfix failed: {e}");
+            }
+        }
+    }
 }

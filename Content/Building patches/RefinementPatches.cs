@@ -210,7 +210,7 @@ namespace Rephysicalized
                         code[i + 1].opcode == OpCodes.Newobj &&
                         Equals(code[i + 1].operand as ConstructorInfo, recipeElemCtor2))
                     {
-                        code[i].operand = 1f;
+                        code[i].operand = 20f;
                         break;
                     }
                     // If pattern diverges, reset and continue scanning
