@@ -1,4 +1,4 @@
-using Rephysicalized.Chores;
+﻿using Rephysicalized.Chores;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,11 +8,14 @@ namespace Rephysicalized
 {
     [RequireComponent(typeof(KPrefabID))]
     [SkipSaveFileSerialization]
-    public class FueledDietController : KMonoBehaviour
+public class FueledDietController : KMonoBehaviour
     {
         [MyCmpReq] private KPrefabID prefabID;
         [MyCmpGet] private Storage storage;
         [MyCmpGet] private PrimaryElement primaryElement;
+
+        private bool lastHadCapacity = false;
+        private static readonly EventSystem.IntraObjectHandler<FueledDietController> OnStorageChangeDelegate = new EventSystem.IntraObjectHandler<FueledDietController>((component, data) => component.OnStorageChange(data));
 
         public FueledDiet fueledDiet;
 
@@ -27,8 +30,8 @@ namespace Rephysicalized
             ? storageCapacityOverride
             : (storage != null ? storage.capacityKg : 0f);
 
-        // Enable verbose logging for diagnosis
-        public bool EnableDebugLogs = false;
+ 
+        public bool EnableDebugLogs { get; set; } = false;
 
         // Accumulate pending emissions (converted outputs). Emission/poop hookup is handled elsewhere.
         private struct PendingEmission
@@ -98,7 +101,6 @@ namespace Rephysicalized
             if (storageCapacityOverride > 0f)
                 storage.capacityKg = storageCapacityOverride;
 
-         
             SetupElementConsumers(diet);
 
             if (EnableDebugLogs)
@@ -130,11 +132,28 @@ namespace Rephysicalized
                     storage.capacityKg = storageCapacityOverride;
             }
 
-       
+            Subscribe<FueledDietController>(-1697596308, OnStorageChangeDelegate);
+
             EnableInstanceConsumers();
+
+            // Initial check: disable consumers if no space
+            NudgeConsumers();
+            lastHadCapacity = HasFreeCapacityForFuel();
 
             if (EnableDebugLogs)
                 Debug.Log($"[FueledDiet] {name}: OnSpawn complete");
+        }
+
+        private void OnStorageChange(object data)
+        {
+            bool nowHasCapacity = HasFreeCapacityForFuel(0.1f);
+            if (nowHasCapacity != lastHadCapacity)
+            {
+                if (EnableDebugLogs)
+                    Debug.Log($"[FueledDiet] {name}: Storage capacity changed: {lastHadCapacity} -> {nowHasCapacity}. Nudging consumers.");
+                NudgeConsumers();
+                lastHadCapacity = nowHasCapacity;
+            }
         }
 
         // Total pending mass (for diagnostics/testing)
@@ -247,6 +266,10 @@ namespace Rephysicalized
             return false;
         }
 
+        /// <summary>
+        /// Nudges (enables/disables based on storage space) all gas/liquid ElementConsumers.
+        /// Called post-consume (space may be freed), OnSpawn, etc.
+        /// </summary>
         internal void NudgeConsumers()
         {
             if (consumers.Count == 0)
@@ -261,12 +284,34 @@ namespace Rephysicalized
                     }));
             }
 
+            // Always reset first
             foreach (var ec in consumers)
             {
                 if (ec == null) continue;
                 ec.EnableConsumption(false);
-                ec.EnableConsumption(true);
             }
+
+            // Enable only if space available for at least one consumer
+            bool hasSpace = HasFreeCapacityForFuel(0.1f);
+            foreach (var ec in consumers)
+            {
+                if (ec == null) continue;
+                if (hasSpace)
+                    ec.EnableConsumption(true);
+            }
+        }
+
+        private bool HasFreeCapacityForFuel(float minFreeKg = 0.1f)
+        {
+            if (storage == null || consumers.Count == 0) return false;
+
+            foreach (var ec in consumers)
+            {
+                if (ec == null) continue;
+                if (storage.RemainingCapacity() >= minFreeKg)
+                    return true;
+            }
+            return false;
         }
 
     
@@ -344,7 +389,7 @@ namespace Rephysicalized
 
                 if (freedAnyFuel)
                 {
-                    NudgeConsumers();
+                    OnStorageChange(null);  // Trigger capacity check/nudge
                     SolidFuelStates.PrioritizeUpdateBrain(gameObject);
                 }
                 return;
@@ -381,7 +426,7 @@ namespace Rephysicalized
 
             if (freedAnyFuel)
             {
-                NudgeConsumers();
+                OnStorageChange(null);  // Trigger capacity check/nudge
                 SolidFuelStates.PrioritizeUpdateBrain(gameObject);
             }
         }
@@ -393,6 +438,7 @@ namespace Rephysicalized
                 Debug.Log($"[FueledDiet] {name}: CreditMainDietKg {consumedMainMassKg:F3} kg (no tag)");
             if (consumedMainMassKg <= 0f) return;
             TryApplyFuelConversion(consumedMainMassKg, usedDietInfo: null, mainFoodTag: Tag.Invalid, poopWasProduced: false);
+            OnStorageChange(null);  // Trigger capacity check
         }
 
         // Public API with main-food tag specified (e.g., CarbonDioxide for slicksters).
@@ -402,6 +448,7 @@ namespace Rephysicalized
                 Debug.Log($"[FueledDiet] {name}: CreditMainDietKg {consumedMainMassKg:F3} kg tag={mainFoodTag}");
             if (consumedMainMassKg <= 0f) return;
             TryApplyFuelConversion(consumedMainMassKg, usedDietInfo: null, mainFoodTag: mainFoodTag, poopWasProduced: false);
+            OnStorageChange(null);  // Trigger capacity check
         }
 
         private float GetAvailableInStorage(Tag inputTag)

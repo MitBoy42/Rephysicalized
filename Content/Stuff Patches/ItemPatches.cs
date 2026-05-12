@@ -1,18 +1,19 @@
 ﻿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using Rephysicalized;
 using STRINGS;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
-using UnityEngine;
-using HarmonyLib;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Reflection.Emit;
+using UnityEngine;
+using static STRINGS.ITEMS;
 
 
 namespace Rephysicalized
@@ -50,7 +51,6 @@ namespace Rephysicalized
 
 
 
-            // Find the Tallow ingredient and replace it with an alternative [Tallow | Graphite], both 10f
             for (int i = 0; i < recipe.ingredients.Length; i++)
             {
                 var ing = recipe.ingredients[i];
@@ -119,79 +119,54 @@ namespace Rephysicalized
         private static void Postfix(GameObject __result)
         {
 
-
             var primary = __result.GetComponent<PrimaryElement>() ?? __result.AddComponent<PrimaryElement>();
-
-
             primary.SetElement(SimHashes.Clay);
 
         }
     }
 
-    [HarmonyPatch(typeof(CrabWoodShellConfig), nameof(CrabWoodShellConfig.CreatePrefab))]
-    public static class CrabWoodShell_CreatePrefab_Patch
-    {
-        private static void Postfix(GameObject __result)
-        {
-            var comp = __result.AddComponent<EnviromentCookablePatch>();
+  
 
-            comp.temperature = 0f;
-            comp.ID = "WoodLog";
-            comp.massConversionRatio = 1f;
-            comp.pressureThreshold = 4000f;
+
+   [HarmonyPatch(typeof(ClothingFabricatorConfig), "ConfigureRecipes")]
+    internal static class ClothingFabricatorConfig_AddBasicFabricFromFeathers
+    {
+        public static void Postfix()
+        {  Tag featherFabric = TagManager.Create("FeatherFabric");
+            Tag naturalResin = TagManager.Create("NaturalResin"); 
+            Tag plantFiber = TagManager.Create("PlantFiber"); 
+            Tag basicFabric = TagManager.Create(BasicFabricConfig.ID);
+            // Build ingredient and result arrays
+            var ingredients = new ComplexRecipe.RecipeElement[]
+        {
+            new ComplexRecipe.RecipeElement(featherFabric, 1f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
+            new ComplexRecipe.RecipeElement(naturalResin, 1f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
+            new ComplexRecipe.RecipeElement(plantFiber, 2f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
+        };
+
+            var results = new ComplexRecipe.RecipeElement[]
+            {
+            new ComplexRecipe.RecipeElement(basicFabric, 4f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
+            };
+
+            string fabId = ClothingFabricatorConfig.ID; // "ClothingFabricator"
+            string recipeId = ComplexRecipeManager.MakeRecipeID(fabId, ingredients, results);
+
+            // Avoid duplicating if something already registered same recipe
+            if (ComplexRecipeManager.Get().GetRecipe(recipeId) != null)
+                return;
+
+            var recipe = new ComplexRecipe(recipeId, ingredients, results)
+            {
+                time = 20f,
+                description = STRINGS.BUILDINGS.ClOTHING_FABRICATOR.FIBER, 
+                nameDisplay = ComplexRecipe.RecipeNameDisplay.Result,
+                fabricators = new List<Tag> { fabId },
+                sortOrder = 100 
+            };
+
+      
         }
     }
-    [HarmonyPatch(typeof(CrabShellConfig), nameof(CrabShellConfig.CreatePrefab))]
-    public static class CrabShell_CreatePrefab_Patch
-    {
-        private static void Postfix(GameObject __result)
-        {
-            var comp = __result.AddComponent<EnviromentCookablePatch>();
-
-            comp.temperature = 0f;
-            comp.ID = "Lime";
-            comp.massConversionRatio = 1f;
-            comp.pressureThreshold = 4000f;
-        }
-
-    }
-
-    [HarmonyPatch(typeof(DewDripConfig), nameof(DewDripConfig.CreatePrefab))]
-    public static class DewDripPatch
-    {
-        private static void Postfix(GameObject __result)
-        {
-            var comp = __result.AddComponent<EnviromentCookablePatch>();
-            comp.temperature = 80f + 273.15f;
-            comp.ID = "Milk";
-            comp.massConversionRatio = 1.0f;
-            var compF = __result.AddComponent<EnviromentCookablePatch>();
-            compF.enableFreezing = true;
-            compF.temperature = -40f + 273.15f;
-            compF.ID = "MilkIce";
-            compF.massConversionRatio = 1.0f;
-
-        }
-    }
-    [HarmonyPatch(typeof(KelpConfig), nameof(KelpConfig.CreatePrefab))]
-    public static class Kelp_CreatePrefab_Patch
-    {
-        private static void Postfix(GameObject __result)
-        {
-            var comp = __result.AddComponent<EnviromentCookablePatch>();
-
-            comp.temperature = 75f + 273.15f;
-            comp.ID = "PhytoOil";
-            comp.massConversionRatio = 4f;
-            comp.pressureThreshold = 1000f;
-            comp.triggeringElements = comp.triggeringElements ?? new List<SimHashes>();
-            comp.triggeringElements.Clear();
-            comp.triggeringElements.Add(SimHashes.Water);
-            comp.elementConsumedRatio = 0.75f;
-        }
-
-    }
-
-
 
 } 

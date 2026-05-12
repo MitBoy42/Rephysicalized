@@ -1,0 +1,97 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.1/",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.1": {},
+    ".NETStandard,Version=v2.1/": {
+      "Rephysicalized/1.0.0": {
+        "dependencies": {
+          "Aze.Publicise.MSBuild.Task": "1.1.0",
+          "ILRepack.Lib.MSBuild.Task": "2.0.44.2",
+          "Lib.Harmony.Ref": "2.4.2",
+          "UtilLibs": "1.0.0"
+        },
+        "runtime": {
+          "Rephysicalized.dll": {}
+        }
+      },
+      "Aze.Publicise.MSBuild.Task/1.1.0": {},
+      "ILRepack.Lib.MSBuild.Task/2.0.44.2": {},
+      "Lib.Harmony.Ref/2.4.2": {
+        "dependencies": {
+          "System.Reflection.Emit": "4.7.0"
+        }
+      },
+      "PLib/4.21.0": {
+        "runtime": {
+          "lib/netstandard2.1/PLib.dll": {
+            "assemblyVersion": "4.21.0.0",
+            "fileVersion": "4.21.0.0"
+          }
+        }
+      },
+      "System.Reflection.Emit/4.7.0": {},
+      "UtilLibs/1.0.0": {
+        "dependencies": {
+          "PLib": "4.21.0"
+        },
+        "runtime": {
+          "UtilLibs.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Rephysicalized/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Aze.Publicise.MSBuild.Task/1.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cW6x9pPL5l8f5eueBC1N4uUstz3VScyPEgNap4mqC+sSSCZ7GPcJAMWJv862CuErmtZ75Qtq1u7utxjX+7RKBw==",
+      "path": "aze.publicise.msbuild.task/1.1.0",
+      "hashPath": "aze.publicise.msbuild.task.1.1.0.nupkg.sha512"
+    },
+    "ILRepack.Lib.MSBuild.Task/2.0.44.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-53H6rOrVGPDBUU0GqEHefptus3ER34szVsVv1WfKr3Dh666ha5s0Eui9znxTztHaudWlSEUb6hJSGg4cA+wn2g==",
+      "path": "ilrepack.lib.msbuild.task/2.0.44.2",
+      "hashPath": "ilrepack.lib.msbuild.task.2.0.44.2.nupkg.sha512"
+    },
+    "Lib.Harmony.Ref/2.4.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pK6Z6WlR6OyynJqj50SspAV3qSU4pAiFluoryxE6ad63r2BD8LHKmH40aZz+0Ve+gyyQxSXTkxBnaXs9JvTkIw==",
+      "path": "lib.harmony.ref/2.4.2",
+      "hashPath": "lib.harmony.ref.2.4.2.nupkg.sha512"
+    },
+    "PLib/4.21.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Rf/xn2IknR6OqTSaffwli9Y6VbfTlMO3NhJAMqyfv03JXGNm6s8Nlr955OaCHFah0HA9CPmGEvLLjkH7vt8Nqg==",
+      "path": "plib/4.21.0",
+      "hashPath": "plib.4.21.0.nupkg.sha512"
+    },
+    "System.Reflection.Emit/4.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VR4kk8XLKebQ4MZuKuIni/7oh+QGFmZW3qORd1GvBq/8026OpW501SzT/oypwiQl4TvT8ErnReh/NzY9u+C6wQ==",
+      "path": "system.reflection.emit/4.7.0",
+      "hashPath": "system.reflection.emit.4.7.0.nupkg.sha512"
+    },
+    "UtilLibs/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

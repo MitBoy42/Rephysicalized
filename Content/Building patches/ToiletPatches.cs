@@ -15,7 +15,9 @@ namespace Rephysicalized
         [HarmonyPostfix]
         public static void Postfix(Toilet __instance)
         {
-            // smi is available after base OnSpawn/startup
+            if (OrganicOverhaulIntegration.IsPresent())
+                return; // let OrganicOverhaul handle it
+
             if (__instance?.smi != null)
             {
                 __instance.smi.monsterSpawnTime = 1800f;
@@ -27,28 +29,27 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(Toilet), "SpawnMonster")]
     public static class Toilet_SpawnMonster_Patch
     {
+       
         // Cache MethodInfo for efficiency; Harmony can patch/invoke private methods
         private static readonly MethodInfo SpawnMonsterMI = AccessTools.Method(typeof(Toilet), "SpawnMonster");
 
         [HarmonyPostfix]
         public static void Postfix(Toilet __instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return; // let OrganicOverhaul handle it
+
             var smi = __instance?.smi;
             if (smi == null)
                 return;
 
-            // Always keep the timer at 1800f as requested
             smi.monsterSpawnTime = 1800f;
 
-            // Only keep respawning while the toilet is still in the "fullWaitingForClean" state,
-            // which is the state where the game schedules the original spawn.
             var current = smi.GetCurrentState();
             var fullWaiting = smi.sm.fullWaitingForClean;
             if (current == fullWaiting)
             {
-                // Schedule another spawn in monsterSpawnTime seconds.
-                // Use reflection to call the original private SpawnMonster method so our postfix runs again,
-                // creating a repeating schedule as long as the state remains valid.
+ 
                 smi.Schedule(smi.monsterSpawnTime, _ =>
                 {
                     if (__instance != null && __instance.smi != null &&

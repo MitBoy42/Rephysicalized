@@ -5,8 +5,6 @@ using System;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using STRINGS;
 namespace Rephysicalized
@@ -20,18 +18,29 @@ namespace Rephysicalized
         private static readonly Dictionary<string, SimHashes> PeeElementOverrides = new Dictionary<string, SimHashes>(StringComparer.OrdinalIgnoreCase)
         {
 
-{ "Seal", SimHashes.Ethanol },
-{ "Drecko", SimHashes.Water },
-{ "DreckoPlastic", SimHashes.Water },
-{ "Chameleon", SimHashes.Chlorine },
-{ "Raptor", SimHashes.BrineIce },
-{ "OilFloater", SimHashes.CrudeOil },
-{ "OilFloaterHighTemp", SimHashes.Petroleum },
-{ "HatchMetal", SimHashes.Mercury },
-{ "DivergentBeetle", SimHashes.SugarWater },
-{ "DivergentWorm", SimHashes.Mud },
+{ "Seal", SimHashes.Ethanol }, { "SealBaby", SimHashes.Ethanol },
+{ "Drecko", SimHashes.Water }, { "DreckoBaby", SimHashes.Water },
+{ "DreckoPlastic", SimHashes.Water }, { "DreckoPlasticBaby", SimHashes.Water },
+{ "Chameleon", SimHashes.Chlorine }, { "ChameleonBaby", SimHashes.Chlorine },
+{ "Raptor", SimHashes.BrineIce }, { "RaptorBaby", SimHashes.BrineIce },
+{ "OilFloater", SimHashes.CrudeOil }, { "OilFloaterBaby", SimHashes.CrudeOil },
+{ "OilFloaterHighTemp", SimHashes.Petroleum }, { "OilFloaterHighTempBaby", SimHashes.Petroleum },
+{ "HatchMetal", SimHashes.Mercury }, { "HatchMetalBaby", SimHashes.Mercury },
+{ "DivergentBeetle", SimHashes.SugarWater }, { "DivergentBeetleBaby", SimHashes.SugarWater },
+{ "DivergentWorm", SimHashes.Mud }, { "DivergentWormBaby", SimHashes.Mud },
 { "DieselMoo", SimHashes.RefinedLipid },
 { "Moo", SimHashes.Brine },
+{ "LightBugOrange", SimHashes.NaturalResin }, { "LightBugOrangeBaby", SimHashes.NaturalResin },
+{ "LightBugPurple", SimHashes.CrudeOil }, { "LightBugPurpleBaby", SimHashes.CrudeOil },
+{ "LightBugPink", SimHashes.SugarWater }, { "LightBugPinkBaby", SimHashes.SugarWater },
+{ "LightBugBlue", SimHashes.Ethanol }, { "LightBugBlueBaby", SimHashes.Ethanol },
+{ "LightBugBlack", SimHashes.Resin }, { "LightBugBlackBaby", SimHashes.Resin },
+{ "LightBugCrystal", SimHashes.Resin }, { "LightBugCrystalBaby", SimHashes.Resin },
+{ "GoldBelly", SimHashes.Gold }, { "GoldBellyBaby", SimHashes.Gold },
+
+{ "CrabWood", SimHashes.Ethanol }, { "BabyCrabWood", SimHashes.Ethanol },
+{ "Crab", SimHashes.SaltWater }, { "BabyCrab", SimHashes.SaltWater },
+{ "CrabFreshWater", SimHashes.Water }, { "BabyCrabFreshWater", SimHashes.Water },
 };
 
         private const float PeeMassKg = 4f;
@@ -63,10 +72,11 @@ namespace Rephysicalized
             
                 // 1) Increase creature mass by 1 kg if it has PrimaryElement
                 var pe = go.GetComponent<PrimaryElement>();
-                if (pe != null)
-                {
+           
                     pe.Mass += MassGainKg;
-                }
+                    var tracker = go.GetComponent<CreatureMassTracker>();
+tracker?.AddExternalMass(MassGainKg);
+                
 
                 // 2) Spawn pee element with disease at the creature's location, using creature's body temperature
                 var prefabId = go.PrefabID();

@@ -12,26 +12,28 @@ namespace Rephysicalized
     // 1. Increase amount in crops
     // 2. Decrease calorie amount
     // 3. Traverse recipes.
-    // 4. Check animal diet
-    // 5. Check rephysicalized cooking
+    // 4. Check animal diet (Not being set up here)
+    // 5. Check rephysicalized cooking (Not being set up here)
     public static class FoodDensityRebalance
     {
-        // Multipliers
-        public const float PricklefruitMultiplier = 5f;
-        public const float SwampfruitMultiplier = 5f;
-        public const float CarrotMultiplier = 4f;
-        public const float FriesCarrotMultiplier = 6f;
-        public const float MushBarMultiplier = 5f;
-
-        // Map ingredient/result tag -> multiplier
-        internal static readonly Dictionary<Tag, float> IngredientMultipliers = new Dictionary<Tag, float>
+        // SINGLE central place for multipliers: { "CropTag", multiplier }
+        // Adding new food: add entry here. Auto-generates crop/calories/stego/recipes.
+        internal static readonly Dictionary<Tag, float> IngredientMultiplier = new Dictionary<Tag, float>
         {
-            { "PrickleFruit", PricklefruitMultiplier },
-            { "SwampFruit",   SwampfruitMultiplier   },
-            { "Carrot",  CarrotMultiplier       },
-            { "FriesCarrot",  FriesCarrotMultiplier  },
-                     { "MushBar",  MushBarMultiplier  },
-                             { "FriedMushBar",  MushBarMultiplier  },
+            { PrickleFruitConfig.ID.ToTag(), 5f },
+            { SwampFruitConfig.ID.ToTag(), 5f },
+            { CarrotConfig.ID.ToTag(), 4f },
+            { "FriesCarrot".ToTag(), 6f },
+            { "MushBar".ToTag(), 5f },
+            { "FriedMushBar".ToTag(), 5f },
+        };
+
+        // Crops with configs (skip others)
+        internal static readonly string[] CropIds = new[]
+        {
+            PrickleFruitConfig.ID,
+            SwampFruitConfig.ID,
+            CarrotConfig.ID
         };
 
         // Fabricator IDs (Tags) to scale; names must match building IDs
@@ -39,7 +41,7 @@ namespace Rephysicalized
         internal static readonly Tag CookingStation = TagManager.Create("CookingStation");
         internal static readonly Tag GourmetCookingStation = TagManager.Create("GourmetCookingStation");
         internal static readonly Tag Smoker = TagManager.Create("Smoker");
-        internal static readonly Tag Deepfryer = TagManager.Create("Deepfryer"); // note lowercase f in ID
+        internal static readonly Tag Deepfryer = TagManager.Create("Deepfryer"); 
     }
 
     internal static class CropValAccess
@@ -94,7 +96,7 @@ namespace Rephysicalized
 
             try
             {
-                // CROPS: increase crop amounts by multipliers (affects second number; default 1 when missing)
+                // CROPS: AUTO increase amounts ONLY for foods with crops
                 var list = CROPS.CROP_TYPES;
                 if (list != null)
                 {
@@ -113,32 +115,36 @@ namespace Rephysicalized
                             int baseAmt = amount <= 0 ? 1 : amount;
                             int newAmount = Mathf.RoundToInt(baseAmt * multiplier);
                             list[i] = new Crop.CropVal(id, duration, newAmount);
-                        //    Debug.Log($"[PricklefruitRebalance] CROPS: '{id}' amount {amount} -> {newAmount} (duration {duration:0.#}s).");
                             return;
                         }
-                 //       Debug.LogWarning($"[PricklefruitRebalance] CROPS: '{cropId}' not found; no crop rewrite performed.");
                     }
 
-                    RewriteCropAmount(PrickleFruitConfig.ID, FoodDensityRebalance.PricklefruitMultiplier);
-                    RewriteCropAmount(SwampFruitConfig.ID, FoodDensityRebalance.SwampfruitMultiplier);
-                    RewriteCropAmount(CarrotConfig.ID, FoodDensityRebalance.CarrotMultiplier);
+            foreach (var cropId in FoodDensityRebalance.CropIds)
+            {
+                if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(cropId.ToTag(), out float mul))
+                    RewriteCropAmount(cropId, mul);
+            }
                 }
                 else
                 {
-             //       Debug.LogWarning("[PricklefruitRebalance] CROPS.CROP_TYPES is null; skipping crop patch.");
                 }
 
-                // FOOD: divide raw food calories by multiplier
-                // Pricklefruit raw
-                AdjustFoodCalories(FOOD.FOOD_TYPES.PRICKLEFRUIT, FoodDensityRebalance.PricklefruitMultiplier, "PRICKLEFRUIT");
-                // Swampfruit raw
-                AdjustFoodCalories(FOOD.FOOD_TYPES.SWAMPFRUIT, FoodDensityRebalance.SwampfruitMultiplier, "SWAMPFRUIT");
-                // Carrot raw
-                AdjustFoodCalories(FOOD.FOOD_TYPES.CARROT, FoodDensityRebalance.CarrotMultiplier, "CARROT");
-                // FriesCarrot 
-                AdjustFoodCalories(FOOD.FOOD_TYPES.FRIES_CARROT, FoodDensityRebalance.FriesCarrotMultiplier, "FRIES_CARROT");
-                AdjustFoodCalories(FOOD.FOOD_TYPES.MUSHBAR, FoodDensityRebalance.MushBarMultiplier, "MUSHBAR");
-                AdjustFoodCalories(FOOD.FOOD_TYPES.FRIEDMUSHBAR, FoodDensityRebalance.MushBarMultiplier, "FRIEDMUSHBAR");
+// FOOD: AUTO divide calories by multiplier
+                foreach (var kv in FoodDensityRebalance.IngredientMultiplier)
+                {
+                    // Map tag to FOOD.FOOD_TYPES (handle UPPERCASE)
+                    string foodKey = kv.Key.ToString().ToUpperInvariant();
+                    
+                    // Special case: FriesCarrot is stored as FRIES_CARROT in FOOD.FOOD_TYPES
+                    if (foodKey == "FRIESCARROT")
+                        foodKey = "FRIES_CARROT";
+                    
+                    var foodTypeField = AccessTools.Field(typeof(FOOD.FOOD_TYPES), foodKey);
+                    if (foodTypeField?.GetValue(null) is EdiblesManager.FoodInfo foodInfo)
+                    {
+                        AdjustFoodCalories(foodInfo, kv.Value, foodKey);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -155,7 +161,6 @@ namespace Rephysicalized
                 float before = foodInfo.CaloriesPerUnit;
                 float after = before / divider;
                 foodInfo.CaloriesPerUnit = after;
-                Debug.Log($"[PricklefruitRebalance] FOOD: {nameForLog} calories {before} -> {after}.");
             }
             catch
             {
@@ -165,7 +170,6 @@ namespace Rephysicalized
                     float before = (float)caloriesField.GetValue(foodInfo);
                     float after = before / divider;
                     caloriesField.SetValue(foodInfo, after);
-                    Debug.Log($"[PricklefruitRebalance] FOOD: {nameForLog} calories {before} -> {after} (via reflection).");
                 }
             
             }
@@ -201,14 +205,14 @@ namespace Rephysicalized
             var mgr = ComplexRecipeManager.Get();
             if (mgr == null)
             {
-                Debug.LogWarning($"[PricklefruitRebalance] Manager null; skip {fabricatorNameForLog}");
+                Debug.LogWarning($"[FoodRebalance] Manager null; skip {fabricatorNameForLog}");
                 return;
             }
 
             var recipes = GetRecipesForFabricator(mgr, fabricatorTag) ?? GetAllRecipes(mgr);
             if (recipes == null)
             {
-                Debug.LogWarning("[PricklefruitRebalance] No recipes found; aborting for " + fabricatorNameForLog);
+                Debug.LogWarning("[FoodRebalance] No recipes found; aborting for " + fabricatorNameForLog);
                 return;
             }
 
@@ -242,7 +246,7 @@ namespace Rephysicalized
                         var ing = ings[i];
 
                         // Exact match on material
-                        if (FoodDensityRebalance.IngredientMultipliers.TryGetValue(ing.material, out var mul) && mul > 0f)
+                        if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(ing.material, out var mul) && mul > 0f)
                         {
                             float old = ing.amount;
                             ing.amount = old * mul;
@@ -258,7 +262,7 @@ namespace Rephysicalized
                             float maxMul = 0f;
                             foreach (var t in ing.possibleMaterials)
                             {
-                                if (FoodDensityRebalance.IngredientMultipliers.TryGetValue(t, out var m) && m > maxMul)
+                                if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(t, out var m) && m > maxMul)
                                     maxMul = m;
                             }
                             if (maxMul > 0f)
@@ -280,7 +284,7 @@ namespace Rephysicalized
                     for (int i = 0; i < res.Length; i++)
                     {
                         var r = res[i];
-                        if (FoodDensityRebalance.IngredientMultipliers.TryGetValue(r.material, out var mul) && mul > 0f)
+                        if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(r.material, out var mul) && mul > 0f)
                         {
                             float old = r.amount;
                             r.amount = old * mul;
@@ -299,11 +303,9 @@ namespace Rephysicalized
 
                     ProcessedRecipeIds.Add(rid);
                     changedCount++;
-              //      Debug.Log($"[PricklefruitRebalance] Scaled recipe '{rid}' on {fabricatorNameForLog}: ingredientsChanged={changedIngredients}, resultsChanged={changedResults}.");
                 }
             }
 
-       //     Debug.Log($"[PricklefruitRebalance] {fabricatorNameForLog}: scanned={seen}, fabricatorMatched={matched}, modified={changedCount}, ingChanged={changedIngredients}, resChanged={changedResults}.");
         }
 
         // Prefer manager API if present: GetRecipesForFabricator(Tag)
@@ -414,7 +416,6 @@ namespace Rephysicalized
     {
         public static void Postfix()
         {
-         //   Debug.Log("[PricklefruitRebalance] Final recipe scaling pass after Assets.OnPrefabInit.");
             MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.CookingStation, "CookingStation (final)");
             MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.MicrobeMusher, "MicrobeMusher (final)");
             MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.GourmetCookingStation, "GourmetCookingStation (final)");

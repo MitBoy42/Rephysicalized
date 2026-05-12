@@ -1,8 +1,8 @@
 {
   "Id": "RephysTiles",
-  "Name": "CrudTiles",
+  "Name": "Rephysicalized Tiles",
   "Author": "MitBoy",
-  "Description": "Crud Tiles For Rephysicalized.",
+  "Description": "Tile textures For Rephysicalized.",
   "Order": 4,
   "Enabled": true
 }

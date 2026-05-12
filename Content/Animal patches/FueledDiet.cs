@@ -18,114 +18,70 @@ namespace Rephysicalized
         public static StatusItem EatingSecondary;
     }
 
-    [HarmonyPatch(typeof(Db), "Initialize")]
 
-    // Makes DietManager's collectors robust against null/partially-initialized prefabs during load.
-    [HarmonyPatch]
-    internal static class DietManagerSafePatch
+/// Harmony patches for DietManager safety and calorie consumption hooking.
+
+[HarmonyPatch(typeof(DietManager), nameof(DietManager.CollectSaveDiets))]
+[HarmonyPatch(typeof(DietManager), nameof(DietManager.CollectDiets))]
+internal static class DietManagerSafePatch
+{
+    [HarmonyPrefix]
+    private static bool Prefix(Tag[] target_species, ref Dictionary<Tag, Diet> __result, MethodBase __originalMethod)
     {
-        [HarmonyPatch(typeof(DietManager), nameof(DietManager.CollectSaveDiets))]
-        [HarmonyPrefix]
-        private static bool CollectSaveDiets_Safe(Tag[] target_species, ref Dictionary<Tag, Diet> __result)
+        try
         {
-            try
+            bool isSave = __originalMethod.Name.Contains("Save");
+            var dict = new Dictionary<Tag, Diet>();
+            foreach (var prefab in Assets.Prefabs)
             {
-                var dict = new Dictionary<Tag, Diet>();
-                foreach (var prefab in Assets.Prefabs)
+                if (prefab == null) continue;
+                var go = prefab.gameObject;
+                if (go == null) continue;
+
+                CreatureCalorieMonitor.Def ccDef = null;
+                BeehiveCalorieMonitor.Def bhDef = null;
+                try { ccDef = prefab.GetDef<CreatureCalorieMonitor.Def>(); } catch { }
+                if (ccDef == null) { try { bhDef = prefab.GetDef<BeehiveCalorieMonitor.Def>(); } catch { } }
+
+                Diet diet = null;
+                if (ccDef != null) diet = ccDef.diet;
+                else if (bhDef != null) diet = bhDef.diet;
+                if (diet == null) continue;
+
+                if (target_species != null)
                 {
-                    if (prefab == null) continue;
-                    var go = prefab.gameObject;
-                    if (go == null) continue;
+                    var brain = go.GetComponent<CreatureBrain>();
+                    if (brain == null) continue;
+                    if (Array.IndexOf(target_species, brain.species) < 0) continue;
+                }
 
-                    // Guard GetDef calls
-                    CreatureCalorieMonitor.Def ccDef = null;
-                    BeehiveCalorieMonitor.Def bhDef = null;
-                    try
-                    {
-                        ccDef = prefab.GetDef<CreatureCalorieMonitor.Def>();
-                    }
-                    catch { /* ignore */ }
-                    if (ccDef == null)
-                    {
-                        try { bhDef = prefab.GetDef<BeehiveCalorieMonitor.Def>(); }
-                        catch { /* ignore */ }
-                    }
-
-                    Diet diet = null;
-                    if (ccDef != null) diet = ccDef.diet;
-                    else if (bhDef != null) diet = bhDef.diet;
-                    if (diet == null) continue;
-
-                    if (target_species != null)
-                    {
-                        var brain = go.GetComponent<CreatureBrain>();
-                        if (brain == null) continue;
-                        if (Array.IndexOf(target_species, brain.species) < 0) continue;
-                    }
-
+                if (isSave)
+                {
                     var copy = new Diet(diet);
                     copy.FilterDLC();
                     dict[prefab.PrefabTag] = copy;
                 }
-
-                __result = dict;
-                return false; // skip original
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[Rephysicalized] CollectSaveDiets_Safe failed, falling back to original: {e}");
-                return true; // run original as last resort
-            }
-        }
-
-        [HarmonyPatch(typeof(DietManager), nameof(DietManager.CollectDiets))]
-        [HarmonyPrefix]
-        private static bool CollectDiets_Safe(Tag[] target_species, ref Dictionary<Tag, Diet> __result)
-        {
-            try
-            {
-                var dict = new Dictionary<Tag, Diet>();
-                foreach (var prefab in Assets.Prefabs)
+                else
                 {
-                    if (prefab == null) continue;
-                    var go = prefab.gameObject;
-                    if (go == null) continue;
-
-                    CreatureCalorieMonitor.Def ccDef = null;
-                    BeehiveCalorieMonitor.Def bhDef = null;
-                    try { ccDef = prefab.GetDef<CreatureCalorieMonitor.Def>(); } catch { }
-                    if (ccDef == null) { try { bhDef = prefab.GetDef<BeehiveCalorieMonitor.Def>(); } catch { } }
-
-                    Diet diet = null;
-                    if (ccDef != null) diet = ccDef.diet;
-                    else if (bhDef != null) diet = bhDef.diet;
-                    if (diet == null) continue;
-
-                    if (target_species != null)
-                    {
-                        var brain = go.GetComponent<CreatureBrain>();
-                        if (brain == null) continue;
-                        if (Array.IndexOf(target_species, brain.species) < 0) continue;
-                    }
-
                     dict[prefab.PrefabTag] = diet;
                 }
+            }
 
-                __result = dict;
-                return false;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[Rephysicalized] CollectDiets_Safe failed, falling back to original: {e}");
-                return true;
-            }
+            __result = dict;
+            return false;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Rephysicalized] DietManager patch failed for {__originalMethod.Name}: {e}");
+            return true;
         }
     }
+}
 
     // Simple registry to rebuild FueledDiet on spawned instances
     internal static class FueledDietRegistry
     {
-        private static readonly Dictionary<Tag, FueledDiet> map = new Dictionary<Tag, FueledDiet>();
+        public static readonly Dictionary<Tag, FueledDiet> map = new Dictionary<Tag, FueledDiet>();
 
         internal static void Register(Tag prefabTag, FueledDiet diet)
         {
@@ -302,40 +258,6 @@ namespace Rephysicalized
             OutputTemperatureOverrideKelvin = Mathf.Max(0f, outputTemperatureOverrideKelvin);
         }
     }
-
-    public static class ModInit
-    {
-        public static void OnLoad()
-        {
-            var harmony = new Harmony("com.yourname.oni.fueleddiet");
-            harmony.PatchAll();
-        }
-    }
-
-    internal static class FueledDietDispatch
-    {
-        internal static void TryDispatch(GameObject creatureGO, Tag consumedTag, float consumedMassKg)
-        {
-            try
-            {
-                if (creatureGO == null || consumedMassKg <= 0f) return;
-
-                var diet = creatureGO.GetComponent<Diet>();
-                var controller = creatureGO.GetComponent<FueledDietController>();
-                if (diet == null || controller == null) return;
-
-                var info = diet.GetDietInfo(consumedTag);
-                if (info == null) return;
-
-     
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[FueledDiet] Dispatch failed: {e}");
-            }
-        }
-    }
-
 
 
     // Central hook: for any creature with FueledDietController, convert CaloriesConsumed -> kg of main diet

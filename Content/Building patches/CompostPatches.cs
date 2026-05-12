@@ -37,14 +37,9 @@ namespace Rephysicalized
             {
                 for (int i = 0; i < converter.consumedElements.Length; i++)
                 {
-                    try
-                    {
+                  
                         converter.consumedElements[i].MassConsumptionRate *= 2f;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogWarning($"[Rephysicalized] Failed to scale consumed element {i} on Compost: {e}");
-                    }
+                   
                 }
             }
 
@@ -53,14 +48,10 @@ namespace Rephysicalized
             {
                 for (int i = 0; i < converter.outputElements.Length; i++)
                 {
-                    try
-                    {
+                    
                         converter.outputElements[i].massGenerationRate *= 2f;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogWarning($"[Rephysicalized] Failed to scale output element {i} on Compost: {e}");
-                    }
+                    
+              
                 }
             }
         }
@@ -115,7 +106,6 @@ namespace Rephysicalized
             Vector3 basePos = compost.transform.GetPosition();
             Vector3 spawnPos = basePos + new Vector3(0f, 1f, 0f);
 
-            // Get Glom prefab and instantiate
             var prefab = Assets.GetPrefab(GlomConfig.ID);
             if (prefab == null)
                 return;
@@ -140,6 +130,9 @@ namespace Rephysicalized
         [HarmonyPostfix]
         public static void Postfix(Compost.States __instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return; // let OrganicOverhaul handle it
+
             // Add enter/exit/update handlers directly to the concrete 'inert' state, which toggles AwaitingCompostFlip
             __instance.inert
                 .Enter("GlomRespawn_Enter", smi => CompostGlomRespawn.Start(smi.master))
@@ -155,6 +148,9 @@ namespace Rephysicalized
         [HarmonyPostfix]
         public static void Postfix(Compost __instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return; // let OrganicOverhaul handle it
+
             CompostGlomRespawn.Stop(__instance);
         }
     }

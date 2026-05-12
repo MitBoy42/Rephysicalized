@@ -40,7 +40,13 @@ namespace Rephysicalized.Chores
                 if (targetGO == null) return false;
 
                 var pickup = targetGO.GetComponent<Pickupable>();
-                if (pickup == null || pickup.storage != null) return false;
+                if (pickup == null) return false;
+                if (pickup.storage != null)
+                {
+                    // CreatureFeeder exception
+                    if (pickup.storage.GetComponent<CreatureFeeder>() == null)
+                        return false;
+                }
 
                 var pe = targetGO.GetComponent<PrimaryElement>();
                 if (pe == null || pe.Mass <= def.minPickupKg) return false;
@@ -113,22 +119,9 @@ namespace Rephysicalized.Chores
                 return Grid.PosToCell(pos);
             }
 
-            private Diet ResolveDiet()
-            {
-                try
-                {
-                    var ccDef = kpid != null ? kpid.GetDef<CreatureCalorieMonitor.Def>() : null;
-                    if (ccDef != null && ccDef.diet != null) return ccDef.diet;
-                    var bhDef = kpid != null ? kpid.GetDef<BeehiveCalorieMonitor.Def>() : null;
-                    if (bhDef != null && bhDef.diet != null) return bhDef.diet;
-                }
-                catch { }
-                return null;
-            }
-
             public bool AllowedByFuelOrDiet(Pickupable pickup)
             {
-                if (pickup == null || pickup.storage != null)
+                if (pickup == null)
                     return false;
 
                 if (!pickup.TryGetComponent<PrimaryElement>(out var pe) || pe.Mass <= def.minPickupKg)
@@ -139,20 +132,13 @@ namespace Rephysicalized.Chores
                 if (diet?.FuelInputs == null || diet.FuelInputs.Count == 0)
                     return false;
 
-                // Resolve tags for matching
-                Tag elementTag = Tag.Invalid;
-                var elem = ElementLoader.FindElementByHash(pe.ElementID);
-                if (elem != null)
-                    elementTag = elem.tag;
-
+                Tag elementTag = FueledDietUtils.ResolveElementTag(pe);
                 Tag prefabTag = Tag.Invalid;
                 if (pickup.TryGetComponent<KPrefabID>(out var pkpid))
                     prefabTag = pkpid.PrefabTag;
 
-                // Match rule: any FuelInput tag that equals the item's prefab tag OR the element tag
                 bool allowed = diet.FuelInputs.Any(fi =>
-                    fi != null &&
-                    (fi.ElementTag == prefabTag || fi.ElementTag == elementTag));
+                    fi != null && (fi.ElementTag == prefabTag || fi.ElementTag == elementTag));
 
                 if (allowed)
                     return true;
@@ -188,6 +174,47 @@ namespace Rephysicalized.Chores
             int lx = cx - half;
             int ly = cy - half;
 
+// 2. CreatureFeeder exception (like vanilla SolidConsumerMonitor)
+            int feederScanSize = 32;
+            int fx = cx - feederScanSize / 2;
+            int fy = cy - feederScanSize / 2;
+
+            foreach (CreatureFeeder feeder in Components.CreatureFeeders.GetItems(smi.GetMyWorldId()))
+            {
+                Vector2I targetFeederXY = feeder.GetTargetFeederCell();
+                if (targetFeederXY.x < fx || targetFeederXY.x > fx + feederScanSize ||
+                    targetFeederXY.y < fy || targetFeederXY.y > fy + feederScanSize)
+                    continue;
+
+                if (feeder.StoragesAreEmpty()) continue;
+
+                int feederCell = Grid.XYToCell(targetFeederXY.x, targetFeederXY.y);
+                int feederCost = smi.GetCost(feederCell);
+                if (feederCost == -1) continue;
+
+                if (smi.targetGO != null && feederCost >= smi.targetCost) continue;
+
+                bool foundItem = false;
+                foreach (Storage storage in feeder.storages)
+                {
+                    if (storage == null || storage.IsEmpty()) continue;
+                    foreach (GameObject itemGO in storage.items)
+                    {
+                        if (itemGO == null) continue;
+                        Pickupable pu = itemGO.GetComponent<Pickupable>();
+                        if (pu != null && smi.AllowedByFuelOrDiet(pu))
+                        {
+                            smi.Assign(itemGO, feederCost, Vector3.zero);
+                            foundItem = true;
+                            break;
+                        }
+                    }
+                    if (foundItem) break;
+                }
+                if (foundItem) break;
+            }
+
+            // 3. Ground pickupables (existing scan)
             var hits = ListPool<ScenePartitionerEntry, GameScenePartitioner>.Allocate();
             GameScenePartitioner.Instance.GatherEntries(
                 lx, ly, smi.def.scanWindowCells, smi.def.scanWindowCells,

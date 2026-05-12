@@ -27,7 +27,6 @@ namespace Rephysicalized
                 float rate = 0.6f; // default fallback
                 if (converter.consumedElements != null && converter.consumedElements.Length > 0)
                 {
-                    // Use whatever rate mods configured originally for Slime
                     rate = converter.consumedElements[0].MassConsumptionRate;
                 }
 

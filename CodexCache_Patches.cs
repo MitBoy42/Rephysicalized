@@ -20,12 +20,12 @@ namespace Rephysicalized
 		{
 			public static void Postfix(string folder, List<CodexEntry> __result)
 			{
-			//	SgtLogger.l("Collecting Codex Entries for " + folder);
+Debug.Log("[Rephysicalized/Codex] CollectEntries called for folder: " + folder);
+
 				CodexUtils.CollectModdedCodexEntries(folder,__result, true);				
 			}
 		}
-
-		
 	}
 }
+
 

@@ -16,6 +16,9 @@ namespace Rephysicalized
         // The method to run after the original (Postfix)
         public static void Postfix(GameObject go, Tag prefab_tag)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             ElementConverter elementConverter = go.GetComponent<ElementConverter>();
             if (elementConverter != null)
             {
@@ -95,46 +98,5 @@ namespace Rephysicalized
             elementDropper.emitOffset = new Vector3(0.0f, 0.0f, 0.0f);
         }
     }
-    [HarmonyPatch(typeof(SublimationStationConfig), "ConfigureBuildingTemplate")]
-    //Sublimation
-    public static class SublimationStationConfig_SandOutputPatch
-    {
-        private const float Sand_PER_LOAD = 30f;
-
-        public static void Postfix(GameObject go, Tag prefab_tag)
-        {
-            // Ensure ElementConverter exists, or add if missing
-            var elementConverter = go.GetComponent<ElementConverter>();
-            if (elementConverter == null)
-            {
-                elementConverter = go.AddComponent<ElementConverter>();
-                elementConverter.consumedElements = new ElementConverter.ConsumedElement[0];
-            }
-            var outputs = elementConverter.outputElements?.ToList() ?? new System.Collections.Generic.List<ElementConverter.OutputElement>();
-            // Remove any existing Sand output
-            outputs.RemoveAll(o => o.elementHash == SimHashes.Sand);
-            // Always add/overwrite with a Sand output (AirFilter values)
-            outputs.Add(new ElementConverter.OutputElement(
-                0.34f,      // massGenerationRate (AirFilter)
-                SimHashes.Sand,  // output element
-                0.0f,            // temperatureOperation
-                storeOutput: true,
-                diseaseWeight: 0.25f
-            ));
-            elementConverter.outputElements = outputs.ToArray();
-
-            // Ensure Storage uses StandardSealedStorage modifiers (like AirFilter)
-            var storage = go.GetComponent<Storage>();
-            if (storage != null)
-            {
-                storage.SetDefaultStoredItemModifiers(Storage.StandardSealedStorage);
-            }
-            // Ensure ElementDropper exists and is set up to drop Sand in 30kg loads
-            var elementDropper = go.AddComponent<ElementDropper>();
-
-            elementDropper.emitTag = new Tag("Sand");
-            elementDropper.emitMass = 40f;
-            elementDropper.emitOffset = new Vector3(0.0f, 0.0f, 0.0f);
-        }
-    }
+  
 }

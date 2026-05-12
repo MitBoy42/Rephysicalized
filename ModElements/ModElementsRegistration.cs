@@ -91,6 +91,7 @@ namespace Rephysicalized.ModElements
         internal static void ConfigureElements()
         {
             AddElementDecorModifier(ModElementRegistration.CrudByproduct, -0.8f);
+            AddElementDecorModifier(SimHashes.Lime, 0.3f);
         }
     }
 }   

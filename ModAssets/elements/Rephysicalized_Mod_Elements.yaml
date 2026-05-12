@@ -35,7 +35,7 @@ elements:
     liquidSurfaceAreaMultiplier: 1
     gasSurfaceAreaMultiplier: 1
     strength: 0.6
-    highTemp: 1683
+    highTemp: 1883
     highTempTransitionTarget: Magma
     highTempTransitionOreId: CarbonDioxide
     highTempTransitionOreMassConversion: 0.2
@@ -50,7 +50,7 @@ elements:
     materialCategory: Other
     tags:
     - BuildableAny
-   
+    - Plumbable
     buildMenuSort: 2
     isDisabled: false
     state: Solid

@@ -1,7 +1,9 @@
 ﻿using HarmonyLib;
 
 using System.Collections.Generic;
-
+using System;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using TUNING;
 using UnityEngine;
@@ -11,11 +13,24 @@ using UnityEngine;
 namespace Rephysicalized
 {
 
+    [HarmonyPatch(typeof(GeneratedBuildings), "LoadGeneratedBuildings")]
+    public static class AlgaeHabitat_AddToDescription
+    {
+        public static void Prefix()
+        {
+            const string key = "STRINGS.BUILDINGS.PREFABS.ALGAEHABITAT.EFFECT";
+            Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Massively increases efficiency under light. At 50 000 Lux or higher, it will consume 150g/s of CO2 and produce no Polluted Water waste.</b>");
+        }
+    }
+
     [HarmonyPatch(typeof(AlgaeHabitatConfig), nameof(AlgaeHabitatConfig.CreateBuildingDef))]
     public static class AlgaeHabitatConfig_CreateBuildingDef_Patch
     {
         public static void Postfix(ref BuildingDef __result)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return; // let OrganicOverhaul handle it
+
             // Modify the construction recipe to include algae as the second material
             string[] modifiedMaterials = new string[]
             {
@@ -56,6 +71,10 @@ namespace Rephysicalized
     {
         public static bool Prefix(GameObject go, Tag prefab_tag)
         {
+            // If OrganicOverhaul mod is present, do not run our custom prefix; allow original method.
+            if (OrganicOverhaulIntegration.IsPresent())
+                return true; // run original
+
             // This will make sure that the original method code is NOT run
 
             // Easy-to-edit references
@@ -88,9 +107,9 @@ namespace Rephysicalized
             storage3.showInUI = true;
             storage3.SetDefaultStoredItemModifiers(storageMods);
             storage3.allowItemRemoval = false;
-            storage3.storageFilters = [SimHashes.Algae.CreateTag()];
+            storage3.storageFilters = new List<Tag>() { SimHashes.Algae.CreateTag() };
 
-            var tilemaker = go.AddComponent<ElementTileMakerPatch>();
+            var tilemaker = go.AddComponent<ElementTileMaker>();
             tilemaker.emitTag = new Tag("Algae");
             tilemaker.emitMass = 400f;
             tilemaker.emitOffset = new Vector3(0f, 1f);
@@ -178,8 +197,9 @@ namespace Rephysicalized
             go.AddOrGet<KBatchedAnimController>().randomiseLoopedOffset = true;
             go.AddOrGet<AnimTileable>();
             Prioritizable.AddRef(go);
-            
-   
+
+
+
 
             return false; // <- SKIP original
         }
@@ -192,6 +212,9 @@ namespace Rephysicalized
     {
         public static void Postfix(AlgaeHabitat.SMInstance __instance, Tag tag, ref bool __result)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             // Only override for CO2 and Water
             if (tag == SimHashes.CarbonDioxide.CreateTag() || tag == SimHashes.Water.CreateTag())
             {
@@ -212,10 +235,10 @@ namespace Rephysicalized
     public class AlgaeHabitatHarvest : Workable
     {
         private static readonly HashedString[] HARVEST_ANIMS =
-        [
+        {
         (HashedString) "harvest_pre",
         (HashedString) "harvest_loop"
-        ];
+        };
         private static readonly HashedString PST_ANIM = new("harvest_pst");
 
 
@@ -234,13 +257,15 @@ namespace Rephysicalized
 
             this.workAnims = HARVEST_ANIMS;
             this.workingPstComplete =
-            [
+            new HashedString[]
+            {
             PST_ANIM
-            ];
+            };
             this.workingPstFailed =
-            [
+            new HashedString[]
+            {
             PST_ANIM
-            ];
+            };
             this.synchronizeAnims = false;
 
         }
@@ -279,7 +304,7 @@ namespace Rephysicalized
 
             if (habitat.AlgaeNeedsHarvesting())
             {
-              //  Debug.Log("[AlgaeHarvestMonitor] Algae storage full, creating harvest chore.");
+                //  Debug.Log("[AlgaeHarvestMonitor] Algae storage full, creating harvest chore.");
                 habitat.CreateAlgaeHarvestChore();
             }
             else
@@ -305,6 +330,9 @@ namespace Rephysicalized
 
         public static void ConfigureAlgaeOutput(this AlgaeHabitat instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             Storage storage = null;
             Tag algaeTag = ElementLoader.FindElementByHash(SimHashes.Algae).tag;
             foreach (Storage component in instance.GetComponents<Storage>())
@@ -335,26 +363,29 @@ namespace Rephysicalized
             if (algaeStorageTable.TryGetValue(instance, out var storage))
             {
                 bool needs = storage.RemainingCapacity() <= 0.0f;
-            //    Debug.Log($"[AlgaeHabitat] AlgaeNeedsHarvesting: {needs} (remaining capacity: {storage.RemainingCapacity()})");
+                //    Debug.Log($"[AlgaeHabitat] AlgaeNeedsHarvesting: {needs} (remaining capacity: {storage.RemainingCapacity()})");
                 return needs;
             }
-         //   Debug.LogWarning("[AlgaeHabitat] AlgaeNeedsHarvesting: No algae storage found!");
+            //   Debug.LogWarning("[AlgaeHabitat] AlgaeNeedsHarvesting: No algae storage found!");
             return false;
         }
 
         public static void CreateAlgaeHarvestChore(this AlgaeHabitat instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             // Only create if not already running
             if (algaeHarvestChoreTable.TryGetValue(instance, out var existingChore) && existingChore != null && !existingChore.isComplete)
             {
-          //      Debug.Log($"[AlgaeHabitat] Harvest chore already exists for {instance}, not creating another.");
+                //      Debug.Log($"[AlgaeHabitat] Harvest chore already exists for {instance}, not creating another.");
                 return;
             }
 
             var harvestComponent = instance.GetComponent<AlgaeHabitatHarvest>();
             if (harvestComponent == null)
             {
-          //      Debug.LogError("[AlgaeHabitat] No AlgaeHabitatHarvest component found, cannot create harvest chore!");
+                //      Debug.LogError("[AlgaeHabitat] No AlgaeHabitatHarvest component found, cannot create harvest chore!");
                 return;
             }
 
@@ -366,30 +397,36 @@ namespace Rephysicalized
             );
             newChore.AddPrecondition(ChorePreconditions.instance.IsNotARobot);
             algaeHarvestChoreTable.AddOrUpdate(instance, newChore);
-        //    Debug.Log($"[AlgaeHabitat] Created new algae harvest chore for {instance}.");
+            //    Debug.Log($"[AlgaeHabitat] Created new algae harvest chore for {instance}.");
         }
 
         public static void CancelAlgaeHarvestChore(this AlgaeHabitat instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             if (algaeHarvestChoreTable.TryGetValue(instance, out var chore) && chore != null && !chore.isComplete)
             {
                 chore.Cancel("Cancelled");
                 algaeHarvestChoreTable.Remove(instance);
-          //      Debug.Log($"[AlgaeHabitat] Cancelled algae harvest chore for {instance}.");
+                //      Debug.Log($"[AlgaeHabitat] Cancelled algae harvest chore for {instance}.");
             }
         }
 
         public static void OnAlgaeHarvestComplete(this AlgaeHabitat instance, Chore chore)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             algaeHarvestChoreTable.Remove(instance);
             if (algaeStorageTable.TryGetValue(instance, out var storage))
             {
-          //      Debug.Log($"[AlgaeHabitat] Harvest complete, dropping all algae.");
+                //      Debug.Log($"[AlgaeHabitat] Harvest complete, dropping all algae.");
                 storage.DropAll();
             }
             else
             {
-       //         Debug.LogWarning("[AlgaeHabitat] Harvest complete, but no algae storage found!");
+                //         Debug.LogWarning("[AlgaeHabitat] Harvest complete, but no algae storage found!");
             }
         }
 
@@ -404,6 +441,9 @@ namespace Rephysicalized
         [HarmonyPatch(nameof(AlgaeHabitat.OnSpawn))]
         public static void OnSpawn_Postfix(AlgaeHabitat __instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             __instance.ConfigureAlgaeOutput();
         }
 
@@ -411,6 +451,9 @@ namespace Rephysicalized
         [HarmonyPatch(nameof(AlgaeHabitat.OnCleanUp))]
         public static void OnCleanUp_Postfix(AlgaeHabitat __instance)
         {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+
             algaeStorageTable.Remove(__instance);
             algaeHarvestChoreTable.Remove(__instance);
         }
@@ -437,7 +480,14 @@ namespace Rephysicalized
         // If you return false, the original method will be skipped.
         public static bool Prefix(AlgaeHabitat.States __instance, out StateMachine.BaseState default_state)
         {
-            // ==== COPY OF ORIGINAL CODE (EDIT AS YOU WISH) ====
+            // If OrganicOverhaul mod is present, allow original InitializeStates to run
+            if (OrganicOverhaulIntegration.IsPresent())
+            {
+                default_state = __instance.noAlgae;
+                return true; // run original
+            }
+
+
 
             default_state = __instance.noAlgae;
 
@@ -553,8 +603,4 @@ namespace Rephysicalized
             return false;
         }
     }
-   
 }
-    
-    
-

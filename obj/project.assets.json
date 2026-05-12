@@ -1,13 +1,9 @@
 {
   "version": 3,
   "targets": {
-    ".NETFramework,Version=v4.8": {
+    ".NETStandard,Version=v2.1": {
       "Aze.Publicise.MSBuild.Task/1.1.0": {
         "type": "package",
-        "frameworkAssemblies": [
-          "Microsoft.Build.Framework",
-          "Microsoft.Build.Utilities.v4.0"
-        ],
         "build": {
           "build/Aze.Publicise.MSBuild.Task.props": {}
         },
@@ -15,7 +11,7 @@
           "buildMultiTargeting/Aze.Publicise.MSBuild.Task.props": {}
         }
       },
-      "ILRepack.Lib.MSBuild.Task/2.0.44.1": {
+      "ILRepack.Lib.MSBuild.Task/2.0.44.2": {
         "type": "package",
         "build": {
           "build/ILRepack.Lib.MSBuild.Task.targets": {}
@@ -24,27 +20,44 @@
           "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.targets": {}
         }
       },
-      "PLib/4.17.1": {
+      "Lib.Harmony.Ref/2.4.2": {
         "type": "package",
         "dependencies": {
-          "ILRepack.Lib.MSBuild.Task": "2.0.26"
+          "System.Reflection.Emit": "4.7.0"
         },
         "compile": {
-          "lib/net471/PLib.dll": {
-            "related": ".xml"
-          }
-        },
-        "runtime": {
-          "lib/net471/PLib.dll": {
+          "ref/netstandard2.0/0Harmony.dll": {
             "related": ".xml"
           }
         }
       },
+      "PLib/4.21.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.1/PLib.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/PLib.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "System.Reflection.Emit/4.7.0": {
+        "type": "package",
+        "compile": {
+          "ref/netstandard2.1/_._": {}
+        },
+        "runtime": {
+          "lib/netstandard2.1/_._": {}
+        }
+      },
       "UtilLibs/1.0.0": {
         "type": "project",
-        "framework": ".NETFramework,Version=v4.8",
+        "framework": ".NETStandard,Version=v2.1",
         "dependencies": {
-          "PLib": "4.17.1"
+          "PLib": "4.21.0"
         },
         "compile": {
           "bin/placeholder/UtilLibs.dll": {}
@@ -71,10 +84,10 @@
         "tasks/net46/Aze.Publicise.MSBuild.Task.dll"
       ]
     },
-    "ILRepack.Lib.MSBuild.Task/2.0.44.1": {
-      "sha512": "3XeHBO90AI5ggjmSeaSCVWuMuVWvNj+67ghtjTlOjhFSwhsFOJ3YU0GB/Zk19DG1grgHcJY195SIxCFVRiWf9Q==",
+    "ILRepack.Lib.MSBuild.Task/2.0.44.2": {
+      "sha512": "53H6rOrVGPDBUU0GqEHefptus3ER34szVsVv1WfKr3Dh666ha5s0Eui9znxTztHaudWlSEUb6hJSGg4cA+wn2g==",
       "type": "package",
-      "path": "ilrepack.lib.msbuild.task/2.0.44.1",
+      "path": "ilrepack.lib.msbuild.task/2.0.44.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -82,22 +95,94 @@
         "build/ILRepack.Lib.MSBuild.Task.targets",
         "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.dll",
         "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.targets",
-        "ilrepack.lib.msbuild.task.2.0.44.1.nupkg.sha512",
+        "ilrepack.lib.msbuild.task.2.0.44.2.nupkg.sha512",
         "ilrepack.lib.msbuild.task.nuspec"
       ]
     },
-    "PLib/4.17.1": {
-      "sha512": "0Gi1kszwolS33rYvMHM6jBnjga+GrsaJgzbyTTkKj+84Oj3uqbz3QySpQsWYMG0r1zT4M39u1RCEnXqPjE7jjw==",
+    "Lib.Harmony.Ref/2.4.2": {
+      "sha512": "pK6Z6WlR6OyynJqj50SspAV3qSU4pAiFluoryxE6ad63r2BD8LHKmH40aZz+0Ve+gyyQxSXTkxBnaXs9JvTkIw==",
       "type": "package",
-      "path": "plib/4.17.1",
+      "path": "lib.harmony.ref/2.4.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "HarmonyLogo.png",
+        "LICENSE",
+        "README.md",
+        "lib.harmony.ref.2.4.2.nupkg.sha512",
+        "lib.harmony.ref.nuspec",
+        "ref/netstandard2.0/0Harmony.dll",
+        "ref/netstandard2.0/0Harmony.xml"
+      ]
+    },
+    "PLib/4.21.0": {
+      "sha512": "Rf/xn2IknR6OqTSaffwli9Y6VbfTlMO3NhJAMqyfv03JXGNm6s8Nlr955OaCHFah0HA9CPmGEvLLjkH7vt8Nqg==",
+      "type": "package",
+      "path": "plib/4.21.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "icon.png",
         "lib/net471/PLib.dll",
         "lib/net471/PLib.xml",
-        "plib.4.17.1.nupkg.sha512",
+        "lib/netstandard2.1/PLib.dll",
+        "lib/netstandard2.1/PLib.xml",
+        "plib.4.21.0.nupkg.sha512",
         "plib.nuspec"
+      ]
+    },
+    "System.Reflection.Emit/4.7.0": {
+      "sha512": "VR4kk8XLKebQ4MZuKuIni/7oh+QGFmZW3qORd1GvBq/8026OpW501SzT/oypwiQl4TvT8ErnReh/NzY9u+C6wQ==",
+      "type": "package",
+      "path": "system.reflection.emit/4.7.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net45/_._",
+        "lib/netcore50/System.Reflection.Emit.dll",
+        "lib/netcoreapp2.0/_._",
+        "lib/netstandard1.1/System.Reflection.Emit.dll",
+        "lib/netstandard1.1/System.Reflection.Emit.xml",
+        "lib/netstandard1.3/System.Reflection.Emit.dll",
+        "lib/netstandard2.0/System.Reflection.Emit.dll",
+        "lib/netstandard2.0/System.Reflection.Emit.xml",
+        "lib/netstandard2.1/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "lib/xamarintvos10/_._",
+        "lib/xamarinwatchos10/_._",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net45/_._",
+        "ref/netcoreapp2.0/_._",
+        "ref/netstandard1.1/System.Reflection.Emit.dll",
+        "ref/netstandard1.1/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/de/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/es/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/fr/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/it/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/ja/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/ko/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/ru/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/zh-hans/System.Reflection.Emit.xml",
+        "ref/netstandard1.1/zh-hant/System.Reflection.Emit.xml",
+        "ref/netstandard2.0/System.Reflection.Emit.dll",
+        "ref/netstandard2.0/System.Reflection.Emit.xml",
+        "ref/netstandard2.1/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "ref/xamarintvos10/_._",
+        "ref/xamarinwatchos10/_._",
+        "runtimes/aot/lib/netcore50/System.Reflection.Emit.dll",
+        "runtimes/aot/lib/netcore50/System.Reflection.Emit.xml",
+        "system.reflection.emit.4.7.0.nupkg.sha512",
+        "system.reflection.emit.nuspec",
+        "useSharedDesignerContext.txt",
+        "version.txt"
       ]
     },
     "UtilLibs/1.0.0": {
@@ -107,9 +192,10 @@
     }
   },
   "projectFileDependencyGroups": {
-    ".NETFramework,Version=v4.8": [
+    ".NETStandard,Version=v2.1": [
       "Aze.Publicise.MSBuild.Task >= *",
       "ILRepack.Lib.MSBuild.Task >= *",
+      "Lib.Harmony.Ref >= 2.4.2",
       "UtilLibs >= 1.0.0"
     ]
   },
@@ -120,11 +206,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+      "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj",
       "projectName": "Rephysicalized",
-      "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+      "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj",
       "packagesPath": "C:\\Users\\MitBoy\\.nuget\\packages\\",
-      "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\obj\\",
+      "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -135,18 +221,19 @@
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
-        "net48"
+        "netstandard2.1"
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net48": {
-          "targetAlias": "net48",
+        "netstandard2.1": {
+          "framework": "netstandard2.1",
+          "targetAlias": "netstandard2.1",
           "projectReferences": {
-            "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
-              "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj"
+            "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj": {
+              "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj"
             }
           }
         }
@@ -164,8 +251,9 @@
       "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
-      "net48": {
-        "targetAlias": "net48",
+      "netstandard2.1": {
+        "framework": "netstandard2.1",
+        "targetAlias": "netstandard2.1",
         "dependencies": {
           "Aze.Publicise.MSBuild.Task": {
             "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -178,9 +266,29 @@
             "suppressParent": "All",
             "target": "Package",
             "version": "[*, )"
+          },
+          "Lib.Harmony.Ref": {
+            "target": "Package",
+            "version": "[2.4.2, )"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306\\RuntimeIdentifierGraph.json"
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "NETStandard.Library": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\RuntimeIdentifierGraph.json"
       }
     }
   }

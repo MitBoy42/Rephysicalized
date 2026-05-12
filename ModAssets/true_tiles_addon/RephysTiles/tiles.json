@@ -3,6 +3,10 @@
         "CrudByproduct": {
             "MainTex": "carpet_crudbyproduct_main",
             "TopTex": "carpet_crudbyproduct_top"
+        },
+        "Lime": {
+            "MainTex": "carpet_lime_main",
+            "TopTex": "carpet_lime_top"
         }
 
     },
@@ -11,14 +15,30 @@
         "CrudByproduct": {
             "MainTex": "tile_crudbyproduct_main",
             "TopTex": "tile_crudbyproduct_top"
+        },
+        "Lime": {
+            "MainTex": "tile_lime_main",
+            "TopTex": "tile_lime_top"
         }
 
     },
+
     "InsulationTile": {
         "CrudByproduct": {
             "MainTex": "insulation_crudbyproduct_main"
 
-        }
+        },
+        "Lime": {
+            "MainTex": "insulation_lime_main"
 
+        }
+    },
+  "GlassTile": {
+    "Ice": {
+      "MainTex": "glasstile_ice_main",
+      "TopTex": "glasstile_ice_top",
+      "MainSpecular": "glasstile_ice_spec"
     }
+}
+
 }

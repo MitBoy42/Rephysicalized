@@ -8,18 +8,15 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Rephysicalized
-{ // Forces plants created via ExtendEntityToBasicPlant to be Dirt instead of Creature
+{ 
+    // Forces plants created via ExtendEntityToBasicPlant to be Dirt instead of Creature
     [HarmonyPatch(typeof(EntityTemplates), nameof(EntityTemplates.ExtendEntityToBasicPlant))]
     internal static class ExtendEntityToBasicPlant_SetDirtElement_Patch
     {
         [HarmonyPostfix]
         private static void Postfix(GameObject template)
         {
-            if (template == null) return;
             var pe = template.GetComponent<PrimaryElement>();
-            if (pe == null) return;
-
-            // Only switch if it’s still the generic Creature element; preserves plants that already set a concrete element.
             if (pe.ElementID == SimHashes.Creature)
             {
   
@@ -29,21 +26,39 @@ namespace Rephysicalized
         }
     }
 
+
+    // Consolidated: adjust yields for specific crop IDs in one pass, no PlantFiber special case.
     [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    internal static class DewDripYieldPatch
+    internal static class Consolidated_Crop_Yield_Patch
     {
         private static void Postfix()
         {
             var crops = TUNING.CROPS.CROP_TYPES;
-            string oxyId = DewDripConfig.ID;
+            if (crops == null || crops.Count == 0)
+                return;
+
+            // Target amounts per cropId; durations are preserved from existing values.
+            var targetAmounts = new Dictionary<string, int>
+            {
+                { DewDripConfig.ID, 20 },                  // DewDrip
+                { "SwampLily", 10 },                       // Balm Lily (SwampLily)
+                { "Kelp", 10 },                            // Kelp
+                { SimHashes.WoodLog.ToString(), 30 },      // WoodLog
+                { SimHashes.OxyRock.ToString(), 20 },      // OxyRock
+                { "PlantFiber", 50 }, 
+            { "PlantMeat", 1 },     };
+        
             for (int i = 0; i < crops.Count; i++)
             {
-                if (crops[i].cropId == oxyId)
-                {
-                    var c = crops[i];
-                    crops[i] = new Crop.CropVal(c.cropId, c.cropDuration, 20);
-                    break;
-                }
+                var cv = crops[i];
+                if (cv.cropId == null)
+                    continue;
+
+                if (!targetAmounts.TryGetValue(cv.cropId, out int amount))
+                    continue;
+
+                // Preserve original duration
+                crops[i] = new Crop.CropVal(cv.cropId, cv.cropDuration, amount);
             }
         }
     }
@@ -68,7 +83,7 @@ namespace Rephysicalized
         private static void Prefix([HarmonyArgument(0)] string id, [HarmonyArgument(3)] ref float mass)
         {
             if (id == "ForestTree" || id == "ForestTreeBranch" || id == "ColdBreather" || id == "BlueGrass" || id == "SaltPlant"
-                || id == "SpaceTree" || id == "SpaceTreeBranch" || id == "VineMother")
+                || id == "SpaceTree" || id == "SpaceTreeBranch" || id == "VineMother" || id == "SpiceVine" || id == "KelpPlant")
                 mass = 1f;
         }
     }

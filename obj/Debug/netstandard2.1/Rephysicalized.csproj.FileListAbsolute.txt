@@ -1,0 +1,36 @@
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.csproj.AssemblyReference.cache
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.GeneratedMSBuildEditorConfig.editorconfig
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.AssemblyInfoInputs.cache
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.AssemblyInfo.cs
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.csproj.CoreCompileInputs.cache
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.sourcelink.json
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.deps.json
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.dll
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.pdb
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\mod.yaml
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\mod_info.yaml
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\LauncherMetadata.json
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\PLib.dll
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.dll
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.pdb
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysic.F0F5DBA7.Up2Date
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.dll
+D:\Мастерская Творческого Потенциала\New sgt\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.pdb
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.deps.json
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.pdb
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\mod.yaml
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\mod_info.yaml
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\LauncherMetadata.json
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\PLib.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.pdb
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.csproj.AssemblyReference.cache
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.GeneratedMSBuildEditorConfig.editorconfig
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.AssemblyInfoInputs.cache
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.AssemblyInfo.cs
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.csproj.CoreCompileInputs.cache
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.sourcelink.json
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysic.F0F5DBA7.Up2Date
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.dll
+D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-March26_Beta\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.pdb

@@ -87,7 +87,7 @@ namespace Rephysicalized.Patches
                     var kpid = planted.AddOrGet<KPrefabID>();
                     kpid.PrefabTag = new Tag(PlantedId);
                     kpid.AddTag(GameTags.RoomProberBuilding, true);
-                    kpid.AddTag(RoomConstraints.ConstraintTags.LightSource, true);
+        
                     Assets.AddPrefab(kpid);
 
                     plantedCreated = true;
@@ -260,60 +260,5 @@ namespace Rephysicalized.Patches
         }
     }
 
-    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    internal static class RoomConstraints_LightCountsPlants_Patch
-    {
-        private static void Postfix()
-        {
-            // Get the existing LIGHT constraint instance; do not replace the instance to keep RoomType references intact.
-            var light = RoomConstraints.LIGHT;
-            if (light == null)
-                return;
-
-            light.room_criteria = room =>
-            {
-                // Original behavior: any creature with a Light2D
-                foreach (var creature in room.cavity.creatures)
-                {
-                    if (creature != null && creature.GetComponent<Light2D>() != null)
-                        return true;
-                }
-
-                // Original behavior: any building with Light2D that's enabled or has satisfied RequireInputs
-                foreach (var building in room.buildings)
-                {
-                    if (building == null) continue;
-
-                    var l = building.GetComponent<Light2D>();
-                    if (l != null)
-                    {
-                        var req = building.GetComponent<RequireInputs>();
-                        if (l.enabled || (req != null && req.RequirementsMet))
-                            return true;
-                    }
-                }
-
-                // NEW: Consider planted occupants (plants) as potential light sources
-                foreach (var plant in room.plants)
-                {
-                    if (plant == null) continue;
-
-                    // Primary: Light2D enabled or gated by RequireInputs (mirrors building logic)
-                    var l = plant.GetComponent<Light2D>();
-                    if (l != null)
-                    {
-                        var req = plant.GetComponent<RequireInputs>();
-                        if (l.enabled || (req != null && req.RequirementsMet))
-                            return true;
-                    }
-
-                    // Secondary: explicitly tagged as a light source (e.g., PinkRockCarved_Planted with LightSource tag)
-                    if (plant.HasTag(RoomConstraints.ConstraintTags.LightSource))
-                        return true;
-                }
-
-                return false;
-            };
-        }
-    }
+ 
 }

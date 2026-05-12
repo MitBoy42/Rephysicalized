@@ -49,7 +49,6 @@ namespace Rephysicalized
         {
             "PlanterBox", "FarmTile", "HydroponicFarm"
         };
-
         public static void Install()
         {
             if (_installed) return;
@@ -140,12 +139,6 @@ namespace Rephysicalized
             tracker?.AddTinkerMass(5f);
         }
 
-        // Back-compat path if an Effect object is available elsewhere
-        internal static void NotifyEffectAdded(Effects effects, Effect effect)
-        {
-            if (effect == null) return;
-            NotifyEffectAddedById(effects, effect.Id);
-        }
     }
 
     [SerializationConfig(MemberSerialization.OptIn)]
@@ -248,8 +241,7 @@ namespace Rephysicalized
     {
         public static void Prefix(Deconstructable __instance, WorkerBase worker)
         {
-            try
-            {
+           
                 if (__instance == null) return;
 
                 var go = __instance.gameObject;
@@ -263,7 +255,7 @@ namespace Rephysicalized
                 var plotStore = go.GetComponent<PlotMassStore>();
                 if (plotStore == null) return;
 
-                var trackers = UnityEngine.Object.FindObjectsOfType<PlantMassTrackerComponent>();
+                var trackers = UnityEngine.Object.FindObjectsByType<PlantMassTrackerComponent>(FindObjectsSortMode.None);
 
                 for (int i = 0; i < trackers.Length; i++)
                 {
@@ -282,11 +274,8 @@ namespace Rephysicalized
                         t.BeginFinalTeardown();
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[PMT] Deconstruction Prefix exception: {ex}");
-            }
+            
+      
         }
 
         public static void Postfix(Deconstructable __instance, WorkerBase worker)
@@ -314,5 +303,24 @@ namespace Rephysicalized
         }
     }
 
+    // Optional component: attach to a plant prefab to customize what the PlantMassTracker
+    // spawns on harvest or uproot. If not present on a plant, PMT uses its base config yields.
+    [SerializationConfig(MemberSerialization.OptIn)]
+    public sealed class PlantMassTrackerYieldModifier : KMonoBehaviour
+    {
+        // If true, replace the base yields for harvest with 'harvestYields'.
+        // If false, 'harvestYields' are added to the base yields.
+        [Serialize] public bool overrideHarvestYields = false;
+
+        // If true, replace the base yields for dig with 'digYields'.
+        // If false, 'digYields' are added to the base yields.
+        [Serialize] public bool overrideDigYields = false;
+
+        // Extra/override yields when the plant is harvested.
+        [Serialize] public List<MaterialYield> harvestYields = new List<MaterialYield>();
+
+        // Extra/override yields when the plant is uprooted.
+        [Serialize] public List<MaterialYield> digYields = new List<MaterialYield>();
+    }
  
 }

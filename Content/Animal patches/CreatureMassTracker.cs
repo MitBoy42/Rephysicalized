@@ -1,3 +1,5 @@
+using HarmonyLib;
+using Klei.AI;
 using KSerialization;
 using System;
 using System.Collections.Generic;
@@ -6,7 +8,7 @@ using UnityEngine;
 namespace Rephysicalized
 {
     [AddComponentMenu("KMonoBehaviour/Creatures/CreatureMassTracker")]
-    public partial class CreatureMassTracker : KMonoBehaviour
+    public partial class CreatureMassTracker : KMonoBehaviour, ISim200ms
     {
         public enum AccumulationMode
         {
@@ -21,7 +23,7 @@ namespace Rephysicalized
         [Serialize] public float CALORIE_RATIO = 100000f; // kg = calories / CALORIE_RATIO (Calories mode)
         [Serialize] public float MASS_RATIO = 1f;         // kg delta = consumed_kg * MASS_RATIO (ConsumedMass mode)
 
-        // Intake accumulators (telemetry; mass is applied directly to PE.Mass)
+        // Intake accumulators (telemetry)
         [Serialize] private float caloriesConsumedTotal = 0f;
         [Serialize] private float massConsumedTotal = 0f;
 
@@ -33,37 +35,8 @@ namespace Rephysicalized
         [Serialize] private bool initializedFromPrefabMass = false;
         [Serialize] private float prefabStartingMassSnapshot = 1f;
 
-        // ===== Visual scaling config (defaults defined as constants below) =====
-        // NOTE: These per-instance fields are serialized; we add a config-hash upgrade so they
-        //       get overwritten when you ship a mod update with new compile-time defaults.
-        [Serialize] public bool ENABLE_VISUAL_SCALING = true;
-        [Serialize] public float SCALE_AT_START_MASS = DEFAULT_SCALE_AT_START_MASS;
-        [Serialize] public float SCALE_AT_100X_MASS = DEFAULT_SCALE_AT_100X_MASS;
-        [Serialize] public float MAX_MASS_MULTIPLE_FOR_MAX_SCALE = DEFAULT_MAX_MULTIPLE_FOR_MAX_SCALE;
-        [Serialize] public bool ANCHOR_DOWNWARD = DEFAULT_ANCHOR_DOWNWARD;
-
-        // Versioning: the config-hash that was last applied to this instance
-        [Serialize] private int visualScaleConfigHash = 0;
-
-        // Compile-time defaults (bump these in code when you want new defaults)
-        private const bool DEFAULT_ENABLE_VISUAL_SCALING = true;
-        private const float DEFAULT_SCALE_AT_START_MASS = 0.9f;
-        private const float DEFAULT_SCALE_AT_100X_MASS = 1.2f;
-        private const float DEFAULT_MAX_MULTIPLE_FOR_MAX_SCALE = 100f;
-        private const bool DEFAULT_ANCHOR_DOWNWARD = true;
-
-        // Hash for the current compiled defaults
-        private static readonly int CURRENT_VISUAL_CONFIG_HASH =
-            ComputeVisualConfigHash(
-                DEFAULT_ENABLE_VISUAL_SCALING,
-                DEFAULT_SCALE_AT_START_MASS,
-                DEFAULT_SCALE_AT_100X_MASS,
-                DEFAULT_MAX_MULTIPLE_FOR_MAX_SCALE,
-                DEFAULT_ANCHOR_DOWNWARD
-            );
-
-        // Cache for optional direct notifications
-        [NonSerialized] private Rephysicalized.Visuals.CreatureVisualScaler cachedVisualScaler;
+        // Body mass is the persistent, saveable part controlled by the tracker (excludes derived parts like scales/milk).
+        [Serialize] private float bodyMassKg = 0f;
 
         private const int CALORIES_CONSUMED_EVENT_ID = -2038961714;
 
@@ -119,7 +92,15 @@ namespace Rephysicalized
                 if (STARTING_MASS <= 0f)
                     STARTING_MASS = prefabStartingMassSnapshot;
 
+                // Initialize body mass to baseline (body only; derived masses will be added via sync)
+                bodyMassKg = Mathf.Max(0.001f, STARTING_MASS);
                 initializedFromPrefabMass = true;
+            }
+            else
+            {
+                // Ensure bodyMassKg is sane if loaded from save without init
+                if (bodyMassKg <= 0f)
+                    bodyMassKg = Mathf.Max(0.001f, STARTING_MASS > 0f ? STARTING_MASS : (primaryElement != null ? primaryElement.Mass : 1f));
             }
 
             if (ExtraDrops == null || ExtraDrops.Count == 0)
@@ -133,15 +114,6 @@ namespace Rephysicalized
             }
 
             Subscribe(CALORIES_CONSUMED_EVENT_ID, OnCaloriesConsumed);
-
-            // DO NOT re-baseline STARTING_MASS here; leave it as the original snapshot unless explicitly changed.
-
-            // Upgrade visual scaling config if the compiled defaults changed since this instance was saved
-            UpgradeVisualScalingConfigIfNeeded();
-
-            // Ensure a visual scaler exists if enabled and apply initial size
-            EnsureVisualScaler();
-            NotifyVisualScaler();
         }
 
         public override void OnCleanUp()
@@ -157,11 +129,31 @@ namespace Rephysicalized
             return Mathf.Max(0.001f, m);
         }
 
-        // Convenience getter
+        // Effective mass = body mass + scale mass + milk mass
         public float GetCurrentMass()
         {
             if (primaryElement == null) primaryElement = GetComponent<PrimaryElement>();
-            return Mathf.Max(0.001f, primaryElement != null ? primaryElement.Mass : STARTING_MASS);
+            float scale = ComputeScaleMassKgFromMonitors(gameObject);
+            float milk = ComputeMilkMassKgFromMilkMonitor(gameObject);
+            return Mathf.Max(0.001f, bodyMassKg + scale + milk);
+        }
+
+        // ISim200ms: keep PrimaryElement.Mass in sync with effective mass without saving derived masses.
+        public void Sim200ms(float dt)
+        {
+            SyncPeMass();
+        }
+
+        private void SyncPeMass()
+        {
+            if (primaryElement == null) primaryElement = GetComponent<PrimaryElement>();
+            if (primaryElement == null) return;
+
+            float scale = ComputeScaleMassKgFromMonitors(gameObject);
+            float milk = ComputeMilkMassKgFromMilkMonitor(gameObject);
+            float effective = Mathf.Max(0.001f, bodyMassKg + scale + milk);
+            if (!Mathf.Approximately(primaryElement.Mass, effective))
+                primaryElement.Mass = effective;
         }
 
         private void OnCaloriesConsumed(object data)
@@ -191,8 +183,8 @@ namespace Rephysicalized
                 float kgGain = (CALORIE_RATIO > 0f) ? (caloriesFromEvent / CALORIE_RATIO) : 0f;
                 if (kgGain > 0f)
                 {
-                    primaryElement.Mass = Mathf.Max(0.001f, primaryElement.Mass + kgGain);
-                    NotifyVisualScaler();
+                    // Apply to body mass only; sync will update PE to include derived masses
+                    bodyMassKg = Mathf.Max(0.001f, bodyMassKg + kgGain);
                 }
             }
             else // AccumulationMode.ConsumedMass
@@ -211,42 +203,31 @@ namespace Rephysicalized
 
             massConsumedTotal += kilograms;
 
-            if (primaryElement == null) primaryElement = GetComponent<PrimaryElement>();
-            if (primaryElement == null)
-                return;
-
+            // Add to body mass only
             float kgGain = kilograms * Mathf.Max(0f, MASS_RATIO);
             if (kgGain > 0f)
             {
-                primaryElement.Mass = Mathf.Max(0.001f, primaryElement.Mass + kgGain);
-                NotifyVisualScaler();
+                bodyMassKg = Mathf.Max(0.001f, bodyMassKg + kgGain);
             }
         }
+
         public void AddExternalMass(float kilograms)
         {
             if (kilograms == 0f) return;
-            if (primaryElement == null) primaryElement = GetComponent<PrimaryElement>();
-            if (primaryElement == null)
-                return;
-
-            primaryElement.Mass = Mathf.Max(0.001f, primaryElement.Mass + kilograms);
-            NotifyVisualScaler();
+            // External adjustments affect body mass only
+            bodyMassKg = Mathf.Max(0.001f, bodyMassKg + kilograms);
         }
 
         public float GetTotalCaloriesConsumed() => caloriesConsumedTotal;
         public float GetTotalMassConsumed() => massConsumedTotal;
 
-        // Explicit: sets a new absolute baseline; clears accumulators and writes PE mass
+        // Explicit: sets a new absolute baseline; clears accumulators and sets body mass
         public void SetMassAbsolute(float newMassKg)
         {
             float clamped = Mathf.Max(0.001f, newMassKg);
 
-            if (primaryElement == null) primaryElement = GetComponent<PrimaryElement>();
-            if (primaryElement != null)
-            {
-                primaryElement.Mass = clamped;
-                NotifyVisualScaler();
-            }
+            // Update body mass; sync will update PE
+            bodyMassKg = clamped;
 
             STARTING_MASS = clamped;
             caloriesConsumedTotal = 0f;
@@ -273,7 +254,7 @@ namespace Rephysicalized
             if (other == null) return;
 
             float carryMass = other.GetCurrentMass();
-            SetMassAbsolute(carryMass); // sets PE and baseline
+            SetMassAbsolute(carryMass); // sets body mass and baseline
 
             CALORIE_RATIO = other.CALORIE_RATIO;
             MASS_RATIO = other.MASS_RATIO;
@@ -284,67 +265,88 @@ namespace Rephysicalized
                 this.caloriesConsumedTotal = other.caloriesConsumedTotal;
                 this.massConsumedTotal = other.massConsumedTotal;
             }
+        }
+        public void OnEggLaid_DecreaseBodyMass()
+        {
+            float toRemove = Mathf.Max(0f, STARTING_MASS) * 2f;
+                float minBody = Mathf.Max(0.001f, STARTING_MASS);
+            bodyMassKg = Mathf.Max(minBody, bodyMassKg - toRemove); }
 
-            NotifyVisualScaler();
+
+        // Compute scale mass from monitors (ScaleGrowth/ElementGrowth + ScaleGrowthMonitor or WellFedShearable)
+        private static float ComputeScaleMassKgFromMonitors(GameObject go)
+        {
+            if (TryGetScaleDefAndPercent01(go, out _, out var dropMass, out var pct01))
+                return pct01 * dropMass;
+            return 0f;
         }
 
-        // Visual scaler wiring
-        private void EnsureVisualScaler()
+        // Compute milk mass from MilkProductionMonitor (kg). If no monitor or zero, returns 0.
+        private static float ComputeMilkMassKgFromMilkMonitor(GameObject go)
         {
-            if (!ENABLE_VISUAL_SCALING)
-                return;
+            var milkSmi = go != null ? go.GetSMI<MilkProductionMonitor.Instance>() : null;
+            if (milkSmi == null) return 0f;
 
-            if (cachedVisualScaler == null)
+            // MilkAmount is already in kg (MilkPercentage/100 * Capacity)
+            float kg = milkSmi.MilkAmount;
+            return Mathf.Max(0f, kg);
+        }
+
+        // Helper: resolve scale percent and drop def/tag
+        private static bool TryGetScaleDefAndPercent01(GameObject go, out Tag dropTag, out float dropMass, out float percent01)
+        {
+            dropTag = Tag.Invalid;
+            dropMass = 0f;
+            percent01 = 0f;
+            if (go == null) return false;
+
+            // Percent: prefer ScaleGrowth, else ElementGrowth
+            float pct01 = 0f;
+            var db = Db.Get();
+            var scaleAmt = db?.Amounts?.ScaleGrowth?.Lookup(go);
+            if (scaleAmt != null)
+                pct01 = Mathf.Clamp01(scaleAmt.value / 100f);
+            else
             {
-                cachedVisualScaler = gameObject.AddOrGet<Rephysicalized.Visuals.CreatureVisualScaler>();
+                var elemAmt = db?.Amounts?.ElementGrowth?.Lookup(go);
+                if (elemAmt != null)
+                    pct01 = Mathf.Clamp01(elemAmt.value / 100f);
             }
-        }
 
-        private void NotifyVisualScaler()
-        {
-            if (!ENABLE_VISUAL_SCALING)
-                return;
+            if (pct01 <= 0f)
+                return false;
 
-            if (cachedVisualScaler == null)
-                EnsureVisualScaler();
+            // Definitions: prefer ScaleGrowthMonitor, else WellFedShearable
+            Tag tag = Tag.Invalid;
+            float fullMass = 0f;
 
-            if (cachedVisualScaler != null)
-                cachedVisualScaler.OnMassChanged();
-        }
-
-        // ===== Visual scaling config upgrade helpers =====
-
-        private static int ComputeVisualConfigHash(bool enabled, float start, float at100x, float maxMult, bool anchorDown)
-        {
-            unchecked
+            var sgm = go.GetSMI<ScaleGrowthMonitor.Instance>();
+            if (sgm?.def != null)
             {
-                int h = 17;
-                h = h * 31 + (enabled ? 1 : 0);
-                h = h * 31 + BitConverter.ToInt32(BitConverter.GetBytes(start), 0);
-                h = h * 31 + BitConverter.ToInt32(BitConverter.GetBytes(at100x), 0);
-                h = h * 31 + BitConverter.ToInt32(BitConverter.GetBytes(maxMult), 0);
-                h = h * 31 + (anchorDown ? 1 : 0);
-                return h;
+                tag = sgm.def.itemDroppedOnShear;
+                fullMass = Mathf.Max(0f, sgm.def.dropMass);
             }
+            else
+            {
+                var wfs = go.GetSMI<WellFedShearable.Instance>();
+                if (wfs?.def != null)
+                {
+                    tag = wfs.def.itemDroppedOnShear;
+                    fullMass = Mathf.Max(0f, wfs.def.dropMass);
+                }
+            }
+
+            if (!tag.IsValid || fullMass <= 0f)
+                return false;
+
+            dropTag = tag;
+            dropMass = fullMass;
+            percent01 = pct01;
+            return true;
         }
 
-        private void UpgradeVisualScalingConfigIfNeeded()
-        {
-            if (visualScaleConfigHash == CURRENT_VISUAL_CONFIG_HASH)
-                return;
-
-            // Overwrite serialized instance fields with the new compiled defaults
-            ENABLE_VISUAL_SCALING = DEFAULT_ENABLE_VISUAL_SCALING;
-            SCALE_AT_START_MASS = DEFAULT_SCALE_AT_START_MASS;
-            SCALE_AT_100X_MASS = DEFAULT_SCALE_AT_100X_MASS;
-            MAX_MASS_MULTIPLE_FOR_MAX_SCALE = DEFAULT_MAX_MULTIPLE_FOR_MAX_SCALE;
-            ANCHOR_DOWNWARD = DEFAULT_ANCHOR_DOWNWARD;
-
-            visualScaleConfigHash = CURRENT_VISUAL_CONFIG_HASH;
-
-            // Ensure visuals are refreshed with the new config
-            NotifyVisualScaler();
-        }
+        // Optional: expose body mass for other patches (internal scope)
+        internal float GetBodyMass() => bodyMassKg;
     }
 
     [AddComponentMenu("KMonoBehaviour/Creatures/CreatureMassTrackerLink")]
@@ -381,21 +383,16 @@ namespace Rephysicalized
                 if (peAdult != null && peBaby != null)
                     peAdult.Mass = Mathf.Max(0.001f, peBaby.Mass);
             }
-
-            // Ensure visuals in sync next frame
-            GameScheduler.Instance.ScheduleNextFrame("MassCarryOverEnforce", _ =>
-            {
-                var pe = GetComponent<PrimaryElement>();
-                if (pe != null)
-                {
-                    pe.Mass = Mathf.Max(0.001f, pe.Mass);
-                    var scaler = GetComponent<Rephysicalized.Visuals.CreatureVisualScaler>();
-                    if (scaler != null) scaler.OnMassChanged();
-                }
-            });
         }
     }
-}
 
+    [HarmonyPatch(typeof(FertilityMonitor.Instance), nameof(FertilityMonitor.Instance.LayEgg))] 
+    public static class Patch_Fertility_LayEgg_MassDrain 
+    { public static void Postfix(FertilityMonitor.Instance __instance) 
+        { var go = __instance.gameObject; var tracker = go.GetComponent<CreatureMassTracker>();
+            if (tracker != null) tracker.OnEggLaid_DecreaseBodyMass(); } }
+
+
+}
 
 

@@ -6,22 +6,104 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using Rephysicalized.ModElements;
 using UnityEngine;
+
+using Rephysicalized.Content.System_Patches;
 
 namespace Rephysicalized
 {
+    public class ElectrobankWaterZapPatch : KMonoBehaviour, ISim1000ms
+    {
+        [MyCmpGet]
+        private Pickupable pickupable;
+        private Building building;
+        private Electrobank electrobank;
+        private KSelectable selectable;
+
+        public override void OnSpawn()
+        {
+            base.OnSpawn();
+            building = GetComponent<Building>();
+            electrobank = GetComponent<Electrobank>();
+            selectable = GetComponent<KSelectable>();
+        }
+
+        public override void OnCleanUp()
+        {
+            ZapComponent zap = GetComponent<ZapComponent>();
+            zap?.StopZapping();
+            base.OnCleanUp();
+        }
+
+        public void Sim1000ms(float dt)
+        {
+            bool isStored = pickupable?.KPrefabID?.HasTag(GameTags.Stored) ?? false;
+            bool isEquipped = pickupable?.KPrefabID?.HasTag(GameTags.Equipped) ?? false;
+
+            if (isStored || isEquipped)
+            {
+                GetComponent<ZapComponent>()?.StopZapping();
+                return;
+            }
+
+            bool isInWater = false;
+            int myCell = pickupable.cachedCell;
+
+
+            if (Grid.IsValidCell(myCell) && Grid.Element[myCell].HasTag(GameTags.AnyWater))
+            {
+                isInWater = true;
+            }
+
+            ZapComponent zap = GetComponent<ZapComponent>();
+            if (isInWater)
+            {
+                zap ??= gameObject.AddComponent<ZapComponent>();
+                zap.DecorativeBeamScale = 0.5f;
+                zap.DecorativeBeamOffset = new Vector3(0f, -0.2f, 0f);
+                zap.DamageBeamOffset = new Vector3(0f, -1.3f, 0f);
+                zap.DAMAGE_RATE = 2f;
+                zap.StartZapping();
+            }
+            else
+            {
+                zap?.StopZapping();
+            }
+        }
+    }
+
+
+    [HarmonyPatch(typeof(ElectrobankConfig), "CreatePrefab")]
+    internal static class ElectrobankConfig_CreatePrefab_WaterZap_Patch
+    {
+        private static void Postfix(ref GameObject __result)
+        {
+   
+            __result.AddComponent<ElectrobankWaterZapPatch>();
+        }
+    }
+
+    [HarmonyPatch(typeof(DisposableElectrobankConfig), "CreateDisposableElectrobank")]
+    internal static class DisposableElectrobankConfig_CreateDisposableElectrobank_WaterZap_Patch
+    {
+        private static void Postfix(GameObject __result)
+        {
+            if (__result == null) return;
+            __result.AddComponent<ElectrobankWaterZapPatch>();
+        }
+    }
     // Disposable Electrobank behavior:
     // - On empty, drop from storage and replace with:
     //    * DepletedUranium if uranium ore disposable
-    //    * The bank's primary element if raw metal disposable
-    //    * Otherwise: fall back to original (no Sand fallback)
+    //    * Crud if metal ore disposable
+
     [HarmonyPatch(typeof(Electrobank), "OnEmpty")]
     public static class Electrobank_OnEmpty_Disposable_Patch
     {
         public static bool Prefix(Electrobank __instance, bool dropWhenEmpty)
         {
-            try
-            {
+       
                 var go = __instance?.gameObject;
                 if (go == null)
                     return true;
@@ -53,7 +135,7 @@ namespace Rephysicalized
                 else if (kpid.PrefabTag == rawMetalTag)
                 {
                     // Raw metal disposable -> its primary element (e.g., IronOre, CopperOre, etc.)
-                    outHash = pe.ElementID;
+                    outHash = ModElementRegistration.CrudByproduct;
                     handled = true;
                 }
 
@@ -87,13 +169,8 @@ namespace Rephysicalized
 
                 // We handled the behavior; skip the original OnEmpty
                 return false;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError("[Rephysicalized] Electrobank_OnEmpty_Disposable_Patch failed: " + ex);
-                // Fall back to original behavior on error
-                return true;
-            }
+            
+          
         }
     }
 
@@ -115,7 +192,7 @@ namespace Rephysicalized
                 float mass = pe.Mass;
                 float temp = pe.Temperature;
 
-                pe.SetElement(SimHashes.IronOre);
+                pe.SetElement(ModElementRegistration.CrudByproduct);
 
                 // Preserve existing mass/temperature
                 pe.Mass = mass;
@@ -124,7 +201,7 @@ namespace Rephysicalized
         }
     }
 
-    // CreateDisposableElectrobank currently calls CreateLooseEntity without passing 'element',
+        // CreateDisposableElectrobank currently calls CreateLooseEntity without passing 'element',
     // which defaults to Creature. This enforces the element argument (e.g., Cuprite/UraniumOre)
     // so Disposable banks never end up as Creature.
     [HarmonyPatch(typeof(DisposableElectrobankConfig), "CreateDisposableElectrobank")]
@@ -149,6 +226,28 @@ namespace Rephysicalized
                 pe.Mass = mass;
                 pe.Temperature = temp;
             }
+        }
+    }
+
+    // Additional patch: Force raw metal disposable base element to CrudByproduct at creation
+    [HarmonyPatch(typeof(DisposableElectrobankConfig), "CreateDisposableElectrobank")]
+    internal static class DisposableElectrobankConfig_CreateDisposableElectrobank_RawMetalBaseElement_Patch
+    {
+        private static void Postfix(GameObject __result, string id)
+        {
+            if (__result == null) return;
+            if (id != DisposableElectrobankConfig.ID_METAL_ORE) return;  // "DisposableElectrobank_RawMetal"
+
+            var pe = __result.GetComponent<PrimaryElement>();
+            if (pe == null) return;
+
+            float mass = pe.Mass;
+            float temp = pe.Temperature;
+
+            pe.SetElement(ModElementRegistration.CrudByproduct);
+
+            pe.Mass = mass;
+            pe.Temperature = temp;
         }
     }
 }

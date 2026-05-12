@@ -308,8 +308,7 @@ namespace Rephysicalized
         [HarmonyPostfix]
         private static void Postfix(BuildingDef def, string categoryEntryID, ref CodexEntry __result)
         {
-            try
-            {
+            
                 if (__result == null || def == null)
                     return;
 
@@ -348,11 +347,8 @@ namespace Rephysicalized
                         containers.Add(splitPanel);
                 }
             }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[Rephysicalized] NuclearReactor_CodexPanels_Patch.Postfix failed: {e}");
-            }
-        }
+          
+        
 
         private static List<ContentContainer> GetEntryContainers(CodexEntry entry)
         {

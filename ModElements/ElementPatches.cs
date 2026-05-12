@@ -98,6 +98,13 @@ namespace Rephysicalized.ModElements
 			
                 AddTagsToElementAndEnable(ModElementRegistration.AshByproduct, new Tag[] { GameTags.Farmable });
                 AddTagsToElementAndEnable(ModElementRegistration.CrudByproduct, new Tag[] { GameTags.BuildableRaw });
+                AddTagsToElementAndEnable(SimHashes.Ice, new Tag[] { GameTags.Transparent });
+                AddTagsToElementAndEnable(SimHashes.Lime, new Tag[] { GameTags.PreciousRock });
+                AddTagsToElementAndEnable(SimHashes.Lime, new Tag[] { GameTags.BuildableAny });
+                AddTagsToElementAndEnable(SimHashes.Lime, new Tag[] { GameTags.BuildableRaw });
+
+                AddTagsToElementAndEnable(SimHashes.SuperCoolant, new Tag[] { GameTags.LubricatingOil });
+                AddTagsToElementAndEnable(SimHashes.ViscoGel, new Tag[] { GameTags.LubricatingOil });
 
                 AddTagsToElementAndEnable(SimHashes.Dirt, new[] { ModTags.RichSoil });
             AddTagsToElementAndEnable(ModElementRegistration.AshByproduct.SimHash, new[] { ModTags.RichSoil });
@@ -148,12 +155,10 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
     }
 }
 
-
-    internal class UraniumPatches
+    internal class ElementalPatches
     {
-        /// <summary>
-        /// Set melting temperature (highTemp) for uranium-family elements to 1405°F.
-        /// </summary>
+
+
         [HarmonyPatch(typeof(ElementLoader))]
         [HarmonyPatch(nameof(ElementLoader.CollectElementsFromYAML))]
         public static class Patch_ElementLoader_CollectElementsFromYAML_UraniumMelting
@@ -191,20 +196,54 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
    
                 SetHighTempSecondary(__result, nameof(SimHashes.MoltenSucrose), ashByproductId, 0.2f);
 
-           
-                SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Oxygen), 0.50f);
+                SetHighTempPrimary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Oxygen));
+                SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Iron), 0.6f);
               
-                SetHighTempSecondary(__result, nameof(SimHashes.Cinnabar), nameof(SimHashes.SulfurGas), 0.14f);
 
-               
+            
+
                 SetHighTempSecondary(__result, nameof(SimHashes.LiquidGunk), nameof(SimHashes.RefinedCarbon), 0.20f);
 
                 SetHighTempPrimary(__result, nameof(SimHashes.OxyRock), nameof(SimHashes.Iridium));
-                SetSublimation(__result, nameof(SimHashes.OxyRock), 1f);
+
+                SetSublimation(__result, nameof(SimHashes.OxyRock), 1f, 0.2f);
+                SetSublimation(__result, nameof(SimHashes.ToxicMud), 1f, 0.02f);
+                SetSublimation(__result, nameof(SimHashes.ToxicSand), 1f, 0.02f);
+                SetSublimation(__result, nameof(SimHashes.Corium), 1f, 0.2f);
+                SetMolarMass(__result, nameof(SimHashes.RefinedLipid), 451f);
+
+
                 SetHighTempSecondary(__result, nameof(SimHashes.OxyRock), nameof(SimHashes.Oxygen), 0.12f);
-            }
-              
+
+                SetHighTempSecondary(__result, nameof(SimHashes.Cinnabar), nameof(SimHashes.Sulfur), 0.14f);
+                SetHighTempSecondary(__result, nameof(SimHashes.MaficRock), nameof(SimHashes.Iron), 0.08f);
+
+                if (Config.Instance.RephysicalizedMetalOre)
+
+                {
+                    SetHighTempSecondary(__result, nameof(SimHashes.IronOre), nameof(SimHashes.IgneousRock), 0.33f);
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.Cuprite), nameof(SimHashes.SolidOxygen), 1f - 0.8f);
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.GoldAmalgam), nameof(SimHashes.SolidMercury), 0.33f);
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.Wolframite), nameof(SimHashes.Rust), 0.4f);
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.NickelOre), nameof(SimHashes.Sulfur), 1f - 0.73f);
+
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.Cobaltite), nameof(SimHashes.Sulfur), 1f - 0.71f);
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.AluminumOre), nameof(SimHashes.SolidOxygen), 1f - 0.6f);
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.FoolsGold), nameof(SimHashes.Sulfur), 1f - 0.64f);
                 }
+
+
+
+            }
+
+        }
             
 
             private static void SetHighTempSecondary(List<ElementEntry> entries, string elementId, string oreId, float oreMassConversion)
@@ -225,7 +264,7 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
             entry.highTempTransitionTarget = oreId;
         
         }
-        private static void SetSublimation(List<ElementEntry> entries, string elementId, float SublimateEfficiency)
+        private static void SetSublimation(List<ElementEntry> entries, string elementId, float SublimateEfficiency, float SublimateRate)
         {
             var entry = entries?.FirstOrDefault(e => e.elementId == elementId);
             if (entry == null)
@@ -233,10 +272,23 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
 
             entry.sublimateEfficiency = SublimateEfficiency;
 
+            entry.sublimateRate = SublimateRate;
+
+        }
+        private static void SetMolarMass(List<ElementEntry> entries, string elementId, float molarMass)
+        {
+            var entry = entries?.FirstOrDefault(e => e.elementId == elementId);
+            if (entry == null)
+                return;
+
+            entry.molarMass = molarMass;
+
+
+
         }
     }
 }
-            
-        
-    
+
+
+
 

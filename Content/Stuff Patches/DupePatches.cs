@@ -88,12 +88,10 @@ namespace Rephysicalized
     }
 
 
-    // Scales calorie use and (for bionics) power drain in proportion to actual healing rate.
-    // +100% calories at 100 HP/cycle; +50% power at 100 HP/cycle (configurable), with safety caps.
-    // No status items are created; the calories modifier shows as a standard DUPLICANTS.MODIFIERS entry.
+
     [SkipSaveFileSerialization]
 
-        public sealed class HealingConsumptionScaler : KMonoBehaviour, ISim4000ms
+        public sealed class HealingConsumptionScaler : KMonoBehaviour, ISim1000ms
         {
             private const float SecondsPerCycle = 600f;
             private const string BionicWattageModId = "rephys_healing_wattage";
@@ -115,9 +113,8 @@ namespace Rephysicalized
 
             // Tuning
             [SerializeField] public float caloriesPercentPer100HpPerCycle = 100f; // +100% at 100 HP/cycle
-            [SerializeField] public float powerPercentPer100HpPerCycle = 50f;     // +50% at 100 HP/cycle (bionics only)
             [SerializeField] public float maxCalorieMultiplier = 5f;              // hard cap (5x baseline)
-            [SerializeField] public float maxPowerMultiplier = 5f;                // hard cap (5x baseline)
+
 
             // Debug throttling
             private float _lastHealLogTime;
@@ -134,9 +131,7 @@ namespace Rephysicalized
                 TryBindCore();
                 TryBindCaloriesDelta();
 
-                lastHP = Mathf.Max(0f, health != null ? health.hitPoints : 0f);
-
-              
+                lastHP = Mathf.Max(0f, health != null ? health.hitPoints : 0f);              
             }
 
             public override void OnCleanUp()
@@ -165,65 +160,75 @@ namespace Rephysicalized
                 base.OnCleanUp();
             }
 
-            public void Sim4000ms(float dt)
-            {
-                if (dt <= 0f) return;
+        public void Sim1000ms(float dt)
+        {
+            if (dt <= 0f) return;
 
-                if (!TryBindCore())
+            if (!TryBindCore())
+            {
+                if (DebugEnabled && Time.unscaledTime - _lastBindLogTime > 5f)
+                {
+                    _lastBindLogTime = Time.unscaledTime;
+
+                }
+                return;
+            }
+
+            if ((caloriesDeltaInst == null) || (caloriesDeltaMod == null))
+            {
+                if (!TryBindCaloriesDelta())
                 {
                     if (DebugEnabled && Time.unscaledTime - _lastBindLogTime > 5f)
                     {
                         _lastBindLogTime = Time.unscaledTime;
-                     
+
                     }
                     return;
                 }
+            }
 
-                if ((caloriesDeltaInst == null) || (caloriesDeltaMod == null))
+            float currentHP = health.hitPoints;
+            float dHP = Mathf.Max(0f, currentHP - lastHP);
+            lastHP = currentHP;
+
+            if (dHP <= 0.0001f)
+            {
+                // Not healing: reset modifiers and return
+                SetModifierValue(caloriesDeltaMod, 0f);
+
+                var smiOff = this.GetSMI<BionicBatteryMonitor.Instance>();
+                if (smiOff != null)
+                    smiOff.RemoveModifier(BionicWattageModId, true);
+
+                if (DebugEnabled && Time.unscaledTime - _lastHealLogTime > 5f)
                 {
-                    if (!TryBindCaloriesDelta())
-                    {
-                        if (DebugEnabled && Time.unscaledTime - _lastBindLogTime > 5f)
-                        {
-                            _lastBindLogTime = Time.unscaledTime;
-                         
-                        }
-                        return;
-                    }
+                    _lastHealLogTime = Time.unscaledTime;
+
+                }
+                return;
+            }
+
+            // HP regen rate
+            float regenPerSec = dHP / dt;
+            float regenPerCycle = regenPerSec * SecondsPerCycle;
+
+            // Drain bionic metal meter if healing (1f metal = 1 hp) and has enough metal
+            if (Config.Instance.BionicMetalMeter)
+            { 
+            Amount metalAmount = Db.Get().Amounts.Get("BionicMetalMeter");
+            if (metalAmount != null)
+            {
+                AmountInstance metalInst = metalAmount.Lookup(gameObject);
+                if (metalInst != null && metalInst.value >= 1f)
+                {
+                    metalInst.ApplyDelta(-dHP * 0.2f);
                 }
 
-                float currentHP = health.hitPoints;
-                float dHP = Mathf.Max(0f, currentHP - lastHP);
-                lastHP = currentHP;
-
-                if (dHP <= 0.0001f)
-                {
-                    // Not healing: reset modifiers and return
-                    SetModifierValue(caloriesDeltaMod, 0f);
-
-                    var smiOff = this.GetSMI<BionicBatteryMonitor.Instance>();
-                    if (smiOff != null)
-                        smiOff.RemoveModifier(BionicWattageModId, true);
-
-                    if (DebugEnabled && Time.unscaledTime - _lastHealLogTime > 5f)
-                    {
-                        _lastHealLogTime = Time.unscaledTime;
+            } }
              
-                    }
-                    return;
-                }
-
-                // HP regen rate
-                float regenPerSec = dHP / dt;
-                float regenPerCycle = regenPerSec * SecondsPerCycle;
-
-                // Multipliers (note: current design uses /500f per your code)
                 float calMult = 1f + (regenPerCycle / 100f) * (caloriesPercentPer100HpPerCycle / 100f);
-                float powerMult = 1f + (regenPerCycle / 100f) * (powerPercentPer100HpPerCycle / 100f);
 
                 if (maxCalorieMultiplier > 0f) calMult = Mathf.Min(calMult, maxCalorieMultiplier);
-                if (maxPowerMultiplier > 0f) powerMult = Mathf.Min(powerMult, maxPowerMultiplier);
-
                 // Apply calories scaling (baseline-preserving additive)
                 if (caloriesDeltaInst != null && caloriesDeltaMod != null)
                 {
@@ -239,46 +244,7 @@ namespace Rephysicalized
                     }
                 }
 
-                // Apply bionic power scaling if the monitor exists (uses public API, no reflection)
-                var smi = this.GetSMI<BionicBatteryMonitor.Instance>();
-                if (smi != null)
-                {
-                    if (powerMult <= 1.0001f)
-                    {
-                        smi.RemoveModifier(BionicWattageModId, true);
-                        if (DebugEnabled && Time.unscaledTime - _lastBionicLogTime > 2f)
-                        {
-                            _lastBionicLogTime = Time.unscaledTime;
-                        }
-                    }
-                    else
-                    {
-                        float baselineW = smi.GetBaseWattage() + SumOtherModifiers(smi.Modifiers, BionicWattageModId);
-                        float extraWatts = baselineW * (powerMult - 1f);
 
-                        var name = STRINGS.DUPLICANTS.HEALINGMETABOLISM.NAME;
-                        var mod = new BionicBatteryMonitor.WattageModifier(
-                            id: BionicWattageModId,
-                            name: name,
-                            value: extraWatts,
-                            potentialValue: extraWatts
-                        );
-
-                        smi.AddOrUpdateModifier(mod, true);
-
-                        if (DebugEnabled && Time.unscaledTime - _lastBionicLogTime > 1.0f)
-                        {
-                            _lastBionicLogTime = Time.unscaledTime;
-                        }
-                    }
-                }
-                else
-                {
-                    if (DebugEnabled && Time.unscaledTime - _lastBionicLogTime > 5f)
-                    {
-                        _lastBionicLogTime = Time.unscaledTime;
-                    }
-                }
             }
 
             private static float SumOtherModifiers(List<BionicBatteryMonitor.WattageModifier> list, string excludeId)

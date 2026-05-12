@@ -14,7 +14,6 @@ namespace Rephysicalized.Patches
         {
             if (go == null) return;
             go.AddOrGet<ConditionerPowerScaler>();
-      //      ConditionerPowerScaler.MaybeLog($"[CondPowerScaler] Attached via AirConditionerConfig to prefab {go.name}");
         }
     }
 
@@ -26,7 +25,6 @@ namespace Rephysicalized.Patches
         {
             if (go == null) return;
             go.AddOrGet<ConditionerPowerScaler>();
-        //    ConditionerPowerScaler.MaybeLog($"[CondPowerScaler] Attached via LiquidConditionerConfig to prefab {go.name}");
         }
     }
 
@@ -39,7 +37,6 @@ namespace Rephysicalized.Patches
         {
             if (__instance == null) return;
             __instance.gameObject.AddOrGet<ConditionerPowerScaler>();
-          //  ConditionerPowerScaler.MaybeLog($"[CondPowerScaler] Ensured on AirConditioner.OnSpawn for {__instance.gameObject.name}");
         }
     }
 
@@ -87,7 +84,6 @@ namespace Rephysicalized.Patches
             // Cache output cell (same as used by AirConditioner internally)
             try { outputCell = building.GetUtilityOutputCell(); } catch { outputCell = Grid.InvalidCell; }
 
-            MaybeLog($"[CondPowerScaler] OnSpawn {gameObject.name} mode={(air.isLiquidConditioner ? "Liquid" : "Gas")} baseWatts={baseWatts} baselineShc={baselineShc} outCell={outputCell}");
         }
 
         public void Sim1000ms(float dt)
@@ -112,7 +108,6 @@ namespace Rephysicalized.Patches
             float shc = ProbeSHCFromConduitOutput();
             if (shc > 0f)
             {
-                ThrottledProbeLog($"[CondPowerScaler] {gameObject.name} SHC from conduit out={shc:0.###}");
                 return shc;
             }
 
@@ -120,7 +115,6 @@ namespace Rephysicalized.Patches
             shc = ProbeSHCFromConduitConsumer();
             if (shc > 0f)
             {
-                ThrottledProbeLog($"[CondPowerScaler] {gameObject.name} SHC from conduit consumer={shc:0.###}");
                 return shc;
             }
 
@@ -151,10 +145,8 @@ namespace Rephysicalized.Patches
             }
             catch (Exception e)
             {
-                MaybeLog($"[CondPowerScaler] Probe SHC failed on {gameObject.name}: {e}");
             }
 
-            ThrottledProbeLog($"[CondPowerScaler] {gameObject.name} no valid fluid detected");
             return 0f;
         }
 
@@ -185,7 +177,6 @@ namespace Rephysicalized.Patches
             }
             catch (Exception e)
             {
-                MaybeLog($"[CondPowerScaler] Conduit out probe failed on {gameObject.name}: {e}");
             }
             return 0f;
         }
@@ -241,7 +232,6 @@ namespace Rephysicalized.Patches
             }
             catch (Exception e)
             {
-                MaybeLog($"[CondPowerScaler] Conduit consumer probe failed on {gameObject.name}: {e}");
             }
 
             return 0f;
@@ -254,40 +244,17 @@ namespace Rephysicalized.Patches
             // Avoid tiny jitter; still log occasionally if nothing changes
             if (!float.IsNaN(lastApplied) && Mathf.Abs(lastApplied - watts) < 0.1f)
             {
-                ThrottledApplyLog($"[CondPowerScaler] {gameObject.name} stable watts={watts:0.##} (base={baseWatts:0.##}) reason={reason}");
                 return;
             }
 
             energyConsumer.BaseWattageRating = watts;
             lastApplied = watts;
 
-            MaybeLog($"[CondPowerScaler] {gameObject.name} set watts={watts:0.##} (base={baseWatts:0.##}) reason={reason}");
         }
 
-        private void ThrottledProbeLog(string msg)
-        {
-            if (!DebugEnabled) return;
-            if (Time.unscaledTime - lastProbeLog > 2f)
-            {
-                lastProbeLog = Time.unscaledTime;
-                Debug.Log(msg);
-            }
-        }
+       
+     
 
-        private void ThrottledApplyLog(string msg)
-        {
-            if (!DebugEnabled) return;
-            if (Time.unscaledTime - lastApplyLog > 2f)
-            {
-                lastApplyLog = Time.unscaledTime;
-                Debug.Log(msg);
-            }
-        }
-
-        public static void MaybeLog(string msg)
-        {
-            if (DebugEnabled)
-                Debug.Log(msg);
-        }
+      
     }
 }

@@ -9,7 +9,6 @@ namespace Rephysicalized.Patches
     {
         private static void Postfix(GameObject go)
         {
-            // Attach the controller that manages radiation emission while converting
             go.AddOrGet<CentrifugeRadiationDuringFabrication>();
         }
     }
@@ -64,7 +63,6 @@ namespace Rephysicalized.Patches
             if (emitter == null)
                 return;
 
-            // Prefer an explicit API if available
             try { emitter.SetEmitting(on); } catch { /* older versions may not have SetEmitting */ }
 
             // Fallbacks to ensure effect

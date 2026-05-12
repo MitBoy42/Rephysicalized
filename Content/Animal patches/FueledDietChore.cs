@@ -112,10 +112,7 @@ namespace Rephysicalized.Chores
                     smi.standCell = Grid.IsValidCell(targetCell)
                         ? targetCell
                         : Grid.PosToCell(smi.transform.position);
-                }
-
-                )
-               ;
+                }     ) ;
 
             moving
                 .DefaultState(moving.moving)
@@ -177,12 +174,12 @@ namespace Rephysicalized.Chores
                     if (tcNow != smi.activeMoveCell)
                     {
                         // Try to re-path smoothly if reachable; otherwise abort and let brain reacquire
-                        if (smi.navigator != null && CanReachCellSafe(smi.navigator, tcNow))
-                        {
-                            smi.standCell = tcNow;
-                            smi.GoTo(moving.moving); // re-enter to issue a fresh MoveTo to the new cell
-                            return;
-                        }
+                if (smi.navigator != null && FueledDietUtils.CanReachCellSafe(smi.navigator, tcNow))
+                {
+                    smi.standCell = tcNow;
+                    smi.GoTo(moving.moving);
+                    return;
+                }
                         else
                         {
                             smi.GoTo(abort);
@@ -200,7 +197,7 @@ namespace Rephysicalized.Chores
                     // Reachability guard
                     if (smi.navigator != null)
                     {
-                        bool canReach = CanReachCellSafe(smi.navigator, smi.standCell);
+                        bool canReach = FueledDietUtils.CanReachCellSafe(smi.navigator, smi.standCell);
                         if (!canReach)
                         {
                             smi.unreachableTimer += dt;
@@ -210,10 +207,7 @@ namespace Rephysicalized.Chores
                                 return;
                             }
                         }
-                        else
-                        {
-                            smi.unreachableTimer = 0f;
-                        }
+                        else smi.unreachableTimer = 0f;
                     }
 
                     // Stuck/no progress: after a few seconds, abort (prevents loop)
@@ -311,8 +305,7 @@ namespace Rephysicalized.Chores
                         return;
                     }
 
-                    // Must be at or adjacent to target cell to consume
-                    if (!IsAtOrAdjacent(Grid.PosToCell(smi.gameObject), smi.standCell))
+                    if (!FueledDietUtils.IsAtOrAdjacent(Grid.PosToCell(smi.gameObject), smi.standCell))
                     {
                         smi.GoTo(gulping.pst);
                         return;
@@ -400,14 +393,12 @@ namespace Rephysicalized.Chores
                 if (!string.IsNullOrEmpty(name) && kbac.HasAnimation(name))
                     return name;
             }
-
             if (phase == AnimPhase.Loop)
             {
                 if (kbac.HasAnimation("idle_loop"))
                     return "idle_loop";
                 return null;
             }
-
             return null;
         }
 
@@ -418,75 +409,20 @@ namespace Rephysicalized.Chores
 
             var controller = go.GetComponent<FueledDietController>();
             var storage = controller != null ? controller.FuelStorage : null;
-            if (storage == null)
-                return true;
+            if (storage == null) return true;
 
-            float cap = controller != null && controller.FuelStorageCapacityKg > 0f ? controller.FuelStorageCapacityKg : storage.capacityKg;
+            float cap = controller != null && controller.FuelStorageCapacityKg > 0f 
+                ? controller.FuelStorageCapacityKg 
+                : storage.capacityKg;
             if (cap <= 0f) return false;
 
-            float used = GetStorageUsedKg(storage);
+            float used = FueledDietUtils.GetStorageUsedKg(storage);
             float remain = Mathf.Max(0f, cap - used);
 
-            float threshold = GetRefillThresholdKg(go, storage);
-            if (threshold > 0f)
-                return used < threshold;
+            float threshold = FueledDietUtils.GetRefillThresholdKg(go, storage);
+            if (threshold > 0f) return used < threshold;
 
             return remain > 0.01f;
-
-        }
-
-        private static float GetStorageUsedKg(Storage storage)
-        {
-            float used = 0f;
-            if (storage != null && storage.items != null)
-            {
-                for (int i = 0; i < storage.items.Count; i++)
-                {
-                    var go = storage.items[i];
-                    var pe = go != null ? go.GetComponent<PrimaryElement>() : null;
-                    if (pe != null) used += pe.Mass;
-                }
-            }
-            return used;
-        }
-
-        private static float GetRefillThresholdKg(GameObject go, Storage storage)
-        {
-            if (go == null) return 0f;
-            var controller = go.GetComponent<FueledDietController>();
-            if (controller == null) return 0f;
-
-            float threshold = controller.RefillThreshold;
-            if (float.IsNaN(threshold) || threshold <= 0f)
-                return 0f;
-
-            return threshold;
-        }
-
-        // Navigator has CanReach(int) in many builds; guard it
-        private static bool CanReachCellSafe(Navigator nav, int cell)
-        {
-            try
-            {
-                if (nav == null || !Grid.IsValidCell(cell)) return false;
-                return nav.CanReach(cell);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        // Range check for consumption: at or orthogonally adjacent to the target cell
-        private static bool IsAtOrAdjacent(int myCell, int targetCell)
-        {
-            if (!Grid.IsValidCell(myCell) || !Grid.IsValidCell(targetCell)) return false;
-            if (myCell == targetCell) return true;
-            if (myCell == Grid.OffsetCell(targetCell, 1, 0)) return true;
-            if (myCell == Grid.OffsetCell(targetCell, -1, 0)) return true;
-            if (myCell == Grid.OffsetCell(targetCell, 0, 1)) return true;
-            if (myCell == Grid.OffsetCell(targetCell, 0, -1)) return true;
-            return false;
         }
 
         internal enum ConsumeResult { Pending, Success, Done }
@@ -514,12 +450,12 @@ namespace Rephysicalized.Chores
                 float cap = controller != null && controller.FuelStorageCapacityKg > 0f ? controller.FuelStorageCapacityKg : storage.capacityKg;
                 if (cap <= 0f) return false;
 
-                float used = GetStorageUsedKg(storage);
+                float used = FueledDietUtils.GetStorageUsedKg(storage);
                 float remain = Mathf.Max(0f, cap - used);
 
-                float threshold = GetRefillThresholdKg(go, storage);
+                float threshold = FueledDietUtils.GetRefillThresholdKg(go, storage);
                 if (threshold > 0f)
-                    return (used < threshold) && (remain > MinTakeKg);
+                    return used < threshold && remain > MinTakeKg;
 
                 return remain > MinTakeKg;
             }
@@ -527,10 +463,8 @@ namespace Rephysicalized.Chores
 
         // Schedules an immediate and delayed brain nudge to force chore/monitor re-evaluation
         private static void NudgeBrainSoon(GameObject go, float delay = 0.2f)
-        {
-          
-                    GameScheduler.Instance.Schedule("FueledDiet.Recheck", delay, _ => PrioritizeUpdateBrain(go));
-              
+        { 
+                    GameScheduler.Instance.Schedule("FueledDiet.Recheck", delay, _ => PrioritizeUpdateBrain(go));   
         }
 
         // Fully abort seeking/eating: clear monitor target, end current chore via ChoreDriver, and nudge brain
@@ -538,7 +472,6 @@ namespace Rephysicalized.Chores
         {
             if (smi == null) return;
 
-        
                 // Clear local target (for SM transitions)
                 smi.TargetGO = null;
 
@@ -546,10 +479,7 @@ namespace Rephysicalized.Chores
                 var mon = smi.gameObject != null ? smi.gameObject.GetSMI<SolidFuelMonitor.Instance>() : null;
                 if (mon != null)
                     mon.targetGO = null;
-         
 
-         
-            
                 // Gracefully stop the running chore via ChoreDriver
                 var driver = smi.gameObject != null ? smi.gameObject.GetComponent<ChoreDriver>() : null;
                 if (driver != null && driver.HasChore())

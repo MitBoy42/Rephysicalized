@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using static STRINGS.BUILDINGS.PREFABS;
 
 namespace Rephysicalized
 {
@@ -82,20 +83,10 @@ namespace Rephysicalized
         }
     }
 
-    // Proxies now persist to CritterMassFilter to ensure values survive deselection/save/load.
     public sealed class CritterMassMinProxy : MonoBehaviour, IUserControlledCapacity
     {
         private CritterMassFilter filter;
-
-        private void Awake()
-        {
-            // Ensure filter exists on existing saves too.
-            filter = gameObject.AddOrGet<CritterMassFilter>();
-        }
-
-        public CritterMassMinProxy() { }
-        public CritterMassMinProxy(IUserControlledCapacity _) { /* kept for compatibility; unused now */ }
-
+        private void Awake() => filter = gameObject.AddOrGet<CritterMassFilter>();
         public float UserMaxCapacity
         {
             get => filter != null ? filter.MinMassKg : 0f;
@@ -106,30 +97,18 @@ namespace Rephysicalized
                 filter.MinMassKg = clamped;
             }
         }
-
         public float AmountStored => GetComponent<PrimaryElement>()?.Mass ?? 0f;
         public float MinCapacity => CritterMassFilter.AbsoluteMinKg;
         public float MaxCapacity => CritterMassFilter.AbsoluteMaxKg;
         public bool WholeValues => false;
-
-        // Fix CS8702 for runtimes without default interface impl support
         public bool ControlEnabled() => true;
-
         public LocString CapacityUnits => (LocString)"kg";
     }
 
     public sealed class CritterMassMaxProxy : MonoBehaviour, IUserControlledCapacity
     {
         private CritterMassFilter filter;
-
-        private void Awake()
-        {
-            filter = gameObject.AddOrGet<CritterMassFilter>();
-        }
-
-        public CritterMassMaxProxy() { }
-        public CritterMassMaxProxy(IUserControlledCapacity _) { }
-
+        private void Awake() => filter = gameObject.AddOrGet<CritterMassFilter>();
         public float UserMaxCapacity
         {
             get => filter != null ? filter.MaxMassKg : 0f;
@@ -140,19 +119,15 @@ namespace Rephysicalized
                 filter.MaxMassKg = clamped;
             }
         }
-
         public float AmountStored => GetComponent<PrimaryElement>()?.Mass ?? 0f;
         public float MinCapacity => CritterMassFilter.AbsoluteMinKg;
         public float MaxCapacity => CritterMassFilter.AbsoluteMaxKg;
         public bool WholeValues => false;
-
-        // Fix CS8702
         public bool ControlEnabled() => true;
-
         public LocString CapacityUnits => (LocString)"kg";
     }
 
-    // Marker to tag each cloned CapacityControlSideScreen as Min or Max (used at runtime for detection).
+    // Marker component to positively identify our cloned UI instances
     public sealed class CritterMassScreenMarker : KMonoBehaviour
     {
         public enum Kind { Min, Max }
@@ -172,7 +147,6 @@ namespace Rephysicalized.Patches
             go.AddOrGet<Rephysicalized.CritterMassMinProxy>();
             go.AddOrGet<Rephysicalized.CritterMassMaxProxy>();
 
-            // Keep original reflection fallback for capacity check delegate
             var def = go.AddOrGetDef<FixedCapturePoint.Def>();
             if (def != null) TryWrapIsAmountStoredOverCapacity(def);
         }
@@ -239,7 +213,6 @@ namespace Rephysicalized.Patches
         }
     }
 
-    // Specific signature patch (if present)
     [HarmonyPatch(typeof(FixedCapturePoint.Instance), "CanCapturableBeCapturedAtCapturePoint", new[] {
         typeof(FixedCapturableMonitor.Instance), typeof(FixedCapturePoint.Instance), typeof(CavityInfo), typeof(int)
     })]
@@ -266,7 +239,6 @@ namespace Rephysicalized.Patches
         }
     }
 
-    // Generic fallback using nested Instance reflection
     [HarmonyPatch]
     public static class FixedCapturePoint_CanCapture_Generic_MassGate_Patch
     {
@@ -357,14 +329,70 @@ namespace Rephysicalized.Patches
         internal const string MinRefName = "Rephys_MassMin";
         internal const string MaxRefName = "Rephys_MassMax";
 
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(DetailsScreen.Refresh), typeof(GameObject))]
+        public static void Refresh_Prefix(DetailsScreen __instance, GameObject go)
+        {
+            try
+            {
+                var sideScreensField = AccessTools.Field(typeof(DetailsScreen), "sideScreens");
+                var list = sideScreensField?.GetValue(__instance) as List<DetailsScreen.SideScreenRef>;
+                if (list == null) return;
+
+                // Only purge our refs when switching to a target that is NOT our eligible building
+                if (!IsEligibleTarget(go))
+                    RemoveMassScreenRefs(list);
+            }
+            catch { }
+        }
+
         [HarmonyPostfix]
-        [HarmonyPatch(nameof(DetailsScreen.Refresh))]
+        [HarmonyPatch(nameof(DetailsScreen.Refresh), typeof(GameObject))]
         public static void Refresh_Postfix(DetailsScreen __instance, GameObject go)
         {
             UpdateMassSideScreensForTarget(__instance, go);
         }
 
-        // Set the left-hand label using the private LocText field "title"
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(DetailsScreen.OnDeactivate))]
+        public static void OnDeactivate_Postfix(DetailsScreen __instance)
+        {
+            PurgeMassSideScreens(__instance);
+        }
+
+        private static bool IsEligibleTarget(GameObject go)
+        {
+            if (go == null) return false;
+            // Must have our filter AND be Critter Dropoff/Pickup to add our screens
+            return go.GetComponent<Rephysicalized.CritterMassFilter>() != null && IsCritterPickupOrDropoff(go);
+        }
+
+        internal static bool IsCritterPickupOrDropoff(GameObject go)
+        {
+            if (go == null) return false;
+            var kpid = go.GetComponent<KPrefabID>();
+            if (kpid != null)
+            {
+                if (kpid.PrefabTag == CritterPickUpConfig.ID || kpid.PrefabTag == CritterDropOffConfig.ID)
+                    return true;
+            }
+            // Fallback heuristics
+            return go.GetComponent<FixedCapturePoint>() != null
+               ;
+        }
+
+        private static void PurgeMassSideScreens(DetailsScreen screen)
+        {
+            try
+            {
+                var sideScreensField = AccessTools.Field(typeof(DetailsScreen), "sideScreens");
+                var list = sideScreensField?.GetValue(screen) as List<DetailsScreen.SideScreenRef>;
+                if (list == null) return;
+                RemoveMassScreenRefs(list);
+            }
+            catch { }
+        }
+
         private static void TrySetLeftTitle(CapacityControlSideScreen screen, string text)
         {
             try
@@ -375,7 +403,7 @@ namespace Rephysicalized.Patches
                 if (lt != null)
                     lt.SetText(text);
             }
-            catch { /* best effort */ }
+            catch { }
         }
 
         private static void UpdateMassSideScreensForTarget(DetailsScreen screen, GameObject target)
@@ -386,14 +414,15 @@ namespace Rephysicalized.Patches
                 var list = sideScreensField?.GetValue(screen) as List<DetailsScreen.SideScreenRef>;
                 if (list == null) return;
 
-                bool eligible = target != null && target.GetComponent<Rephysicalized.CritterMassFilter>() != null;
-                var capacityRef = list.FirstOrDefault(r => r?.screenPrefab != null && r.screenPrefab.GetType().Name == "CapacityControlSideScreen");
+                // Drop old clones first
+                RemoveMassScreenRefs(list);
 
-                if (!eligible || capacityRef == null)
-                {
-                    RemoveMassScreenRefs(list);
+                if (!IsEligibleTarget(target))
                     return;
-                }
+
+                // Find any stock CapacityControlSideScreen to clone
+                var capacityRef = list.FirstOrDefault(r => r?.screenPrefab != null && r.screenPrefab.GetType().Name == "CapacityControlSideScreen");
+                if (capacityRef == null) return;
 
                 if (!list.Any(r => r?.name == MinRefName))
                     list.Add(new DetailsScreen.SideScreenRef { name = MinRefName, screenPrefab = capacityRef.screenPrefab, offset = Vector2.zero, tab = DetailsScreen.SidescreenTabTypes.Config, screenInstance = null });
@@ -401,11 +430,9 @@ namespace Rephysicalized.Patches
                 if (!list.Any(r => r?.name == MaxRefName))
                     list.Add(new DetailsScreen.SideScreenRef { name = MaxRefName, screenPrefab = capacityRef.screenPrefab, offset = Vector2.zero, tab = DetailsScreen.SidescreenTabTypes.Config, screenInstance = null });
 
-                var originalRef = list.FirstOrDefault(r =>
-                    r?.screenInstance is CapacityControlSideScreen &&
-                    r.name != MinRefName && r.name != MaxRefName);
+                // Parent to same container as an existing instance if possible
+                var originalRef = list.FirstOrDefault(r => r?.screenInstance is CapacityControlSideScreen && r.name != MinRefName && r.name != MaxRefName);
                 var originalInstance = originalRef?.screenInstance as CapacityControlSideScreen;
-
                 var parentGO = GetSideScreenContainer(screen, list, originalInstance);
 
                 EnsureUniqueMassScreenInstance(list, capacityRef.screenPrefab as CapacityControlSideScreen, parentGO, MinRefName, "CapacityControlSideScreen (Min)");
@@ -420,7 +447,7 @@ namespace Rephysicalized.Patches
                         if (goInst != null && !goInst.activeSelf)
                             goInst.SetActive(true);
 
-                        css.SetTarget(target);
+                        css.SetTarget(target); // will be intercepted by our SetTarget prefix for clones
                     }
                 }
             }
@@ -429,13 +456,13 @@ namespace Rephysicalized.Patches
 
         private static GameObject GetSideScreenContainer(DetailsScreen screen, List<DetailsScreen.SideScreenRef> list, CapacityControlSideScreen originalInstance)
         {
+            if (originalInstance != null && originalInstance.transform?.parent != null)
+                return originalInstance.transform.parent.gameObject;
+
             var anyInst = list.Select(r => r?.screenInstance as Component)
                               .FirstOrDefault(c => c != null && c.transform.parent != null);
             if (anyInst?.transform?.parent != null)
                 return anyInst.transform.parent.gameObject;
-
-            if (originalInstance != null && originalInstance.transform?.parent != null)
-                return originalInstance.transform.parent.gameObject;
 
             var candidateFields = new[] { "sideScreenContent", "sideScreenContentBody", "sideScreenContainer", "sideScreensContent", "sideScreenContentRoot" };
             foreach (var name in candidateFields)
@@ -453,10 +480,10 @@ namespace Rephysicalized.Patches
         }
 
         public static void EnsureUniqueMassScreenInstance(List<DetailsScreen.SideScreenRef> list,
-                                                           CapacityControlSideScreen prefab,
-                                                           GameObject parent,
-                                                           string refName,
-                                                           string cloneName)
+                                                          CapacityControlSideScreen prefab,
+                                                          GameObject parent,
+                                                          string refName,
+                                                          string cloneName)
         {
             var r = list.FirstOrDefault(x => x != null && x.name == refName);
             if (r == null || prefab == null || parent == null) return;
@@ -466,20 +493,17 @@ namespace Rephysicalized.Patches
             {
                 var cloneGO = Util.KInstantiateUI(prefab.gameObject, parent, true);
                 cloneGO.name = cloneName;
+                cloneGO.SetActive(false);
 
                 var instance = cloneGO.GetComponent<CapacityControlSideScreen>();
                 r.screenInstance = instance;
 
-                // Tag the instance with a marker so runtime detection is trivial and reliable
+                // Mark this is our custom Mass screen and set the label
                 var marker = instance.gameObject.AddOrGet<Rephysicalized.CritterMassScreenMarker>();
                 bool isMin = refName == MinRefName;
                 marker.kind = isMin ? Rephysicalized.CritterMassScreenMarker.Kind.Min : Rephysicalized.CritterMassScreenMarker.Kind.Max;
 
-                // Set the label immediately using the private "title" LocText
                 TrySetLeftTitle(instance, isMin ? "Min" : "Max");
-
-                // Ensure it is active so it’s visible immediately
-                cloneGO.SetActive(true);
             }
         }
 
@@ -497,6 +521,7 @@ namespace Rephysicalized.Patches
                         {
                             var go = (r.screenInstance as Component)?.gameObject;
                             SafeDestroyUI(go);
+                            r.screenInstance = null;
                         }
                     }
                     catch { }
@@ -528,9 +553,6 @@ namespace Rephysicalized.Patches
         private const float B = 9801f;
         private const float A = 10000f / (B - 1f);
 
-        private const string MinRefName = DetailsScreen_MassScreens_Patch.MinRefName;
-        private const string MaxRefName = DetailsScreen_MassScreens_Patch.MaxRefName;
-
         private static float MassFromT(float t) => A * (Mathf.Pow(B, Mathf.Clamp01(t)) - 1f);
         private static float TFromMass(float mass)
         {
@@ -538,93 +560,42 @@ namespace Rephysicalized.Patches
             return Mathf.Log(1f + mass / A) / Mathf.Log(B);
         }
 
-        private static bool TryResolveMassScreenMode(CapacityControlSideScreen screen, out bool isMin)
+        private static bool IsOurClone(CapacityControlSideScreen s, out Rephysicalized.CritterMassScreenMarker.Kind kind)
         {
-            isMin = false;
-            var ds = screen.GetComponentInParent<DetailsScreen>(true);
-            if (ds == null) return false;
-
-            var sideScreensField = AccessTools.Field(typeof(DetailsScreen), "sideScreens");
-            var list = sideScreensField?.GetValue(ds) as List<DetailsScreen.SideScreenRef>;
-            if (list == null) return false;
-
-            var match = list.FirstOrDefault(r => r != null && r.screenInstance == (object)screen);
-            if (match == null) return false;
-
-            if (match.name == MinRefName) { isMin = true; return true; }
-            if (match.name == MaxRefName) { isMin = false; return true; }
-            return false;
+            kind = Rephysicalized.CritterMassScreenMarker.Kind.Min;
+            var m = s ? s.GetComponent<Rephysicalized.CritterMassScreenMarker>() : null;
+            if (m == null) return false;
+            kind = m.kind;
+            return true;
         }
 
-        // Cache the private UI fields we need to exclude/pick from
-        private static readonly FieldInfo FI_Title = AccessTools.Field(typeof(CapacityControlSideScreen), "title");            // big title LocText
-        private static readonly FieldInfo FI_Units = AccessTools.Field(typeof(CapacityControlSideScreen), "unitsLabel");       // "kg" LocText
-        private static readonly FieldInfo FI_Input = AccessTools.Field(typeof(CapacityControlSideScreen), "numberInput");      // KNumberInputField
         private static readonly FieldInfo FI_Target = AccessTools.Field(typeof(CapacityControlSideScreen), "target");
         private static readonly FieldInfo FI_Slider = AccessTools.Field(typeof(CapacityControlSideScreen), "slider");
+        private static readonly FieldInfo FI_Input = AccessTools.Field(typeof(CapacityControlSideScreen), "numberInput");
+        private static readonly FieldInfo FI_Units = AccessTools.Field(typeof(CapacityControlSideScreen), "unitsLabel");
 
-        // Robustly set the left-hand label that defaults to STRINGS.UI.UISIDESCREENS.CAPACITY_CONTROL_SIDE_SCREEN.MAX_LABEL
         private static void TrySetLeftTitle(CapacityControlSideScreen screen, string textNoColon)
         {
             try
             {
-                if (screen == null) return;
-
-                string desired = textNoColon?.EndsWith(":") == true ? textNoColon : $"{textNoColon}:";
-
-                // 1) Prefer an exact private LocText field whose current text equals the localized MAX_LABEL or starts with "Max"
-                var allFields = AccessTools.GetDeclaredFields(typeof(CapacityControlSideScreen));
-                string maxLabelString = global::STRINGS.UI.UISIDESCREENS.CAPACITY_CONTROL_SIDE_SCREEN.MAX_LABEL; // e.g. "Max:"
-
-                foreach (var f in allFields)
-                {
-                    if (f.FieldType != typeof(LocText)) continue;
-                    var lt = f.GetValue(screen) as LocText;
-                    if (lt == null) continue;
-
-                    var curr = lt.text?.Trim();
-                    if (string.IsNullOrEmpty(curr)) continue;
-
-                    if (string.Equals(curr, maxLabelString, StringComparison.Ordinal)
-                        || curr.StartsWith("Max", StringComparison.OrdinalIgnoreCase))
-                    {
-                        lt.SetText(desired);
-                        return;
-                    }
-                }
-
-                // 2) Fallback: scan children LocTexts while excluding the big title, units label, and anything under the number input
-                var titleLt = FI_Title?.GetValue(screen) as LocText;
-                var unitsLt = FI_Units?.GetValue(screen) as LocText;
-                var num = FI_Input?.GetValue(screen) as KNumberInputField;
-                Transform inputRoot = num ? num.transform : null;
-
-                foreach (var lt in screen.GetComponentsInChildren<LocText>(true))
-                {
-                    if (lt == null) continue;
-                    if (lt == titleLt) continue;
-                    if (lt == unitsLt) continue;
-                    if (inputRoot != null && lt.transform.IsChildOf(inputRoot)) continue;
-
-                    // First remaining LocText is the left label in stock prefab
-                    lt.SetText(desired);
-                    return;
-                }
+                var fiTitle = AccessTools.Field(typeof(CapacityControlSideScreen), "title");
+                var lt = fiTitle?.GetValue(screen) as LocText;
+                if (lt != null)
+                    lt.SetText($"{textNoColon}:");
             }
-            catch
-            {
-                // best effort
-            }
+            catch { }
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(CapacityControlSideScreen.IsValidForTarget), typeof(GameObject))]
         public static bool IsValidForTarget_Prefix(CapacityControlSideScreen __instance, GameObject target, ref bool __result)
         {
-            if (!TryResolveMassScreenMode(__instance, out _))
+            // Only take over validity for our clones; vanilla should behave normally
+            if (!IsOurClone(__instance, out _))
                 return true;
 
-            __result = target != null && target.GetComponent<Rephysicalized.CritterMassFilter>() != null;
+            __result = target != null && target.GetComponent<Rephysicalized.CritterMassFilter>() != null
+                       && DetailsScreen_MassScreens_Patch.IsCritterPickupOrDropoff(target);
             return false;
         }
 
@@ -632,27 +603,25 @@ namespace Rephysicalized.Patches
         [HarmonyPatch(nameof(CapacityControlSideScreen.SetTarget), typeof(GameObject))]
         public static bool SetTarget_Prefix(CapacityControlSideScreen __instance, GameObject new_target)
         {
-            if (!TryResolveMassScreenMode(__instance, out var isMin))
-                return true;
+            if (!IsOurClone(__instance, out var kind))
+                return true; // vanilla widget
 
-            // Ensure filter exists for existing saves
-            var filter = new_target != null ? new_target.AddOrGet<Rephysicalized.CritterMassFilter>() : null;
+            if (new_target == null) return false;
+
+            var filter = new_target.AddOrGet<Rephysicalized.CritterMassFilter>();
             if (filter == null) return false;
 
-            IUserControlledCapacity proxy = isMin
+            IUserControlledCapacity proxy = (kind == Rephysicalized.CritterMassScreenMarker.Kind.Min)
                 ? (IUserControlledCapacity)new_target.AddOrGet<Rephysicalized.CritterMassMinProxy>()
                 : (IUserControlledCapacity)new_target.AddOrGet<Rephysicalized.CritterMassMaxProxy>();
 
-            var targetField = AccessTools.Field(typeof(CapacityControlSideScreen), "target");
-            var sliderField = AccessTools.Field(typeof(CapacityControlSideScreen), "slider");
-            var inputField = AccessTools.Field(typeof(CapacityControlSideScreen), "numberInput");
-            var unitsField = AccessTools.Field(typeof(CapacityControlSideScreen), "unitsLabel");
+            // Bind our proxy as the target the UI will drive
+            FI_Target?.SetValue(__instance, proxy);
 
-            targetField?.SetValue(__instance, proxy);
-
-            var slider = sliderField?.GetValue(__instance) as KSlider;
-            var input = inputField?.GetValue(__instance) as KNumberInputField;
-            var units = unitsField?.GetValue(__instance) as LocText;
+            // Initialize controls from proxy
+            var slider = FI_Slider?.GetValue(__instance) as KSlider;
+            var input = FI_Input?.GetValue(__instance) as KNumberInputField;
+            var units = FI_Units?.GetValue(__instance) as LocText;
 
             float mass = Mathf.Clamp(proxy.UserMaxCapacity, Rephysicalized.CritterMassFilter.AbsoluteMinKg, Rephysicalized.CritterMassFilter.AbsoluteMaxKg);
 
@@ -667,7 +636,7 @@ namespace Rephysicalized.Patches
 
             if (input != null)
             {
-                if (isMin)
+                if (kind == Rephysicalized.CritterMassScreenMarker.Kind.Min)
                 {
                     input.minValue = Rephysicalized.CritterMassFilter.AbsoluteMinKg;
                     input.maxValue = filter.MaxMassKg;
@@ -686,16 +655,15 @@ namespace Rephysicalized.Patches
             if (units != null)
                 units.text = "kg";
 
-            // Set the left label immediately
-            TrySetLeftTitle(__instance, isMin ? "Min" : "Max");
-            return false;
+            TrySetLeftTitle(__instance, kind == Rephysicalized.CritterMassScreenMarker.Kind.Min ? "Min" : "Max");
+            return false; // skip vanilla SetTarget for our clone
         }
 
         [HarmonyPrefix]
         [HarmonyPatch("ReceiveValueFromSlider", typeof(float))]
         public static bool ReceiveValueFromSlider_Prefix(CapacityControlSideScreen __instance, float newValue)
         {
-            if (!TryResolveMassScreenMode(__instance, out var isMin))
+            if (!IsOurClone(__instance, out var kind))
                 return true;
 
             var proxy = FI_Target?.GetValue(__instance) as IUserControlledCapacity;
@@ -705,7 +673,9 @@ namespace Rephysicalized.Patches
             if (filter == null) return false;
 
             float rawMass = Mathf.Clamp(MassFromT(newValue), Rephysicalized.CritterMassFilter.AbsoluteMinKg, Rephysicalized.CritterMassFilter.AbsoluteMaxKg);
-            float clampedMass = isMin ? Mathf.Min(rawMass, filter.MaxMassKg) : Mathf.Max(rawMass, filter.MinMassKg);
+            float clampedMass = (kind == Rephysicalized.CritterMassScreenMarker.Kind.Min)
+                ? Mathf.Min(rawMass, filter.MaxMassKg)
+                : Mathf.Max(rawMass, filter.MinMassKg);
 
             proxy.UserMaxCapacity = clampedMass;
 
@@ -723,7 +693,7 @@ namespace Rephysicalized.Patches
         [HarmonyPatch("ReceiveValueFromInput", typeof(float))]
         public static bool ReceiveValueFromInput_Prefix(CapacityControlSideScreen __instance, float newValue)
         {
-            if (!TryResolveMassScreenMode(__instance, out var isMin))
+            if (!IsOurClone(__instance, out var kind))
                 return true;
 
             var proxy = FI_Target?.GetValue(__instance) as IUserControlledCapacity;
@@ -734,7 +704,9 @@ namespace Rephysicalized.Patches
             if (filter == null) return false;
 
             float mass = Mathf.Clamp(newValue, Rephysicalized.CritterMassFilter.AbsoluteMinKg, Rephysicalized.CritterMassFilter.AbsoluteMaxKg);
-            mass = isMin ? Mathf.Min(mass, filter.MaxMassKg) : Mathf.Max(mass, filter.MinMassKg);
+            mass = (kind == Rephysicalized.CritterMassScreenMarker.Kind.Min)
+                ? Mathf.Min(mass, filter.MaxMassKg)
+                : Mathf.Max(mass, filter.MinMassKg);
 
             proxy.UserMaxCapacity = mass;
 
@@ -755,7 +727,7 @@ namespace Rephysicalized.Patches
         [HarmonyPatch("UpdateMaxCapacityLabel")]
         public static bool UpdateMaxCapacityLabel_Prefix(CapacityControlSideScreen __instance)
         {
-            if (!TryResolveMassScreenMode(__instance, out var isMin))
+            if (!IsOurClone(__instance, out var kind))
                 return true;
 
             var proxy = FI_Target?.GetValue(__instance) as IUserControlledCapacity;
@@ -770,7 +742,7 @@ namespace Rephysicalized.Patches
 
             if (input != null)
             {
-                if (isMin)
+                if (kind == Rephysicalized.CritterMassScreenMarker.Kind.Min)
                 {
                     input.minValue = Rephysicalized.CritterMassFilter.AbsoluteMinKg;
                     input.maxValue = filter != null ? filter.MaxMassKg : Rephysicalized.CritterMassFilter.AbsoluteMaxKg;
@@ -797,15 +769,12 @@ namespace Rephysicalized.Patches
             if (units != null)
                 units.text = "kg";
 
-            // Keep the label correct on refresh
-            TrySetLeftTitle(__instance, isMin ? "Min" : "Max");
-
+            TrySetLeftTitle(__instance, kind == Rephysicalized.CritterMassScreenMarker.Kind.Min ? "Min" : "Max");
             return false;
         }
 
         private static void SetNumberDisplay(KNumberInputField input, float mass)
         {
-            // Safely set inner input text via reflection (no direct text API)
             var inner = AccessTools.Field(input.GetType(), "inputField")?.GetValue(input);
             if (inner != null)
             {

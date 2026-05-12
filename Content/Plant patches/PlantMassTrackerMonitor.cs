@@ -1,5 +1,7 @@
-﻿using HarmonyLib;
+﻿﻿using HarmonyLib;
+using Database;
 using KSerialization;
+using Klei.AI;
 using Rephysicalized;
 using System;
 using System.Collections.Generic;
@@ -31,9 +33,6 @@ namespace Rephysicalized
         private float _harvestMassSubtractKg = 1f;
         private string _tinkerEffectId = "FarmTinker";
 
-        // Tinker dedup bookkeeping
-        private bool _hadTinkerEffect;
-        private bool _tinkerCreditGrantedExternally;
 
         // Persisted plant mass; also mirrored on the plot via PlotMassStore
         [Serialize] private float trackedMassKg = 1f;
@@ -147,16 +146,13 @@ namespace Rephysicalized
             _lastObservedPlantMassKg = Mathf.Max(0f, _primaryElement.Mass);
         }
 
-        private void PollStoragesAndAccumulate()
+        private float CalculateConsumptionDelta()
         {
-            if (_finalTeardown) return;
-
-            float consumedThisPoll = 0f;
+            float consumed = 0f;
 
             foreach (var storage in _storages)
             {
-                if (storage == null) continue;
-                if (PlantMassTrackerTeardown.IsSuppressed(storage)) continue; // SKIP suppressed plot storages
+                if (storage == null || PlantMassTrackerTeardown.IsSuppressed(storage)) continue;
 
                 if (!_prevTotalsByStorageTag.TryGetValue(storage, out var prevByTag))
                 {
@@ -164,23 +160,34 @@ namespace Rephysicalized
                     _prevTotalsByStorageTag[storage] = prevByTag;
                 }
 
-                // Seed any missing snapshots for allowed tags (no dynamic tag discovery)
-                SeedMissingSnapshotsForAllowedTags(storage, prevByTag);
+                // Seed missing for allowed tags
+                foreach (var tag in _allowedConsumptionTags)
+                {
+                    if (!prevByTag.ContainsKey(tag))
+                        prevByTag[tag] = SumStorageByTag(storage, tag);
+                }
 
                 foreach (var tag in _allowedConsumptionTags)
                 {
                     float now = SumStorageByTag(storage, tag);
-                    float prev = prevByTag.TryGetValue(tag, out var p) ? p : now;
-                    float delta = prev - now; // positive if consumed
+                    float prev = prevByTag[tag];
+                    float delta = prev - now;
                     if (delta > 0f)
-                        consumedThisPoll += delta;
-
+                        consumed += delta;
                     prevByTag[tag] = now;
                 }
             }
 
-            if (consumedThisPoll > 0f)
-                TrackedMassKg += consumedThisPoll;
+            return consumed;
+        }
+
+        private void PollStoragesAndAccumulate()
+        {
+            if (_finalTeardown) return;
+
+            float consumed = CalculateConsumptionDelta();
+            if (consumed > 0f)
+                TrackedMassKg += consumed;
         }
 
         // Called by registry once per plant, when config is known
@@ -273,49 +280,16 @@ namespace Rephysicalized
             _loadedFromPlotStore = true;
         }
 
-        // Ensure snapshot has entries for all allowed tags; no dynamic tag discovery
-        private void SeedMissingSnapshotsForAllowedTags(Storage storage, Dictionary<Tag, float> prevByTag)
-        {
-            foreach (var tag in _allowedConsumptionTags)
-            {
-                if (!prevByTag.ContainsKey(tag))
-                    prevByTag[tag] = SumStorageByTag(storage, tag);
-            }
-        }
+
 
         private void OnAnyStorageChanged(object _)
         {
             if (_suppressAccumulation || _finalTeardown)
                 return;
 
-            float consumedThisEvent = 0f;
-
-            foreach (var storage in _storages)
-            {
-                if (storage == null) continue;
-                if (PlantMassTrackerTeardown.IsSuppressed(storage)) continue; // SKIP suppressed plot storages
-
-                if (!_prevTotalsByStorageTag.TryGetValue(storage, out var prevByTag))
-                {
-                    prevByTag = new Dictionary<Tag, float>();
-                    _prevTotalsByStorageTag[storage] = prevByTag;
-                }
-
-                SeedMissingSnapshotsForAllowedTags(storage, prevByTag);
-
-                foreach (var tag in _allowedConsumptionTags)
-                {
-                    float now = SumStorageByTag(storage, tag);
-                    float prev = prevByTag.TryGetValue(tag, out var p) ? p : now;
-                    float delta = prev - now;
-                    if (delta > 0f) consumedThisEvent += delta;
-
-                    prevByTag[tag] = now;
-                }
-            }
-
-            if (consumedThisEvent > 0f)
-                TrackedMassKg += consumedThisEvent;
+            float consumed = CalculateConsumptionDelta();
+            if (consumed > 0f)
+                TrackedMassKg += consumed;
         }
 
         private static float SumStorageByTag(Storage storage, Tag tag)
@@ -349,7 +323,7 @@ namespace Rephysicalized
 
         public void AddTinkerMass(float kg)
         {
-            _tinkerCreditGrantedExternally = kg > 0f;
+  
             AddMassDelta(kg);
         }
 
@@ -395,41 +369,24 @@ namespace Rephysicalized
 
         private void OnHarvested(object data)
         {
-            // Detect if PlantFiber will be spawned by PlantFiberProducer and record the amount
+            // Detect PlantFiber spawn for subtraction
             _pendingPlantFiberSubtractKg = 0f;
-            try
+            var fiberProducer = GetComponent<PlantFiberProducer>();
+            if (fiberProducer?.amount > 0f && data is Harvestable harvestable && harvestable.completed_by is WorkerBase completer)
             {
-                // Only attempt when this plant has a PlantFiberProducer component
-                var fiberProducer = GetComponent<PlantFiberProducer>();
-                if (fiberProducer != null && fiberProducer.amount > 0f && data is Harvestable harvestable && harvestable != null)
+                try
                 {
-                    var completer = harvestable.completed_by;
-                    if (completer != null)
-                    {
-                        var resume = completer.GetComponent<MinionResume>();
-                        if (resume != null)
-                        {
-                            var perk = Db.Get()?.SkillPerks?.CanSalvagePlantFiber;
-                            if (perk != null && resume.HasPerk(perk))
-                            {
-                                _pendingPlantFiberSubtractKg = Mathf.Max(0f, fiberProducer.amount);
-                            }
-                        }
-                    }
+                    if (completer.GetComponent<MinionResume>()?.HasPerk(Db.Get()?.SkillPerks?.CanSalvagePlantFiber) == true)
+                        _pendingPlantFiberSubtractKg = fiberProducer.amount;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[PMT] PlantFiber eval error: {e}");
                 }
             }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[PMT] Exception evaluating PlantFiber harvest subtraction: {e}");
-                _pendingPlantFiberSubtractKg = 0f;
-            }
 
-            // Flush any last-second storage consumption before converting
             PollStoragesAndAccumulate();
-
-            // Keep visual in sync for UI, but conversion will use tracked mass (not PE)
             ApplyVisualFromTrackerNow();
-
             SpawnYieldsAndReset(isHarvest: true);
             _suppressDigTicksAfterHarvest = 2;
         }
@@ -441,10 +398,8 @@ namespace Rephysicalized
 
             // Flush any last-second storage consumption before converting
             PollStoragesAndAccumulate();
-
             // Keep visual in sync for UI, but conversion will use tracked mass (not PE)
             ApplyVisualFromTrackerNow();
-
             // No PlantFiber on uproot; ensure pending subtraction is clear
             _pendingPlantFiberSubtractKg = 0f;
 
@@ -466,6 +421,37 @@ namespace Rephysicalized
                 effectiveHarvestSubtract = modifierOverridesHarvest ? 0f : Mathf.Max(0f, _harvestMassSubtractKg);
             }
 
+            // Mutation adjustments
+            float yieldMult = 1f;
+            bool hasRottenHeaps = false;
+            if (isHarvest)
+            {
+                var mutPlant = GetComponent<MutantPlant>();
+                if (mutPlant != null && mutPlant.MutationIDs != null)
+                {
+                    hasRottenHeaps = mutPlant.MutationIDs.Contains("rottenHeaps");
+                    var yieldAttrId = Db.Get().PlantAttributes.YieldAmount.Id;
+                    foreach (var mutId in mutPlant.MutationIDs)
+                    {
+                        var mutation = Db.Get().PlantMutations.Get(mutId);
+                        if (mutation != null)
+                        {
+                            foreach (var mod in mutation.SelfModifiers)
+                            {
+                                if (mod.AttributeId == yieldAttrId)
+                                {
+                                    if (mod.IsMultiplier)
+                                        yieldMult *= (1f + mod.Value);
+                                    else
+                                        yieldMult += mod.Value;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            float totalSubtract = isHarvest ? (effectiveHarvestSubtract * yieldMult + (hasRottenHeaps ? 4f : 0f)) : 0f;
+
             float tracked = Mathf.Max(0f, TrackedMassKg);
             float peMass = (_primaryElement != null) ? Mathf.Max(1f, _primaryElement.Mass) : Mathf.Max(1f, tracked);
 
@@ -473,7 +459,7 @@ namespace Rephysicalized
             float peExcess = Mathf.Max(0f, peMass - baselineSubtractKg);
 
             float baseNet = Mathf.Min(trackedExcess, peExcess);
-            float net = Mathf.Max(0f, baseNet - (isHarvest ? effectiveHarvestSubtract : 0f));
+            float net = Mathf.Max(0f, baseNet - totalSubtract);
 
             // Subtract PlantFiberProducer amount if this harvest will spawn fiber
             if (isHarvest && _pendingPlantFiberSubtractKg > 0f)
@@ -522,7 +508,6 @@ namespace Rephysicalized
 
             // Reset to 1 kg tracked and PE
             TrackedMassKg = 1f;
-
             if (_primaryElement != null)
                 _primaryElement.Mass = 1f;
 
@@ -619,11 +604,6 @@ namespace Rephysicalized
         private void SpawnPrefabMass(string prefabId, float mass, float temperature)
         {
             var prefab = Assets.GetPrefab(prefabId);
-            if (prefab == null)
-            {
-                Debug.LogWarning($"[PMT] Unknown prefab '{prefabId}', skipping spawn.");
-                return;
-            }
 
             var go = GameUtil.KInstantiate(prefab, transform.GetPosition(), Grid.SceneLayer.Ore);
             go.SetActive(true);

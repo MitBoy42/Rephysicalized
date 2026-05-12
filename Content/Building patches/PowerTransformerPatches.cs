@@ -11,7 +11,7 @@ namespace Rephysicalized.Patches
     {
         internal static readonly Dictionary<SimHashes, float> Map = new Dictionary<SimHashes, float>
         {
-            { SimHashes.Copper, 1.5f },
+            { SimHashes.Copper, 1.4f },
             { SimHashes.Cuprite, 1.2f },
             { SimHashes.Gold, 1.2f },
             { SimHashes.GoldAmalgam, 1.1f },

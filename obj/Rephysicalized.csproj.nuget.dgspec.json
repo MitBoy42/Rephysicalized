@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj": {}
+    "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj": {}
   },
   "projects": {
-    "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj": {
+    "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+        "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj",
         "projectName": "Rephysicalized",
-        "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+        "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj",
         "packagesPath": "C:\\Users\\MitBoy\\.nuget\\packages\\",
-        "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\obj\\",
+        "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -22,18 +22,19 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net48"
+          "netstandard2.1"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net48": {
-            "targetAlias": "net48",
+          "netstandard2.1": {
+            "framework": "netstandard2.1",
+            "targetAlias": "netstandard2.1",
             "projectReferences": {
-              "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
-                "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj"
+              "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj": {
+                "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj"
               }
             }
           }
@@ -51,8 +52,9 @@
         "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net48": {
-          "targetAlias": "net48",
+        "netstandard2.1": {
+          "framework": "netstandard2.1",
+          "targetAlias": "netstandard2.1",
           "dependencies": {
             "Aze.Publicise.MSBuild.Task": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -65,20 +67,40 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[*, )"
+            },
+            "Lib.Harmony.Ref": {
+              "target": "Package",
+              "version": "[2.4.2, )"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306\\RuntimeIdentifierGraph.json"
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "NETStandard.Library": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
+    "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj",
+        "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj",
         "projectName": "UtilLibs",
-        "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj",
+        "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj",
         "packagesPath": "C:\\Users\\MitBoy\\.nuget\\packages\\",
-        "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\obj\\",
+        "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -89,15 +111,16 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net48"
+          "netstandard2.1"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net48": {
-            "targetAlias": "net48",
+          "netstandard2.1": {
+            "framework": "netstandard2.1",
+            "targetAlias": "netstandard2.1",
             "projectReferences": {}
           }
         },
@@ -114,15 +137,32 @@
         "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net48": {
-          "targetAlias": "net48",
+        "netstandard2.1": {
+          "framework": "netstandard2.1",
+          "targetAlias": "netstandard2.1",
           "dependencies": {
             "PLib": {
               "target": "Package",
-              "version": "[4.17.1, )"
+              "version": "[4.21.0, )"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306\\RuntimeIdentifierGraph.json"
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "NETStandard.Library": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\RuntimeIdentifierGraph.json"
         }
       }
     }

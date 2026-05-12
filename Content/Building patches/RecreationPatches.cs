@@ -67,7 +67,6 @@ namespace Rephysicalized
     {
         static void Prefix(ref float mass)
         {
-            // Ensure UI lists 0.25 kg consumed per use instead of 1 kg
             mass = 0.25f;
         }
     }
@@ -81,20 +80,12 @@ namespace Rephysicalized
         [HarmonyPatch(MethodType.StaticConstructor)]
         private static void Postfix()
         {
-            try
-            {
                 // Multiply the storage mass by 3
                 TableSaltTuning.SALTSHAKERSTORAGEMASS *= 3f;
 
                 // Set consumable rate to storage mass divided by 15
                 TableSaltTuning.CONSUMABLE_RATE = TableSaltTuning.SALTSHAKERSTORAGEMASS / 15f;
 
-                Debug.Log($"[AdvancedCraftingTweaks] TableSaltTuning adjusted: storage={TableSaltTuning.SALTSHAKERSTORAGEMASS}, rate={TableSaltTuning.CONSUMABLE_RATE}");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AdvancedCraftingTweaks] Failed to adjust TableSaltTuning: {ex}");
-            }
         }
     }
 
@@ -104,10 +95,8 @@ namespace Rephysicalized
     {
         private static void Postfix(ref BuildingDef __result)
         {
-            if (__result != null)
-            {
-                __result.EnergyConsumptionWhenActive = 480f;
-            }
+
+            __result.EnergyConsumptionWhenActive = 480f;
         }
     }
 

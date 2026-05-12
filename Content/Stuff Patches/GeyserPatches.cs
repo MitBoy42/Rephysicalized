@@ -26,16 +26,13 @@ namespace Rephysicalized
         [HarmonyPostfix]
         private static void Postfix(List<GeyserGenericConfig.GeyserPrefabParams> __result)
         {
-            if (__result == null || __result.Count == 0)
-                return;
+  
 
             foreach (var cfg in __result)
             {
                 var gt = cfg.geyserType;
-                if (gt == null)
-                    continue;
+       
 
-                // Match on the string id declared in GenerateConfigs
                 if (!WaterSteamIds.Contains(gt.id))
                     continue;
 
@@ -46,4 +43,45 @@ namespace Rephysicalized
             }
         }
     }
+
+//    [HarmonyPatch(typeof(GeyserGenericConfig), nameof(GeyserGenericConfig.GenerateConfigs))]
+//    internal class Geyser_Metal_RateScalePatch
+//    {
+
+//        public static float MetalVolcanoOutput => Config.Instance.MetalVolcanoOutput;
+
+
+//        private static readonly HashSet<string> MetalIds = new HashSet<string>
+//{
+//    GeyserGenericConfig.MoltenGold,
+//    GeyserGenericConfig.MoltenCopper,
+//    GeyserGenericConfig.MoltenAluminum,
+//    GeyserGenericConfig.MoltenCobalt,
+//    GeyserGenericConfig.MoltenIron,
+//    GeyserGenericConfig.MoltenTungsten,
+//    GeyserGenericConfig.MoltenNiobium,
+
+
+//};
+
+//        [HarmonyPostfix]
+//        private static void Postfix(List<GeyserGenericConfig.GeyserPrefabParams> __result)
+//        {
+
+//            foreach (var cfg in __result)
+//            {
+//                var gt = cfg.geyserType;
+            
+//                if (!MetalIds.Contains(gt.id))
+//                    continue;
+
+//                gt.minRatePerCycle *= MetalVolcanoOutput;
+//                gt.maxRatePerCycle *= MetalVolcanoOutput;
+
+
+//            }
+//        }
+//    }
 }
+
+

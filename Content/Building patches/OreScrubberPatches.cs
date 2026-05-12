@@ -69,7 +69,6 @@ namespace Rephysicalized.Content.Building_patches
                 int cell = Grid.PosToCell(go);
                 if (!Grid.IsValidCell(cell)) return;
 
-                // Emit into the world. Event type is used for debug/logging; ElementConsumerSimUpdate is a safe, existing event.
                 SimMessages.AddRemoveSubstance(
                     cell,
                     element.idx,

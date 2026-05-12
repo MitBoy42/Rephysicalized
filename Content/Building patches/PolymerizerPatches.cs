@@ -5,12 +5,15 @@ using UnityEngine;
 
 namespace Rephysicalized
 {
-    // Keep vanilla plastics converter values (do not merge with resin)
-    [HarmonyPatch(typeof(PolymerizerConfig), "ConfigureBuildingTemplate")]
-    public static class PolymerizerPatch
+
+
+    // Replace ConduitConsumer with RephysicalizedConduitConsumer and add a separate Resin converter.
+    [HarmonyPatch(typeof(PolymerizerConfig), nameof(PolymerizerConfig.ConfigureBuildingTemplate))]
+    public static class PolymerizerConfig_ConfigureBuildingTemplate_Patch
     {
         public static void Postfix(GameObject go, Tag prefab_tag)
         {
+
             var elementConverter = go.GetComponent<ElementConverter>();
             if (elementConverter != null)
             {
@@ -26,15 +29,6 @@ namespace Rephysicalized
                     new ElementConverter.OutputElement(0.15f, SimHashes.CarbonDioxide, 423.15f, storeOutput: true)
                 };
             }
-        }
-    }
-
-    // Replace ConduitConsumer with RephysicalizedConduitConsumer and add a separate Resin converter.
-    [HarmonyPatch(typeof(PolymerizerConfig), nameof(PolymerizerConfig.ConfigureBuildingTemplate))]
-    public static class PolymerizerConfig_ConfigureBuildingTemplate_Patch
-    {
-        public static void Postfix(GameObject go, Tag prefab_tag)
-        {
             // Replace vanilla ConduitConsumer with RephysicalizedConduitConsumer
             var original = go.GetComponent<ConduitConsumer>();
             float capacityKG = 1.666667f;
@@ -51,7 +45,9 @@ namespace Rephysicalized
                 UnityEngine.Object.DestroyImmediate(original);
             }
 
-   
+            var polymerizer = go.GetComponent<Polymerizer>();
+            // keep vanilla emission disabled; we'll handle multiple exhausts via our helper component
+            polymerizer.exhaustElement = SimHashes.Vacuum;
 
 
             var rcc = go.AddOrGet<RephysicalizedConduitConsumer>();
@@ -93,10 +89,13 @@ namespace Rephysicalized
                 new ElementConverter.OutputElement(0.15f, SimHashes.EthanolGas, 383.15f, storeOutput: true),
                 new ElementConverter.OutputElement(0.15f, SimHashes.Hydrogen, 423.15f, storeOutput: true)
             };
+
+            // Add Rephysicalized exhaust list component and set defaults
+            var exhaustComp = go.AddOrGet<RephysicalizedPolymerizerExhaust>();
+            exhaustComp.exhaustElements = new SimHashes[] { SimHashes.EthanolGas, SimHashes.Steam };
         }
     }
 
-  
 
     // Intercept the vanilla consumer tick: if a ConduitConsumer is attached to a Polymerizer, skip its update.
     [HarmonyPatch(typeof(ConduitConsumer), "ConduitUpdate")]
@@ -104,17 +103,18 @@ namespace Rephysicalized
     {
         public static bool Prefix(ConduitConsumer __instance, float dt)
         {
-            try
+            if (__instance == null || __instance.GetComponent<RephysicalizedConduitConsumer>() != null)
+                return true;
+
+            // Skip for Ronivans CustomPolymerizer
+            if (__instance.GetComponent<Polymerizer>()?.GetType().FullName.Contains("CustomPolymerizer") == true)
+                return true;
+
+            if (__instance.GetComponent<Polymerizer>() != null)
             {
-                if (__instance != null && __instance.GetComponent<Polymerizer>() != null)
-                {
-                    return false; // skip original
-                }
+                return false; // skip original for vanilla
             }
-            catch
-            {
-                // best-effort
-            }
+
             return true;
         }
     }
@@ -125,39 +125,38 @@ namespace Rephysicalized
     {
         public static bool Prefix(RequireInputs __instance)
         {
-            try
-            {
-                if (__instance != null && __instance.GetComponent<Polymerizer>() != null)
-                {
-                    return false; // skip original
-                }
-            }
-            catch
-            {
-                // best-effort
-            }
-            return true;
+            if (__instance == null)
+                return true;
+
+            var poly = __instance.GetComponent<Polymerizer>();
+            if (poly == null)
+                return true;
+
+            // Skip for Ronivans CustomPolymerizer
+            if (poly.GetType().FullName.Contains("CustomPolymerizer"))
+                return true;
+
+            return false; // skip original for vanilla
         }
     }
 
     [HarmonyPatch(typeof(RequireInputs), "CheckRequirements")]
     public static class RequireInputs_CheckRequirements_SkipOnPolymerizer
     {
-        public static bool Prefix(RequireInputs __instance, bool forceEvent)
+        public static bool Prefix(RequireInputs __instance)
         {
-            try
-            {
-                if (__instance != null && __instance.GetComponent<Polymerizer>() != null)
-                {
-              
-                    return false;
-                }
-            }
-            catch
-            {
-                // best-effort
-            }
-            return true;
+            if (__instance == null)
+                return true;
+
+            var poly = __instance.GetComponent<Polymerizer>();
+            if (poly == null)
+                return true;
+
+            // Skip for Ronivans CustomPolymerizer
+            if (poly.GetType().FullName.Contains("CustomPolymerizer"))
+                return true;
+
+            return false;
         }
     }
 
@@ -167,10 +166,15 @@ namespace Rephysicalized
         public static bool Prefix(ElementConverter __instance, ref bool __result)
         {
             if (__instance == null) return true;
-            if (__instance.GetComponent<Polymerizer>() == null) return true; // not our building
+            var poly = __instance.GetComponent<Polymerizer>();
+            if (poly == null) return true;
+
+            // Skip for Ronivans CustomPolymerizer
+            if (poly.GetType().FullName.Contains("CustomPolymerizer"))
+                return true;
 
             __result = Polymerizer_SM_Utils.AnyConverterCanConvertOnPoly(__instance);
-            return false; // skip original for Polymerizer
+            return false;
         }
     }
 
@@ -180,10 +184,15 @@ namespace Rephysicalized
         public static bool Prefix(ElementConverter __instance, ref bool __result)
         {
             if (__instance == null) return true;
-            if (__instance.GetComponent<Polymerizer>() == null) return true; // not our building
+            var poly = __instance.GetComponent<Polymerizer>();
+            if (poly == null) return true;
+
+            // Skip for Ronivans CustomPolymerizer
+            if (poly.GetType().FullName.Contains("CustomPolymerizer"))
+                return true;
 
             __result = Polymerizer_SM_Utils.AnyConverterHasEnoughToStartOnPoly(__instance);
-            return false; // skip original for Polymerizer
+            return false;
         }
     }
 
@@ -193,39 +202,39 @@ namespace Rephysicalized
     {
         public static bool Prefix(Polymerizer __instance)
         {
-            try
-            {
-                var storage = AccessTools.Field(__instance.GetType(), "storage")?.GetValue(__instance) as Storage;
-                var oilMeter = AccessTools.Field(__instance.GetType(), "oilMeter")?.GetValue(__instance) as MeterController;
+            // Skip for Ronivans CustomPolymerizer
+            if (__instance.GetType().FullName.Contains("CustomPolymerizer"))
+                return false;
 
-                float total = 0f;
-                if (storage != null)
+            var rcc = __instance.GetComponent<RephysicalizedConduitConsumer>();
+            if (rcc == null)
+                return false;
+
+            var storage = __instance.GetComponent<Storage>();
+            if (storage == null)
+                return false;
+
+            var oilMeter = AccessTools.Field(__instance.GetType(), "oilMeter")?.GetValue(__instance) as MeterController;
+
+            float total = 0f;
+
+            var plastifiable = PolymerizerConfig.INPUT_ELEMENT_TAG;
+            var resinTag = GameTagExtensions.Create(SimHashes.Resin);
+
+            foreach (var go in storage.items)
+            {
+                if (go == null) continue;
+                if (go.HasTag(plastifiable) || go.HasTag(resinTag))
                 {
-                    var plastifiable = PolymerizerConfig.INPUT_ELEMENT_TAG;
-                    var resinTag = GameTagExtensions.Create(SimHashes.Resin);
-
-                    foreach (var go in storage.items)
-                    {
-                        if (go == null) continue;
-                        if (go.HasTag(plastifiable) || go.HasTag(resinTag))
-                        {
-                            var pe = go.GetComponent<PrimaryElement>();
-                            if (pe != null) total += pe.Mass;
-                        }
-                    }
+                    var pe = go.GetComponent<PrimaryElement>();
+                    if (pe != null) total += pe.Mass;
                 }
-
-                float capacity = 1.666667f;
-                var rcc = __instance.GetComponent<RephysicalizedConduitConsumer>();
-                if (rcc != null)
-                    capacity = rcc.capacityKG;
-
-                oilMeter?.SetPositionPercent(Mathf.Clamp01(total / Mathf.Max(capacity, 0.0001f)));
             }
-            catch
-            {
-                // best-effort
-            }
+
+            float capacity = rcc.capacityKG;
+
+            oilMeter?.SetPositionPercent(Mathf.Clamp01(total / Mathf.Max(capacity, 0.0001f)));
+
             return false;
         }
     }
@@ -240,7 +249,7 @@ namespace Rephysicalized
             if (go.GetComponent<Polymerizer>() == null) return false;
 
             var storage = go.GetComponent<Storage>();
-            if (storage == null) return false;
+
 
             var converters = go.GetComponents<ElementConverter>();
             foreach (var c in converters)
@@ -259,11 +268,11 @@ namespace Rephysicalized
         {
             if (instance == null) return false;
             var go = instance.gameObject;
-            if (go == null) return false;
+
             if (go.GetComponent<Polymerizer>() == null) return false;
 
             var storage = go.GetComponent<Storage>();
-            if (storage == null) return false;
+
 
             var converters = go.GetComponents<ElementConverter>();
             foreach (var c in converters)
@@ -291,7 +300,7 @@ namespace Rephysicalized
             for (int i = 0; i < items.Count; i++)
             {
                 var go = items[i];
-                if (go == null) continue;
+                ;
                 if (!go.HasTag(tag)) continue;
                 var pe = go.GetComponent<PrimaryElement>();
                 if (pe != null && pe.Mass > 0f)
@@ -300,4 +309,61 @@ namespace Rephysicalized
             return false;
         }
     }
+
+    [HarmonyPatch(typeof(Polymerizer), "TryEmit", new Type[] { typeof(PrimaryElement) })]
+    public static class Polymerizer_TryEmit_EmitExhaustList_Postfix
+    {
+        public static void Postfix(Polymerizer __instance, PrimaryElement primary_elem)
+        {
+            try
+            {
+                if (__instance == null) return;
+                var exhaustComp = __instance.GetComponent<RephysicalizedPolymerizerExhaust>();
+                if (exhaustComp == null || exhaustComp.exhaustElements == null || exhaustComp.exhaustElements.Length == 0)
+                    return;
+
+                // Compute spawn position same as original TryEmit
+                var rot = __instance.GetComponent<Rotatable>();
+                Vector3 vector3 = rot != null ? (rot.transform.GetPosition() + rot.GetRotatedOffset(__instance.emitOffset)) : __instance.transform.GetPosition();
+                int cell = Grid.PosToCell(vector3);
+                if (Grid.Solid[cell] && rot != null)
+                    vector3 += rot.GetRotatedOffset(Vector3.left);
+
+                // For each configured exhaust element, find stored primary element in storage and emit its mass
+                var storage = __instance.GetComponent<Storage>();
+                if (storage == null) return;
+
+                // The vanilla polymerizer emits exhaust only when a polypropylene chunk is emitted.
+                // Ensure we only perform exhaust emission if primary_elem mass met the emit threshold and a chunk was actually dropped.
+                if (primary_elem == null) return;
+                if (primary_elem.Mass < __instance.emitMass) return;
+
+                for (int i = 0; i < exhaustComp.exhaustElements.Length; i++)
+                {
+                    var hash = exhaustComp.exhaustElements[i];
+                    var pe = storage.FindPrimaryElement(hash);
+                    if (pe == null || pe.Mass <= 0f)
+                        continue;
+
+                    SimMessages.AddRemoveSubstance(Grid.PosToCell(vector3), pe.ElementID, (CellAddRemoveSubstanceEvent)null, pe.Mass, pe.Temperature, pe.DiseaseIdx, pe.DiseaseCount);
+                    pe.Mass = 0.0f;
+                    try { pe.ModifyDiseaseCount(int.MinValue, "Polymerizer.Exhaust"); } catch { }
+
+                    // only one exhaust per emission, break to avoid repeated/continuous emissions
+                    break;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Rephysicalized.Polymerizer] EmitExhaustList failed: {e}");
+            }
+        }
+    }
+
+    // Component to hold multiple exhaust SimHashes
+    public class RephysicalizedPolymerizerExhaust : KMonoBehaviour
+    {
+        public SimHashes[] exhaustElements;
+    }
+
 }

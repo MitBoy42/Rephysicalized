@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Rephysicalized.Content.Plant_patches
 {
-    // Adds a dedicated DirtyWater PassiveElementConsumer to BasicFabricMaterialPlant (Swamp Reed) prefab.
+  
     // Consumer is disabled on prefab; it will be wired and enabled when planted via Irrigation SetStorage.
     [HarmonyPatch(typeof(BasicFabricMaterialPlantConfig), nameof(BasicFabricMaterialPlantConfig.CreatePrefab))]
     internal static class BasicFabricAbsorber_Patch
@@ -201,7 +201,7 @@ namespace Rephysicalized.Content.Plant_patches
             var consumer = __result.AddComponent<PassiveElementConsumer>();
             consumer.elementToConsume = SimHashes.SaltWater;
             consumer.consumptionRate = 0.5f;
-            consumer.consumptionRadius = 1;
+            consumer.consumptionRadius = 2;
             consumer.showDescriptor = false;
             consumer.showInStatusPanel = false;
             consumer.capacityKG = 100f;
@@ -274,9 +274,9 @@ namespace Rephysicalized.Content.Plant_patches
     /// <summary>
     /// Enforces a per-plant cap for a liquid PassiveElementConsumer when storing into plot storage,
     /// by toggling the consumer on/off based on the element mass in the plot storage.
-    /// Runs every 4000 ms to minimize overhead.
+    /// Runs every 1000 ms to minimize overhead.
     /// </summary>
-    public sealed class LiquidPECStorageLimiter : KMonoBehaviour, ISim4000ms
+    public sealed class LiquidPECStorageLimiter : KMonoBehaviour, ISim1000ms
     {
         public PassiveElementConsumer Consumer { get; private set; }
         private Storage _plotStorage;
@@ -301,7 +301,7 @@ namespace Rephysicalized.Content.Plant_patches
             EvaluateAndToggle();
         }
 
-        public void Sim4000ms(float dt)
+        public void Sim1000ms(float dt)
         {
             EvaluateAndToggle();
         }

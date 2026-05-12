@@ -27,20 +27,13 @@ namespace Rephysicalized.Chores
                 if (controller == null || storage == null || diet?.FuelInputs == null || diet.FuelInputs.Count == 0)
                     return ConsumeResult.Done;
 
-                // Resolve tags for matching
-                Tag elementTag = Tag.Invalid;
-                var elem = ElementLoader.FindElementByHash(pe.ElementID);
-                if (elem != null)
-                    elementTag = elem.tag;
-
+                Tag elementTag = FueledDietUtils.ResolveElementTag(pe);
                 Tag prefabTag = Tag.Invalid;
                 if (smi.TargetGO.TryGetComponent<KPrefabID>(out var kpid))
                     prefabTag = kpid.PrefabTag;
 
-                // Allowed if any FuelInput matches either element tag OR prefab tag
                 bool allowed = diet.FuelInputs.Any(fi =>
-                    fi != null &&
-                    (fi.ElementTag == prefabTag || fi.ElementTag == elementTag));
+                    fi != null && (fi.ElementTag == prefabTag || fi.ElementTag == elementTag));
                 if (!allowed)
                     return ConsumeResult.Done;
 
@@ -49,7 +42,7 @@ namespace Rephysicalized.Chores
                     ? controller.FuelStorageCapacityKg
                     : (storage.capacityKg > 0f ? storage.capacityKg : float.PositiveInfinity);
 
-                float storedBefore = GetTotalStoredMass(storage);
+                float storedBefore = FueledDietUtils.GetStorageUsedKg(storage);
                 float remain = Mathf.Max(0f, globalCap - storedBefore);
                 if (remain <= 0.0005f)
                     return ConsumeResult.Done;
@@ -81,18 +74,160 @@ namespace Rephysicalized.Chores
             }
         }
 
-        private static float GetTotalStoredMass(Storage storage)
+
+    }
+
+    internal static class FueledDietUtils
+    {
+        public static float GetStorageUsedKg(Storage storage)
         {
-            if (storage == null || storage.items == null) return 0f;
-            float total = 0f;
+            if (storage?.items == null) return 0f;
+            float used = 0f;
             for (int i = 0; i < storage.items.Count; i++)
             {
                 var go = storage.items[i];
-                if (go == null) continue;
-                var pe = go.GetComponent<PrimaryElement>();
-                if (pe != null) total += pe.Mass;
+                var pe = go?.GetComponent<PrimaryElement>();
+                if (pe != null) used += pe.Mass;
             }
-            return total;
+            return used;
+        }
+
+        public static float ConsumeFromStorage(Storage storage, Tag tag, float maxKg, out float avgTempK, out byte diseaseIdx, out int diseaseCount)
+        {
+            avgTempK = 0f;
+            diseaseIdx = byte.MaxValue;
+            diseaseCount = 0;
+            if (maxKg <= 0f || storage == null) return 0f;
+
+            float remaining = maxKg;
+            float weightedTempSum = 0f;
+            float takenTotal = 0f;
+
+            var items = ListPool<GameObject, Storage>.Allocate();
+            if (storage.items != null) items.AddRange(storage.items);
+
+            for (int i = 0; i < items.Count && remaining > 1e-6f; i++)
+            {
+                var go = items[i];
+                if (go == null || !go.HasTag(tag)) continue;
+                var pe = go.GetComponent<PrimaryElement>();
+                if (pe == null || pe.Mass <= 0f) continue;
+
+                float beforeMass = pe.Mass;
+                float take = Mathf.Min(beforeMass, remaining);
+                pe.Mass -= take;
+                weightedTempSum += take * pe.Temperature;
+                takenTotal += take;
+                remaining -= take;
+
+                // Disease merging
+                if (pe.DiseaseIdx != byte.MaxValue && pe.DiseaseCount > 0)
+                {
+                    var fraction = take / beforeMass;
+                    int takenDisease = Mathf.RoundToInt(pe.DiseaseCount * fraction);
+                    MergeDisease(ref diseaseIdx, ref diseaseCount, pe.DiseaseIdx, takenDisease);
+                }
+
+                if (pe.Mass <= 1e-6f)
+                {
+                    storage.Drop(go, true);
+                    UnityEngine.Object.Destroy(go);
+                }
+            }
+            items.Recycle();
+
+            if (takenTotal > 0f) avgTempK = weightedTempSum / takenTotal;
+            return takenTotal;
+        }
+
+        public static float ConsumeFuelUpTo(Storage storage, float kgNeeded)
+        {
+            float remaining = Mathf.Max(0f, kgNeeded);
+            float consumed = 0f;
+            if (storage?.items == null) return 0f;
+
+            for (int j = storage.items.Count - 1; j >= 0 && remaining > 0f; j--)
+            {
+                var go = storage.items[j];
+                var pe = go?.GetComponent<PrimaryElement>();
+                if (pe == null || pe.Mass <= 0f) continue;
+
+                float take = Mathf.Min(remaining, pe.Mass);
+                pe.Mass -= take;
+                remaining -= take;
+                consumed += take;
+
+                if (pe.Mass <= 0.0001f)
+                    UnityEngine.Object.Destroy(go);
+            }
+            return consumed;
+        }
+
+        public static float TotalFuelKg(Storage storage) => GetStorageUsedKg(storage);
+
+        private static void MergeDisease(ref byte idx, ref int count, byte candidateIdx, int candidateCount)
+        {
+            if (candidateCount <= 0) return;
+            if (idx == byte.MaxValue || idx == candidateIdx)
+            {
+                idx = candidateIdx;
+                count += candidateCount;
+            }
+            else if (candidateCount > count)
+            {
+                idx = candidateIdx;
+                count = candidateCount;
+            }
+        }
+
+        public static Tag ResolveElementTag(PrimaryElement pe)
+        {
+            if (pe == null || pe.ElementID == SimHashes.Vacuum) return Tag.Invalid;
+            var elem = ElementLoader.FindElementByHash(pe.ElementID);
+            return elem?.tag ?? Tag.Invalid;
+        }
+
+        public static bool TryResolveSimHash(Tag tag, out SimHashes hash)
+        {
+            foreach (var elem in ElementLoader.elements)
+            {
+                if (elem != null && elem.tag == tag)
+                {
+                    hash = elem.id;
+                    return true;
+                }
+            }
+            hash = SimHashes.Vacuum;
+            return false;
+        }
+
+        public static bool CanReachCellSafe(Navigator nav, int cell)
+        {
+            try
+            {
+                return nav != null && Grid.IsValidCell(cell) && nav.CanReach(cell);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static bool IsAtOrAdjacent(int myCell, int targetCell)
+        {
+            if (!Grid.IsValidCell(myCell) || !Grid.IsValidCell(targetCell)) return false;
+            if (myCell == targetCell) return true;
+            return myCell == Grid.OffsetCell(targetCell, 1, 0) ||
+                   myCell == Grid.OffsetCell(targetCell, -1, 0) ||
+                   myCell == Grid.OffsetCell(targetCell, 0, 1) ||
+                   myCell == Grid.OffsetCell(targetCell, 0, -1);
+        }
+
+        public static float GetRefillThresholdKg(GameObject go, Storage storage)
+        {
+            var controller = go.GetComponent<FueledDietController>();
+            float threshold = controller?.RefillThreshold ?? 0f;
+            return !float.IsNaN(threshold) && threshold > 0f ? threshold : 0f;
         }
     }
 }

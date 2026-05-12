@@ -1,6 +1,9 @@
 ﻿using Database;
 using HarmonyLib;
 using Klei.AI;
+using Rephysicalized.Content.System_Patches;
+
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,43 +26,42 @@ namespace Rephysicalized
     }
 
 
-//Fix EnergyGenerator to emit solids correctly
-[HarmonyPatch(typeof(EnergyGenerator), "Emit")]
-class FixSolidStorePatch
-{
-    static bool Prefix(EnergyGenerator.OutputItem output, float dt, PrimaryElement root_pe, EnergyGenerator __instance)
+    //Fix EnergyGenerator to emit solids correctly
+    [HarmonyPatch(typeof(EnergyGenerator), "Emit")]
+    class FixSolidStorePatch
     {
-        // Replicate the vanilla behaviour except for solids + store=true
-        Element elementByHash = ElementLoader.FindElementByHash(output.element);
-        float num1 = output.creationRate * dt;
-        if (output.store)
+        static bool Prefix(EnergyGenerator.OutputItem output, float dt, PrimaryElement root_pe, EnergyGenerator __instance)
         {
-            if (elementByHash.IsGas)
-                __instance.storage.AddGasChunk(output.element, num1, root_pe.Temperature, byte.MaxValue, 0, true);
-            else if (elementByHash.IsLiquid)
-                __instance.storage.AddLiquid(output.element, num1, root_pe.Temperature, byte.MaxValue, 0, true);
-            else // SOLIDS
+            // Replicate the vanilla behaviour except for solids + store=true
+            Element elementByHash = ElementLoader.FindElementByHash(output.element);
+            float num1 = output.creationRate * dt;
+            if (output.store)
             {
-                GameObject go = elementByHash.substance.SpawnResource(Vector3.zero, num1, root_pe.Temperature, byte.MaxValue, 0);
-                if (go != null)
+                if (elementByHash.IsGas)
+                    __instance.storage.AddGasChunk(output.element, num1, root_pe.Temperature, byte.MaxValue, 0, true);
+                else if (elementByHash.IsLiquid)
+                    __instance.storage.AddLiquid(output.element, num1, root_pe.Temperature, byte.MaxValue, 0, true);
+                else // SOLIDS
                 {
-                    go.SetActive(false);
-                    __instance.storage.Store(go, true);
+                    GameObject go = elementByHash.substance.SpawnResource(Vector3.zero, num1, root_pe.Temperature, byte.MaxValue, 0);
+                    if (go != null)
+                    {
+                        go.SetActive(false);
+                        __instance.storage.Store(go, true);
+                    }
                 }
+                return false; // skip original
             }
-            return false; // skip original
+            // else: let original run (emits into world)
+            return true;
         }
-        // else: let original run (emits into world)
-        return true;
     }
-}
 
     public static class ModMaterials
     {
-   
-       public static readonly string[] ALGAE = new[] { GameTags.Algae.ToString() };
-    }
 
+        public static readonly string[] ALGAE = new[] { GameTags.Algae.ToString() };
+    }
 
 
     public class NaturalDig
@@ -88,11 +90,8 @@ class FixSolidStorePatch
                     }
                     yield return code;
                 }
-
             }
         }
 
     }
-
-
 }

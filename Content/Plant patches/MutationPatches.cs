@@ -20,15 +20,15 @@ namespace Rephysicalized.Content.Plant_patches
         private static readonly Dictionary<Func<PlantMutations, PlantMutation>, float> Targets =
             new Dictionary<Func<PlantMutations, PlantMutation>, float>
             {
-                { pm => pm.moderatelyLoose,     50f  },
-                { pm => pm.moderatelyTight,     100f },
-                { pm => pm.extremelyTight,      150f },
-                { pm => pm.bonusLice,           50f  },
-                { pm => pm.sunnySpeed,          100f },
-                { pm => pm.blooms,              0f   },
-                { pm => pm.loadedWithFruit,     100f },
-                { pm => pm.slowBurn,            50f  },
-                { pm => pm.heavyFruit,          100f },
+                { pm => pm.moderatelyLoose,     -200f  },
+                { pm => pm.moderatelyTight,     -150f },
+                { pm => pm.extremelyTight,      -100f },
+                { pm => pm.bonusLice,           -200f  },
+                { pm => pm.sunnySpeed,          -150f },
+                { pm => pm.blooms,              -250f   },
+                { pm => pm.loadedWithFruit,     -150f },
+                { pm => pm.slowBurn,            -200f  },
+                { pm => pm.heavyFruit,          -150f },
                 // Intentionally leaving rottenHeaps unchanged
             };
 
@@ -43,7 +43,7 @@ namespace Rephysicalized.Content.Plant_patches
                 }
                 catch
                 {
-                    // If a field is missing in a particular version, skip it
+                  
                 }
 
                 if (mutation != null)

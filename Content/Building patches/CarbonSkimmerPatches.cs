@@ -1,26 +1,17 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 
-namespace CO2ScrubberRework
+namespace Rephysicalized
 {
-    internal static class ScrubberLog
+
+    [HarmonyPatch(typeof(GeneratedBuildings), "LoadGeneratedBuildings")]
+    public static class CarbonSkimmer_AddToDescription
     {
-        public const bool Enabled = false;
-        private const string Pfx = "[CO2ScrubberRework] ";
-
-        public static void Info(string msg)
+        public static void Prefix()
         {
-            if (Enabled) Debug.Log(Pfx + msg);
-        }
-
-        public static void Warn(string msg)
-        {
-            if (Enabled) Debug.LogWarning(Pfx + msg);
-        }
-
-        public static void Error(string msg)
-        {
-            if (Enabled) Debug.LogError(Pfx + msg);
+            const string key = "STRINGS.BUILDINGS.PREFABS.CO2SCRUBBER.EFFECT";
+            // Append gas input functionality to the description
+            Strings.Add(key, Strings.Get(key) + "\n\n <b> REPHYSICALIZED: Requires output gas pipe to function, but you don't have to connect it to anything.</b>");
         }
     }
 
@@ -87,7 +78,7 @@ namespace CO2ScrubberRework
             var pec = go.AddOrGet<PassiveElementConsumer>();
             pec.elementToConsume = SimHashes.CarbonDioxide;
             pec.consumptionRate = 0.6f; // kg/s
-            pec.capacityKG = 2f;       // increased storage capacity to 60 kg as per spec
+            pec.capacityKG = 2f;     
             pec.consumptionRadius = 3;
             pec.showInStatusPanel = false; // hide PEC line in status panel
             pec.showDescriptor = false;    // avoid "0 kg/s" idle descriptor
@@ -108,7 +99,7 @@ namespace CO2ScrubberRework
 
             // Main CO2 storage (60 kg) - visible (piped out via gas secondary port), receives CO2 only after conversion
             var co2Store = go.AddComponent<Storage>();
-            co2Store.capacityKg = 240f;
+            co2Store.capacityKg = 500f;
             co2Store.showInUI = true;
             co2Store.showDescriptor = true;
             co2Store.allowItemRemoval = false;
@@ -231,7 +222,6 @@ namespace CO2ScrubberRework
 
             if (refs == null || pec == null)
             {
-                ScrubberLog.Error("Missing required components on spawn. refs=" + (refs != null) + " pec=" + (pec != null));
                 return;
             }
 
@@ -294,7 +284,6 @@ namespace CO2ScrubberRework
             // Start in standby
             SetActiveState(false);
 
-            ScrubberLog.Info($"OnSpawn: waterStorage={(waterStorage ? waterStorage.name : "null")}, co2Intake={(co2IntakeStorage ? co2IntakeStorage.name : "null")}, co2Main={(co2Storage ? co2Storage.name : "null")}, pwBuffer={(pwBufferStorage ? pwBufferStorage.name : "null")}, hasLiquidDispenser={(liquidDispenser != null)}, hasGasDispenser={(gasDispenser != null)}");
         }
 
         // Run once per simulated second
@@ -333,7 +322,6 @@ namespace CO2ScrubberRework
                     // Track gross intake to enforce exact water ratio (kept from your version)
                     grossCo2Pending += toSiphon;
 
-                    ScrubberLog.Info($"Siphon: intake->buffer: gross={toSiphon:F3}kg, destroyed={loss:F3}kg, buffered+={toBuffer:F3}kg, bufferNow={co2Buffer:F3}kg, grossPending={grossCo2Pending:F3}kg");
                 }
             }
             prevIntakeCo2 = intakeCo2;
@@ -394,7 +382,6 @@ namespace CO2ScrubberRework
                         grossCo2Pending = Mathf.Max(0f, grossCo2Pending - co2Needed);
                     }
 
-                    ScrubberLog.Info($"Convert: water={waterConsumed:F3}kg, pw={pwProduced:F3}kg, co2Moved={co2Moved:F3}kg; bufferCO2={co2Buffer:F3}kg, co2Main={co2Storage.GetAmountAvailable(co2Tag):F3}kg, grossPending={grossCo2Pending:F3}kg");
                 }
             }
 
@@ -406,7 +393,6 @@ namespace CO2ScrubberRework
             if (logTimer >= LogInterval)
             {
                 logTimer = 0f;
-                ScrubberLog.Info($"Status: active={lastActive}, bufferCO2={co2Buffer:F3} kg, waterAvail={waterStorage.GetAmountAvailable(waterTag):F3} kg, PWbuf={pwBufferStorage.GetAmountAvailable(pwTag):F3} kg, roomMainCO2={StorageUiHider.RemainingCapacityForTag(co2Storage, co2Tag):F3} kg");
             }
         }
 
@@ -418,7 +404,6 @@ namespace CO2ScrubberRework
             if (operational != null)
                 operational.SetActive(active);
 
-            ScrubberLog.Info("Operational.SetActive(" + active + ")");
         }
 
         private static void SafeEnableConsumption(PassiveElementConsumer pec, bool enable)
@@ -432,27 +417,17 @@ namespace CO2ScrubberRework
         private Storage FindConsumerStorage()
         {
             var consumer = GetComponent<ConduitConsumer>();
-            if (consumer != null)
-            {
-                try
-                {
+          
                     var fld = AccessTools.Field(typeof(ConduitConsumer), "storage");
                     var s = fld != null ? fld.GetValue(consumer) as Storage : null;
                     if (s != null)
                     {
-                        ScrubberLog.Info("Water storage resolved from ConduitConsumer -> " + s.name);
                         return s;
                     }
-                }
-                catch (System.Exception ex)
-                {
-                    ScrubberLog.Warn("Failed to read ConduitConsumer.storage: " + ex.Message);
-                }
-            }
+                
+          
 
-            // Final fallback: first Storage on the object
             var first = GetComponent<Storage>();
-            ScrubberLog.Warn("Water storage fallback to first Storage -> " + (first ? first.name : "null"));
             return first;
         }
 
@@ -466,18 +441,15 @@ namespace CO2ScrubberRework
                 if (fld != null)
                 {
                     fld.SetValue(dispenser, target);
-                    ScrubberLog.Info($"Bound {dispenser.conduitType} ConduitDispenser.storage -> {target.name}");
                 }
                 else
                 {
                     // Some versions have public field; assign directly as fallback
                     dispenser.storage = target;
-                    ScrubberLog.Info($"Bound (direct) {dispenser.conduitType} ConduitDispenser.storage -> {target.name}");
                 }
             }
             catch (System.Exception ex)
             {
-                ScrubberLog.Error("Failed to bind ConduitDispenser.storage: " + ex);
             }
         }
     }
@@ -494,7 +466,6 @@ namespace CO2ScrubberRework
             gasOutputCell = Grid.OffsetCell(Grid.PosToCell(gameObject), CO2ScrubberSecondaryPorts.CO2_GAS_SECONDARY_OUTPUT.offset);
             var gasNetworkItem = new FlowUtilityNetwork.NetworkItem(ConduitType.Gas, Endpoint.Source, gasOutputCell, gameObject);
             gasNetworkManager.AddToNetworks(gasOutputCell, gasNetworkItem, true);
-            ScrubberLog.Info("Registered secondary gas output at cell " + gasOutputCell);
         }
 
         public override void OnCleanUp()

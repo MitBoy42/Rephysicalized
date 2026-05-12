@@ -1,10 +1,66 @@
 ﻿
-using System.Collections.Generic; using HarmonyLib; using KSerialization; using UnityEngine;
-
+using HarmonyLib; 
+using KSerialization; 
+using System.Collections.Generic; 
+using UnityEngine;
+using HarmonyLib;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
 namespace Rephysicalized
-{ // Configure Sublimation Station with: // - two independent real converters (toxic sand / bleachstone) //
-  // - a proxy converter that reports readiness to the Electrolyzer SM (first ElementConverter on GO) //
-  // - a delivery selector to switch fetch between the two items and adjust capacities
+{
+
+    [HarmonyPatch(typeof(SublimationStationConfig), "ConfigureBuildingTemplate")]
+    //Sublimation
+    public static class SublimationStationConfig_SandOutputPatch
+    {
+        private const float Sand_PER_LOAD = 30f;
+
+        public static void Postfix(GameObject go, Tag prefab_tag)
+        {
+            if (OrganicOverhaulIntegration.IsPresent())
+                return;
+            // Ensure ElementConverter exists, or add if missing
+            var elementConverter = go.GetComponent<ElementConverter>();
+            if (elementConverter == null)
+            {
+                elementConverter = go.AddComponent<ElementConverter>();
+                elementConverter.consumedElements = new ElementConverter.ConsumedElement[0];
+            }
+            var outputs = elementConverter.outputElements?.ToList() ?? new System.Collections.Generic.List<ElementConverter.OutputElement>();
+            // Remove any existing Sand output
+            outputs.RemoveAll(o => o.elementHash == SimHashes.Sand);
+            // Always add/overwrite with a Sand output (AirFilter values)
+            outputs.Add(new ElementConverter.OutputElement(
+                0.34f,      // massGenerationRate (AirFilter)
+                SimHashes.Sand,  // output element
+                0.0f,            // temperatureOperation
+                storeOutput: true,
+                diseaseWeight: 0.25f
+            ));
+            elementConverter.outputElements = outputs.ToArray();
+
+            // Ensure Storage uses StandardSealedStorage modifiers (like AirFilter)
+            var storage = go.GetComponent<Storage>();
+            if (storage != null)
+            {
+                storage.SetDefaultStoredItemModifiers(Storage.StandardSealedStorage);
+            }
+            // Ensure ElementDropper exists and is set up to drop Sand in 30kg loads
+            var elementDropper = go.AddComponent<ElementDropper>();
+
+            elementDropper.emitTag = new Tag("Sand");
+            elementDropper.emitMass = 40f;
+            elementDropper.emitOffset = new Vector3(0.0f, 0.0f, 0.0f);
+        }
+    }
+
+    // Configure Sublimation Station with: // - two independent real converters (toxic sand / bleachstone) //
+    // - a proxy converter that reports readiness to the Electrolyzer SM (first ElementConverter on GO) //
+    // - a delivery selector to switch fetch between the two items and adjust capacities
     [HarmonyPatch(typeof(SublimationStationConfig), nameof(SublimationStationConfig.ConfigureBuildingTemplate))]
     public static class SublimationStationConfig_ConfigureBuildingTemplate_Patch
     {
@@ -22,7 +78,7 @@ namespace Rephysicalized
             if (existingConverters != null)
             {
                 for (int i = 0; i < existingConverters.Length; i++)
-                    Object.DestroyImmediate(existingConverters[i]);
+                    GameObject.DestroyImmediate(existingConverters[i]);
             }
 
             // Converter 1: Toxic Sand -> Polluted Oxygen (vanilla behavior)
@@ -59,20 +115,26 @@ namespace Rephysicalized
 
             var fetcher = go.AddOrGet<ManualDeliveryKG>();
             fetcher.SetStorage(storage);
-            fetcher.RequestedItemTag = SimHashes.ToxicSand.CreateTag(); // default selection
+            if (OrganicOverhaulIntegration.IsPresent()) { fetcher.RequestedItemTag = SimHashes.ToxicMud.CreateTag(); }
+            if (!OrganicOverhaulIntegration.IsPresent())
+            { fetcher.RequestedItemTag = SimHashes.ToxicSand.CreateTag(); }
+
             fetcher.capacity = 600f;
             fetcher.refillMass = 240f;
             fetcher.choreTypeIDHash = Db.Get().ChoreTypes.FetchCritical.IdHash;
 
+
+
             // Allow both items in storage
             if (storage.storageFilters == null)
                 storage.storageFilters = new List<Tag>();
-            var toxicSand = SimHashes.ToxicSand.CreateTag();
-            var bleachStone = SimHashes.BleachStone.CreateTag();
-            if (!storage.storageFilters.Contains(toxicSand))
-                storage.storageFilters.Add(toxicSand);
-            if (!storage.storageFilters.Contains(bleachStone))
-                storage.storageFilters.Add(bleachStone);
+          
+
+                storage.storageFilters.Add(SimHashes.ToxicSand.CreateTag());
+            storage.storageFilters.Add(SimHashes.BleachStone.CreateTag());
+
+            if (OrganicOverhaulIntegration.IsPresent())
+            { storage.storageFilters.Add(SimHashes.ToxicMud.CreateTag()); }
         }
     }
 
@@ -105,31 +167,37 @@ namespace Rephysicalized
             bool anyHasEnough = sandHasEnough || bleachHasEnough;
             bool anyCanConvert = sandCanConvert || bleachCanConvert;
 
-            // Debounced operational: start immediately if either has enough; stop only if neither can convert for grace window
+            // Respect automation: never override Operational.SetActive from here.
+            // If automation disabled the station, keep converters off.
+            if (operational != null && !operational.IsOperational)
+            {
+                sandConverter.enabled = false;
+                bleachConverter.enabled = false;
+                stopGraceTimer = 0f;
+                return;
+            }
+
+            // Debounced internal gating ONLY for converter enablement.
+            // (Operational state machine remains the authority.)
             if (anyHasEnough)
             {
                 stopGraceTimer = 0f;
-                if (operational != null && !operational.IsActive)
-                    operational.SetActive(true);
+            }
+            else if (!anyCanConvert)
+            {
+                stopGraceTimer += 0.2f; // Sim200ms cadence
             }
             else
             {
-                // no one has enough to start; if nobody can convert, start grace countdown
-                if (!anyCanConvert)
-                {
-                    stopGraceTimer += 0.2f; // Sim200ms cadence
-                    if (stopGraceTimer >= StopGraceSeconds && operational != null && operational.IsActive)
-                        operational.SetActive(false);
-                }
-                else
-                {
-                    stopGraceTimer = 0f;
-                }
+                stopGraceTimer = 0f;
             }
 
             // Enable whichever converter can operate; leave enabled if it still "can convert"
-            sandConverter.enabled = sandHasEnough || sandCanConvert;
-            bleachConverter.enabled = bleachHasEnough || bleachCanConvert;
+            bool enableSand = (sandHasEnough || sandCanConvert) && (stopGraceTimer < StopGraceSeconds);
+            bool enableBleach = (bleachHasEnough || bleachCanConvert) && (stopGraceTimer < StopGraceSeconds);
+
+            sandConverter.enabled = enableSand;
+            bleachConverter.enabled = enableBleach;
         }
     }
 
@@ -139,6 +207,9 @@ namespace Rephysicalized
     {
         public static readonly Tag ToxicSandTag = SimHashes.ToxicSand.CreateTag();
         public static readonly Tag BleachStoneTag = SimHashes.BleachStone.CreateTag();
+        public static readonly Tag ToxicMudTag = SimHashes.ToxicMud.CreateTag();
+
+
 
         [KSerialization.Serialize] public Tag selectedDeliveryTag = default;
 
@@ -154,8 +225,18 @@ namespace Rephysicalized
         public override void OnPrefabInit()
         {
             base.OnPrefabInit();
-            if (!selectedDeliveryTag.IsValid)
-                selectedDeliveryTag = ToxicSandTag; // default is Toxic Sand
+
+
+            if (!OrganicOverhaulIntegration.IsPresent())
+            {
+                if (!selectedDeliveryTag.IsValid)
+                    selectedDeliveryTag = ToxicSandTag; // default is Toxic Sand
+            }
+            else
+            {
+                if (!selectedDeliveryTag.IsValid)
+                    selectedDeliveryTag = ToxicMudTag; // default is Toxic Sand
+            }
         }
 
         public override void OnSpawn()
@@ -168,12 +249,22 @@ namespace Rephysicalized
         {
             var options = new FewOptionSideScreen.IFewOptionSideScreen.Option[2];
 
+            if (!OrganicOverhaulIntegration.IsPresent())
             {
                 var label = ToxicSandTag.ProperName() ?? ToxicSandTag.ToString();
                 var sprite = Def.GetUISprite((object)ToxicSandTag);
                 options[0] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
-                    ToxicSandTag, label, sprite, "Deliver Toxic Sand");
+                    ToxicSandTag, label, sprite, "Deliver Polluted Dirt");
             }
+        
+            else
+            {
+                 var label = ToxicSandTag.ProperName() ?? ToxicSandTag.ToString();
+        var sprite = Def.GetUISprite((object)ToxicMudTag);
+        options[0] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
+            ToxicSandTag, label, sprite, "Deliver Polluted Mud");
+            }
+             
             {
                 var label = BleachStoneTag.ProperName() ?? BleachStoneTag.ToString();
                 var sprite = Def.GetUISprite((object)BleachStoneTag);

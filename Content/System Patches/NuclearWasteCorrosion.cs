@@ -159,7 +159,7 @@ namespace Rephysicalized
                         };
 
                         // -794517298 is the raw hash used by Overheatable for building HP damage
-                        bhp.Trigger(-794517298, damageInfo);
+                        bhp.gameObject.BoxingTrigger<BuildingHP.DamageSourceInfo>(-794517298, damageInfo);
                     }
 
                     return;

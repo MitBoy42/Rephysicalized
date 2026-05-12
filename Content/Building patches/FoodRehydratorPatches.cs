@@ -12,46 +12,26 @@ namespace Rephysicalized
     {
         public static void Postfix(GameObject go, Tag prefab_tag)
         {
-            // 1) Bump CO2 output to 0.02 kg/s
             var ec = go.GetComponent<ElementConverter>();
             if (ec != null)
             {
-                var outputs = ec.outputElements;
-                if (outputs != null)
+                bool foundCO2 = false;
+                for (int i = 0; i < ec.outputElements.Length; i++)
                 {
-                    bool foundCO2 = false;
-                    for (int i = 0; i < outputs.Length; i++)
+                    ref ElementConverter.OutputElement output = ref ec.outputElements[i];
+                    if (output.elementHash == SimHashes.CarbonDioxide)
                     {
-                        if (outputs[i].elementHash == SimHashes.CarbonDioxide)
-                        {
-                            outputs[i].massGenerationRate = 0.02f;
-                            foundCO2 = true;
-                            break;
-                        }
+                        output.massGenerationRate = 0.02f;
+                        foundCO2 = true;
+                        break;
                     }
-
-                    if (!foundCO2)
-                    {
-                        // If CO2 isn't present for some reason, add it.
-                        var list = new List<ElementConverter.OutputElement>(outputs)
-                        {
-                            new ElementConverter.OutputElement(0.02f, SimHashes.CarbonDioxide, 348.15f, outputElementOffsety: 1f)
-                        };
-                        outputs = list.ToArray();
-                    }
-
-                    ec.outputElements = outputs; // reassign to persist struct edits
                 }
             }
 
-            // 2) Set the empty workable time to 20 seconds
             var workable = go.GetComponent<FoodDehydratorWorkableEmpty>();
-            if (workable != null)
-            {
-                // Prefer SetWorkTime if available (ensures any internal bookkeeping is updated)
+          
                 workable.SetWorkTime(20f);
-                // If SetWorkTime didn't exist in a variant, workable.workTime = 20f would also work.
-            }
+            
         }
     }
 
@@ -68,12 +48,6 @@ namespace Rephysicalized
             var dmType = AccessTools.TypeByName("FoodRehydrator.DehydratedManager") ??
                          AccessTools.TypeByName("DehydratedManager");
 
-            if (dmType == null)
-            {
-                Debug.LogWarning("[Rephysicalized] Could not find DehydratedManager type for patching.");
-                return;
-            }
-
             // Patch OnSpawn -> attach/find plastic storage and dropper
             var onSpawn = AccessTools.Method(dmType, "OnSpawn");
             if (onSpawn != null)
@@ -83,11 +57,6 @@ namespace Rephysicalized
                     postfix: new HarmonyMethod(typeof(Rehydrator_LatePatch_Bootstrap), nameof(OnSpawn_Postfix))
                 );
             }
-            else
-            {
-                Debug.LogWarning("[Rephysicalized] DehydratedManager.OnSpawn not found.");
-            }
-
             // Patch ConsumeResourcesForRehydration(GameObject, GameObject) -> add 2 kg plastic
             var consume = AccessTools.Method(dmType, "ConsumeResourcesForRehydration", new[] { typeof(GameObject), typeof(GameObject) });
             if (consume != null)
@@ -97,10 +66,7 @@ namespace Rephysicalized
                     postfix: new HarmonyMethod(typeof(Rehydrator_LatePatch_Bootstrap), nameof(Consume_Postfix))
                 );
             }
-            else
-            {
-                Debug.LogWarning("[Rephysicalized] DehydratedManager.ConsumeResourcesForRehydration not found.");
-            }
+     
         }
 
         // Postfix for DehydratedManager.OnSpawn (instance will be a KMonoBehaviour)
@@ -160,7 +126,6 @@ namespace Rephysicalized
             if (inst == null || massKg <= 0f) return;
 
             Tag plasticTag = SimHashes.Polypropylene.CreateTag();
-
             // Find the plastic-only storage by its filter
             Storage plasticStorage = null;
             var storages = inst.GetComponents<Storage>();
