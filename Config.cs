@@ -74,6 +74,13 @@ namespace Rephysicalized
         [JsonProperty]
         public bool TunedUpCrudCreation { get; set; }
 
+        [Option("STRINGS.MODCONFIG.DEBRISDISSOLVING.NAME", "STRINGS.MODCONFIG.DEBRISDISSOLVING.TOOLTIP")]
+        [JsonProperty]
+        public bool DebrisDissolving { get; set; }
+
+        [Option("STRINGS.MODCONFIG.WATTAGECAPACITY.NAME", "STRINGS.MODCONFIG.WATTAGECAPACITY.TOOLTIP")]
+        [JsonProperty]
+        public bool WattageCapacity { get; set; }
 
 
 
@@ -92,6 +99,8 @@ namespace Rephysicalized
             RephysicalizedMetalOre = true;
             BionicMetalMeter = true;
             TunedUpCrudCreation = true;
+            DebrisDissolving = true;
+            WattageCapacity = true;
 
         }
     }

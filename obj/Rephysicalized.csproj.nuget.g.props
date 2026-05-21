@@ -13,7 +13,4 @@
     <SourceRoot Include="C:\Users\MitBoy\.nuget\packages\" />
     <SourceRoot Include="C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages\" />
   </ItemGroup>
-  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <Import Project="$(NuGetPackageRoot)aze.publicise.msbuild.task\1.1.0\build\Aze.Publicise.MSBuild.Task.props" Condition="Exists('$(NuGetPackageRoot)aze.publicise.msbuild.task\1.1.0\build\Aze.Publicise.MSBuild.Task.props')" />
-  </ImportGroup>
 </Project>

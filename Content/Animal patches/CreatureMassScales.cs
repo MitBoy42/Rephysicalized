@@ -27,7 +27,7 @@ namespace Rephysicalized.Content.Animal_patches
             {
                 if (smi.isPaused())
                     smi.GoTo(paused);
-            }, UpdateRate.SIM_1000ms);
+            }, UpdateRate.SIM_4000ms);
 
             paused
                 .ToggleStatusItem(
@@ -38,7 +38,7 @@ namespace Rephysicalized.Content.Animal_patches
                 {
                     if (!smi.isPaused())
                         smi.GoTo(ok);
-                }, UpdateRate.SIM_1000ms);
+                }, UpdateRate.SIM_4000ms);
         }
     }
 
@@ -65,22 +65,22 @@ namespace Rephysicalized.Content.Animal_patches
             {
                 if (smi.isPaused())
                     smi.GoTo(paused);
-            }, UpdateRate.SIM_1000ms);
+            }, UpdateRate.SIM_4000ms);
 
             paused
                 .ToggleStatusItem(
-                    name: "Not enough body mass",
-                    tooltip: "Milk production paused: not enough body mass to convert into milk.",
+                    name: STRINGS.STATUSITEMS.NOTENOUGHBODYMASS_MILK.NAME,
+                    tooltip: STRINGS.STATUSITEMS.NOTENOUGHBODYMASS_MILK.TOOLTIP,
                     category: Db.Get().StatusItemCategories.Stored)
                 .Update((smi, dt) =>
                 {
                     if (!smi.isPaused())
                         smi.GoTo(ok);
-                }, UpdateRate.SIM_1000ms);
+                }, UpdateRate.SIM_4000ms);
         }
     }
 
-    public sealed class ScaleMassTransferDriver : KMonoBehaviour, ISim200ms
+    public sealed class ScaleMassTransferDriver : KMonoBehaviour, ISim1000ms
     {
         // Adjust tags if your prefab IDs differ
         internal static readonly Tag WoodDeerTag = new Tag("WoodDeer");
@@ -125,7 +125,7 @@ namespace Rephysicalized.Content.Animal_patches
             }
         }
 
-        public void Sim200ms(float dt)
+        public void Sim1000ms(float dt)
         {
             // No-op for exempt creatures even if attached
             if (IsExempt())

@@ -1,4 +1,4 @@
-﻿﻿using HarmonyLib;
+﻿using HarmonyLib;
 using Database;
 using KSerialization;
 using Klei.AI;
@@ -323,7 +323,7 @@ namespace Rephysicalized
 
         public void AddTinkerMass(float kg)
         {
-  
+
             AddMassDelta(kg);
         }
 

@@ -67,7 +67,7 @@ namespace Rephysicalized
             ),
                 new Entry("CarrotPlant", 1f *  Rephysicalized.FoodDensityRebalance.IngredientMultiplier[CarrotConfig.ID.ToTag()],
                 new MaterialYield("Ice", 0.99f),
-                new MaterialYield("CarbonDioxide", 0.01f) 
+                new MaterialYield("CarbonDioxide", 0.01f)
             ),
             new Entry("HardSkinBerryPlant", 1f,
                 new MaterialYield("RotPile", 0.8f),
@@ -79,7 +79,7 @@ namespace Rephysicalized
             ),
             new Entry("BasicFabricPlant", 1f,
                 new MaterialYield("ToxicMud", 0.98f),
-                new MaterialYield("ContaminatedOxygen", 0.02f) 
+                new MaterialYield("ContaminatedOxygen", 0.02f)
             ),
                 new Entry("GardenFoodPlant", 1f, new MaterialYield("DirtyWater", 0.5f), new MaterialYield("Shale", 0.5f)),
                 new Entry("KelpPlant", 10f, new MaterialYield("Kelp", 1f)),
@@ -123,5 +123,5 @@ namespace Rephysicalized
         }
     }
 
- 
+
 }

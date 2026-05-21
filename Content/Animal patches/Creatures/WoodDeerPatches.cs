@@ -181,7 +181,7 @@ namespace Rephysicalized
            controller.Configure(diet); 
         }
     }
-    public sealed class WoodDeerAntlerFuelController : KMonoBehaviour, ISim200ms
+    public sealed class WoodDeerAntlerFuelController : KMonoBehaviour, ISim1000ms
     {
         [MyCmpGet] private Effects _effects;
 
@@ -227,7 +227,7 @@ namespace Rephysicalized
             }
         }
 
-        public void Sim200ms(float dt)
+        public void Sim1000ms(float dt)
         {
            
 

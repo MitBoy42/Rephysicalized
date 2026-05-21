@@ -36,11 +36,12 @@ namespace Rephysicalized
 { "LightBugBlue", SimHashes.Ethanol }, { "LightBugBlueBaby", SimHashes.Ethanol },
 { "LightBugBlack", SimHashes.Resin }, { "LightBugBlackBaby", SimHashes.Resin },
 { "LightBugCrystal", SimHashes.Resin }, { "LightBugCrystalBaby", SimHashes.Resin },
-{ "GoldBelly", SimHashes.Gold }, { "GoldBellyBaby", SimHashes.Gold },
+{ "GoldBelly", SimHashes.MoltenGold }, { "GoldBellyBaby", SimHashes.MoltenGold },
 
 { "CrabWood", SimHashes.Ethanol }, { "BabyCrabWood", SimHashes.Ethanol },
 { "Crab", SimHashes.SaltWater }, { "BabyCrab", SimHashes.SaltWater },
 { "CrabFreshWater", SimHashes.Water }, { "BabyCrabFreshWater", SimHashes.Water },
+{ "HatchGold", SimHashes.MoltenGold }, { "BabyHatchGold", SimHashes.MoltenGold },
 };
 
         private const float PeeMassKg = 4f;

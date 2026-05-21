@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Rephysicalized
 {
     [AddComponentMenu("KMonoBehaviour/Creatures/CreatureMassTracker")]
-    public partial class CreatureMassTracker : KMonoBehaviour, ISim200ms
+    public partial class CreatureMassTracker : KMonoBehaviour, ISim1000ms
     {
         public enum AccumulationMode
         {
@@ -138,8 +138,8 @@ namespace Rephysicalized
             return Mathf.Max(0.001f, bodyMassKg + scale + milk);
         }
 
-        // ISim200ms: keep PrimaryElement.Mass in sync with effective mass without saving derived masses.
-        public void Sim200ms(float dt)
+        // ISim1000ms: keep PrimaryElement.Mass in sync with effective mass without saving derived masses.
+        public void Sim1000ms(float dt)
         {
             SyncPeMass();
         }

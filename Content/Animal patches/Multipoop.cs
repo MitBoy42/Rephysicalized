@@ -81,6 +81,23 @@ namespace Rephysicalized.Content.Animal_patches
             Register(HatchMetalConfig.ID, metalByproduct, 20f / 75f);
             Register(BabyHatchMetalConfig.ID, metalByproduct, 20f / 75f);
 
+     
+          
+            //var goldHatchCfgType = AccessTools.TypeByName("GoldHatch.Creatures.HatchGoldConfig");
+            //if (goldHatchCfgType != null)
+            //{
+             
+            //    var idFi = AccessTools.Field(goldHatchCfgType, "ID");
+            //    var babyIdFi = AccessTools.Field(goldHatchCfgType, "ID_BABY");
+
+            //    if (idFi?.GetValue(null) is string hatchIdStr && babyIdFi?.GetValue(null) is string babyIdStr)
+            //    {
+            //        Register(hatchIdStr, metalByproduct, 25f / 75f);
+            //        Register(babyIdStr, metalByproduct, 25f / 75f);
+            //    }
+            //}
+
+
         }
     }
 

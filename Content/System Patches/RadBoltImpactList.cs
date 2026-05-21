@@ -13,24 +13,29 @@ namespace Rephysicalized
             public string[] sfxCandidates;                 // Optional, if null -> no custom audio
             public Action<Vector3> spawnVfx;               // Optional, if null -> no custom vfx
             public string id;
-            public HashSet<SimHashes> affectedElements = new HashSet<SimHashes>();
+            public HashSet<string> affectedElementIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             // Behavior toggles
             public bool launchNearby = true;
 
-            // Emission: map of elements to fraction values; fractions will be normalized at runtime
-            public Dictionary<SimHashes, float> emittedElements = null;
+            // Emission: map of element id strings (SimHashes.CreateTag().ToString()) to fraction values; fractions will be normalized at runtime
+            public Dictionary<string, float> emittedElementIds = null;
             public float spawnTempTargetK = 273f + 150f; // will be clamped to element bounds
             public float emissionMultiplier = 1f;  // emit mass = payloadKg * emissionMultiplier
             public float removalMultiplier = 1f;   // remove mass = payloadKg * removalMultiplier
 
             // Heating (ΔT for impacted solid)
-            public float tempDeltaPerPayload = 0.2f;  // Uranium default: payload * 0.2f
+            public float tempDeltaPerPayload = 0.02f;  // Uranium default: payload * 0.2f
             public float tempDeltaMin = 0f;
             public float tempDeltaMax = 300f;
 
 
-            public bool Matches(SimHashes elem) => affectedElements != null && affectedElements.Contains(elem);
+            public bool Matches(SimHashes elem)
+            {
+                if (affectedElementIds == null) return false;
+                var key = elem.CreateTag().ToString();
+                return affectedElementIds.Contains(key);
+            }
         }
 
         // Registry holding all impact configurations.
@@ -47,9 +52,9 @@ namespace Rephysicalized
             Configs.Add(new HEPImpactConfig
             {
                 id = "uranium",
-                affectedElements = new HashSet<SimHashes> { SimHashes.UraniumOre },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.EnrichedUranium, 1f } },
+                affectedElementIds = new HashSet<string> { SimHashes.UraniumOre.CreateTag().ToString() },
+          
+                emittedElementIds = new Dictionary<string, float> { { SimHashes.EnrichedUranium.CreateTag().ToString(), 1f } },
                 spawnTempTargetK = 1000f,
                 emissionMultiplier = 2f,
                 removalMultiplier = 2f,
@@ -63,12 +68,11 @@ namespace Rephysicalized
             Configs.Add(new HEPImpactConfig
             {
                 id = "uraniumdepleted",
-                affectedElements = new HashSet<SimHashes> { SimHashes.DepletedUranium },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Lead, 0.87f }, { SimHashes.SolidNuclearWaste, 0.13f } },
+                affectedElementIds = new HashSet<string> { SimHashes.DepletedUranium.CreateTag().ToString() },
+      
+                emittedElementIds = new Dictionary<string, float> { { SimHashes.Lead.CreateTag().ToString(), 0.87f }, { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.13f } },
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
 
                 sfxCandidates = new[] { "Meteor_Nuclear_Impact", "Meteor_Impact_Uranium", "Meteor_Impact_Nuclear" },
                 spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactUranium, pos, 0f); }
@@ -80,12 +84,11 @@ namespace Rephysicalized
             Configs.Add(new HEPImpactConfig
             {
                 id = "Lead",
-                affectedElements = new HashSet<SimHashes> { SimHashes.Lead },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.SolidMercury, 0.965f }, { SimHashes.SolidNuclearWaste, 0.035f } },
+                affectedElementIds = new HashSet<string> { SimHashes.Lead.CreateTag().ToString() },
+       
+                emittedElementIds = new Dictionary<string, float> { { SimHashes.SolidMercury.CreateTag().ToString(), 0.965f }, { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.035f } },
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
                 spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }
 
@@ -96,12 +99,11 @@ namespace Rephysicalized
             Configs.Add(new HEPImpactConfig
             {
                 id = "Mercury",
-                affectedElements = new HashSet<SimHashes> { SimHashes.SolidMercury},
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Gold, 0.985f }, { SimHashes.SolidNuclearWaste, 0.015f } },
+                affectedElementIds = new HashSet<string> { SimHashes.SolidMercury.CreateTag().ToString() },
+      
+                emittedElementIds = new Dictionary<string, float> { { SimHashes.Gold.CreateTag().ToString(), 0.985f }, { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.015f } },
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
                 spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }
 
@@ -110,12 +112,11 @@ namespace Rephysicalized
             Configs.Add(new HEPImpactConfig
             {
                 id = "Cinnabar",
-                affectedElements = new HashSet<SimHashes> {  SimHashes.Cinnabar },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Gold, 0.845f }, { SimHashes.Sulfur, 0.14f }, { SimHashes.SolidNuclearWaste, 0.015f } },
+                affectedElementIds = new HashSet<string> { SimHashes.Cinnabar.CreateTag().ToString() },
+      
+                emittedElementIds = new Dictionary<string, float> { { SimHashes.Gold.CreateTag().ToString(), 0.845f }, { SimHashes.Sulfur.CreateTag().ToString(), 0.14f }, { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.015f } },
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
                 spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }
 
@@ -127,26 +128,34 @@ namespace Rephysicalized
             Configs.Add(new HEPImpactConfig
             {
                 id = "Gold",
-                affectedElements = new HashSet<SimHashes> { SimHashes.Gold },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Tungsten, 0.935f }, { SimHashes.SolidNuclearWaste, 0.065f } },
+                affectedElementIds = new HashSet<string> { SimHashes.Gold.CreateTag().ToString() },
+     
+                emittedElementIds = new Dictionary<string, float>
+                {
+                    { SimHashes.Tungsten.CreateTag().ToString(), 0.935f },
+                    { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.065f }
+                },
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
                 spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactDust, pos, 0f); }
             });
+
 
             // Iridium 
             Configs.Add(new HEPImpactConfig
             {
                 id = "Iridium",
-                affectedElements = new HashSet<SimHashes> { SimHashes.Iridium },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Tungsten, 0.96f }, { SimHashes.SolidNuclearWaste, 0.04f } },
+                affectedElementIds = new HashSet<string> { SimHashes.Iridium.CreateTag().ToString() },
+   
+                emittedElementIds = new Dictionary<string, float>
+                {
+                    { SimHashes.Tungsten.CreateTag().ToString(), 0.96f },
+                    { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.04f }
+                },
+
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
                 spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactDust, pos, 0f); }
             });
@@ -154,44 +163,51 @@ namespace Rephysicalized
             Configs.Add(new HEPImpactConfig
             {
                 id = "Copper",
-                affectedElements = new HashSet<SimHashes> { SimHashes.Copper },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Nickel, 0.93f }, { SimHashes.SolidNuclearWaste, 0.07f } },
+                affectedElementIds = new HashSet<string> { SimHashes.Copper.CreateTag().ToString() },
+                emittedElementIds = new Dictionary<string, float>
+                {
+                    { SimHashes.Nickel.CreateTag().ToString(), 0.93f },
+                    { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.07f }
+                },
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
-
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
                 spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactDust, pos, 0f); }
 
             });
 
+
             // Nickel
             Configs.Add(new HEPImpactConfig
             {
                 id = "Nickel",
-                affectedElements = new HashSet<SimHashes> { SimHashes.Nickel },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Cobalt, 1f } }, //Cobalt's atomic weight is same as Nickels 
+                affectedElementIds = new HashSet<string> { SimHashes.Nickel.CreateTag().ToString() },
+                emittedElementIds = new Dictionary<string, float>
+                {
+                    { SimHashes.Cobalt.CreateTag().ToString(), 1f }
+                }, //Cobalt's atomic weight is same as Nickels 
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
-                spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); } });
+                spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }
+            });
 
             // Cobalt
             Configs.Add(new HEPImpactConfig
             {
                 id = "Cobalt",
-                affectedElements = new HashSet<SimHashes> { SimHashes.Cobalt },
-                launchNearby = true,
-                emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Iron, 0.95f }, { SimHashes.SolidNuclearWaste, 0.05f } },
+                affectedElementIds = new HashSet<string> { SimHashes.Cobalt.CreateTag().ToString() },
+                emittedElementIds = new Dictionary<string, float>
+                {
+                    { SimHashes.Iron.CreateTag().ToString(), 0.95f },
+                    { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.05f }
+                },
                 emissionMultiplier = 200f,
                 removalMultiplier = 200f,
-                tempDeltaPerPayload = 0.02f,
-
                 sfxCandidates = new[] { "Meteor_Medium_Impact" },
-                spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }  });
+                spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }
+            });
+
 
             //If ores are NOT Rephysicalized
             if (!Config.Instance.RephysicalizedMetalOre)
@@ -200,49 +216,63 @@ namespace Rephysicalized
                 Configs.Add(new HEPImpactConfig
                 {
                     id = "Gold Amalgam",
-                    affectedElements = new HashSet<SimHashes> {  SimHashes.GoldAmalgam },
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Tungsten, 0.935f }, { SimHashes.SolidNuclearWaste, 0.065f } },
+                    affectedElementIds = new HashSet<string> { SimHashes.GoldAmalgam.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Tungsten.CreateTag().ToString(), 0.935f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.065f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
                     sfxCandidates = new[] { "Meteor_Medium_Impact" },
                     spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactDust, pos, 0f); }     });
 
 
+
                 Configs.Add(new HEPImpactConfig
                 {   id = "Copper Ore",
-                    affectedElements = new HashSet<SimHashes> { SimHashes.Cuprite },
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Nickel, 0.93f }, { SimHashes.SolidNuclearWaste, 0.07f } },
+                    affectedElementIds = new HashSet<string> { SimHashes.Cuprite.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Nickel.CreateTag().ToString(), 0.93f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.07f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
                     sfxCandidates = new[] { "Meteor_Medium_Impact" },
                     spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactDust, pos, 0f); }  });
 
+
+
+
                 Configs.Add(new HEPImpactConfig
-                {   id = "Nickel Ore",
-                    affectedElements = new HashSet<SimHashes> { SimHashes.NickelOre },
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Cobalt, 1f } },
+                {
+                    id = "Nickel Ore",
+                    affectedElementIds = new HashSet<string> { SimHashes.NickelOre.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Cobalt.CreateTag().ToString(), 1f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
-                    sfxCandidates = new[] { "Meteor_Medium_Impact" },
+                            sfxCandidates = new[] { "Meteor_Medium_Impact" },
                     spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }    });
 
 
                 Configs.Add(new HEPImpactConfig
-                {  id = "Cobalt Ore",
-                    affectedElements = new HashSet<SimHashes> {  SimHashes.Cobaltite },
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Iron, 0.95f }, { SimHashes.SolidNuclearWaste, 0.05f } },
+                {
+                    id = "Cobalt Ore",
+                    affectedElementIds = new HashSet<string> { SimHashes.Cobaltite.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Iron.CreateTag().ToString(), 0.95f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.05f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
-                    sfxCandidates = new[] { "Meteor_Medium_Impact" },
-                    spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }   });  
+                       sfxCandidates = new[] { "Meteor_Medium_Impact" },
+                    spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }   });
+
             }
             //IF ORES ARE REPHYSICALIZED
             if (Config.Instance.RephysicalizedMetalOre)
@@ -251,12 +281,15 @@ namespace Rephysicalized
                 Configs.Add(new HEPImpactConfig
                 {
                     id = "Gold Amalgam",
-                    affectedElements = new HashSet<SimHashes> { SimHashes.GoldAmalgam },
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Tungsten, 0.64f }, { SimHashes.Gold, 0.31f }, { SimHashes.SolidNuclearWaste, 0.05f } },
+                    affectedElementIds = new HashSet<string> { SimHashes.GoldAmalgam.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Tungsten.CreateTag().ToString(), 0.64f },
+                        { SimHashes.Gold.CreateTag().ToString(), 0.31f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.05f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
                     sfxCandidates = new[] { "Meteor_Medium_Impact" },
                     spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactDust, pos, 0f); }  });
 
@@ -264,13 +297,16 @@ namespace Rephysicalized
                 Configs.Add(new HEPImpactConfig
                 {
                     id = "Copper Ore",
-                    affectedElements = new HashSet<SimHashes> { SimHashes.Cuprite },
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Nickel, 0.74f }, { SimHashes.SolidOxygen, 0.2f }, { SimHashes.SolidNuclearWaste, 0.06f } },
+                    affectedElementIds = new HashSet<string> { SimHashes.Cuprite.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Nickel.CreateTag().ToString(), 0.74f },
+                        { SimHashes.SolidOxygen.CreateTag().ToString(), 0.2f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.06f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
-
+      
                     sfxCandidates = new[] { "Meteor_Medium_Impact" },
                     spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactDust, pos, 0f); }    });
 
@@ -278,12 +314,14 @@ namespace Rephysicalized
                 Configs.Add(new HEPImpactConfig
                 {
                     id = "Nickel Ore",
-                    affectedElements = new HashSet<SimHashes> { SimHashes.NickelOre},
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Cobalt, 0.73f }, { SimHashes.Sulfur, 0.27f } },
+                    affectedElementIds = new HashSet<string> { SimHashes.NickelOre.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Cobalt.CreateTag().ToString(), 0.73f },
+                        { SimHashes.Sulfur.CreateTag().ToString(), 0.27f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
                     sfxCandidates = new[] { "Meteor_Medium_Impact" },
                     spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }    });
 
@@ -291,17 +329,54 @@ namespace Rephysicalized
                 Configs.Add(new HEPImpactConfig
                 {
                     id = "Cobalt Ore",
-                    affectedElements = new HashSet<SimHashes> { SimHashes.Cobaltite },
-                    launchNearby = true,
-                    emittedElements = new Dictionary<SimHashes, float> { { SimHashes.Iron, 67f }, { SimHashes.Sulfur, 29f }, { SimHashes.SolidNuclearWaste, 0.04f } },
+                    affectedElementIds = new HashSet<string> { SimHashes.Cobaltite.CreateTag().ToString() },
+                    emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Iron.CreateTag().ToString(), 0.67f },
+                        { SimHashes.Sulfur.CreateTag().ToString(), 0.29f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.04f }
+                    },
                     emissionMultiplier = 200f,
                     removalMultiplier = 200f,
-                    tempDeltaPerPayload = 0.02f,
-
                     sfxCandidates = new[] { "Meteor_Medium_Impact" },
                     spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }    });
       
             }
+            //Ronivans Zinc
+
+            Configs.Add(new HEPImpactConfig
+            {
+                id = "Zinc Ore",
+                affectedElementIds = new HashSet<string> { "AurichalciteOre" },
+                emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Copper.CreateTag().ToString(), 0.68f },
+                        { SimHashes.SolidOxygen.CreateTag().ToString(), 0.15f },
+                        { SimHashes.SolidCarbonDioxide.CreateTag().ToString(), 0.15f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.02f }
+                    },
+                emissionMultiplier = 200f,
+                removalMultiplier = 200f,
+                sfxCandidates = new[] { "Meteor_Medium_Impact" },
+                spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }
+            });
+          
+            //Ronivans Zinc
+            Configs.Add(new HEPImpactConfig
+            {
+                id = "Zinc",
+                affectedElementIds = new HashSet<string> { "SolidZinc" },
+                emittedElementIds = new Dictionary<string, float>
+                    {
+                        { SimHashes.Copper.CreateTag().ToString(), 0.97f },
+                        { SimHashes.SolidNuclearWaste.CreateTag().ToString(), 0.03f }
+                    },
+                emissionMultiplier = 200f,
+                removalMultiplier = 200f,
+                sfxCandidates = new[] { "Meteor_Medium_Impact" },
+                spawnVfx = pos => { Game.Instance.SpawnFX(SpawnFXHashes.MeteorImpactPhosphoric, pos, 0f); }
+            });
+
         }
 
         public static HEPImpactConfig FindMatch(SimHashes elem)
@@ -315,10 +390,10 @@ namespace Rephysicalized
             return null;
         }
 
-        public static Dictionary<SimHashes, float> GetEmittedElements(string id)
+        public static Dictionary<string, float> GetEmittedElements(string id)
         {
             var cfg = Configs.Find(c => c != null && c.id == id);
-            return cfg?.emittedElements ?? new Dictionary<SimHashes, float>();
+            return cfg?.emittedElementIds ?? new Dictionary<string, float>();
         }
     }
 }

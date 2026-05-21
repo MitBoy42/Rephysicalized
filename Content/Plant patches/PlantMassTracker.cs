@@ -241,41 +241,41 @@ namespace Rephysicalized
     {
         public static void Prefix(Deconstructable __instance, WorkerBase worker)
         {
-           
-                if (__instance == null) return;
 
-                var go = __instance.gameObject;
-                if (go == null) return;
+            if (__instance == null) return;
 
-                var plot = go.GetComponent<PlantablePlot>();
-                if (plot == null) return;
+            var go = __instance.gameObject;
+            if (go == null) return;
 
-                PlantMassTrackerTeardown.SuppressStoragesFrom(go);
+            var plot = go.GetComponent<PlantablePlot>();
+            if (plot == null) return;
 
-                var plotStore = go.GetComponent<PlotMassStore>();
-                if (plotStore == null) return;
+            PlantMassTrackerTeardown.SuppressStoragesFrom(go);
 
-                var trackers = UnityEngine.Object.FindObjectsByType<PlantMassTrackerComponent>(FindObjectsSortMode.None);
+            var plotStore = go.GetComponent<PlotMassStore>();
+            if (plotStore == null) return;
 
-                for (int i = 0; i < trackers.Length; i++)
+            var trackers = UnityEngine.Object.FindObjectsByType<PlantMassTrackerComponent>(FindObjectsSortMode.None);
+
+            for (int i = 0; i < trackers.Length; i++)
+            {
+                var t = trackers[i];
+                if (t == null) continue;
+
+                PlotMassStore theirStore = null;
+                try
                 {
-                    var t = trackers[i];
-                    if (t == null) continue;
-
-                    PlotMassStore theirStore = null;
-                    try
-                    {
-                        theirStore = Traverse.Create(t).Field<PlotMassStore>("_plotStore").Value;
-                    }
-                    catch { }
-
-                    if (theirStore != null && ReferenceEquals(theirStore, plotStore))
-                    {
-                        t.BeginFinalTeardown();
-                    }
+                    theirStore = Traverse.Create(t).Field<PlotMassStore>("_plotStore").Value;
                 }
-            
-      
+                catch { }
+
+                if (theirStore != null && ReferenceEquals(theirStore, plotStore))
+                {
+                    t.BeginFinalTeardown();
+                }
+            }
+
+
         }
 
         public static void Postfix(Deconstructable __instance, WorkerBase worker)
@@ -304,16 +304,13 @@ namespace Rephysicalized
     }
 
     // Optional component: attach to a plant prefab to customize what the PlantMassTracker
-    // spawns on harvest or uproot. If not present on a plant, PMT uses its base config yields.
     [SerializationConfig(MemberSerialization.OptIn)]
     public sealed class PlantMassTrackerYieldModifier : KMonoBehaviour
     {
         // If true, replace the base yields for harvest with 'harvestYields'.
-        // If false, 'harvestYields' are added to the base yields.
         [Serialize] public bool overrideHarvestYields = false;
 
         // If true, replace the base yields for dig with 'digYields'.
-        // If false, 'digYields' are added to the base yields.
         [Serialize] public bool overrideDigYields = false;
 
         // Extra/override yields when the plant is harvested.
@@ -322,5 +319,5 @@ namespace Rephysicalized
         // Extra/override yields when the plant is uprooted.
         [Serialize] public List<MaterialYield> digYields = new List<MaterialYield>();
     }
- 
+
 }

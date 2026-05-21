@@ -1,14 +1,11 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using STRINGS;
-namespace Rephysicalized.Content.System_Patches
+namespace Rephysicalized.Content.ElectricityPatches
 {
-    
+
 
     // Building effects: replace MAX_WATTAGE descriptor (per-wire) with effective capacity
     [HarmonyPatch(typeof(Building), nameof(Building.GetDescriptors))]
@@ -16,16 +13,16 @@ namespace Rephysicalized.Content.System_Patches
     {
         public static void Postfix([HarmonyArgument(0)] GameObject go, ref List<Descriptor> __result)
         {
-
+            if (!Config.Instance.WattageCapacity) return;
 
             var wire = go.GetComponent<Wire>();
 
-            float maxEff = WireMaterialCapacity.GetEffectiveMax(wire);
+            float maxEff = WireMaterialCapacity.GetEffectiveMaxCached(wire);
 
-            // Tooltip key used by the vanilla "Max Wattage" descriptor
+
+
             string tooltipKey = (string)UI.BUILDINGEFFECTS.TOOLTIPS.MAX_WATTAGE;
 
-            // Text template to identify the descriptor by its visible text as a fallback
             string template = (string)UI.BUILDINGEFFECTS.MAX_WATTAGE; // e.g., "Max Wattage: {0}"
             string prefix = template;
             int ph = template.IndexOf("{0}", StringComparison.Ordinal);
@@ -56,12 +53,14 @@ namespace Rephysicalized.Content.System_Patches
     [HarmonyPatch(typeof(Wire), nameof(Wire.OnPrefabInit))]
     public static class Wire_OnPrefabInit_StatusUIPatch
     {
-        private static readonly System.Reflection.FieldInfo F_WireCircuitStatus = AccessTools.Field(typeof(Wire), "WireCircuitStatus");
-        private static readonly System.Reflection.FieldInfo F_WireMaxWattageStatus = AccessTools.Field(typeof(Wire), "WireMaxWattageStatus");
+
 
         public static void Postfix()
         {
-            var circuitStatus = (StatusItem)F_WireCircuitStatus.GetValue(null);
+            if (!Config.Instance.WattageCapacity) return;
+            var circuitStatus = Wire.WireCircuitStatus;
+
+
             if (circuitStatus != null)
             {
                 circuitStatus.resolveStringCallback = (str, data) =>
@@ -73,11 +72,17 @@ namespace Rephysicalized.Content.System_Patches
                     ushort circuitId = circuitManager.GetCircuitID(cell);
                     float wattsUsedByCircuit = circuitManager.GetWattsUsedByCircuit(circuitId);
                     GameUtil.WattageFormatterUnit unit = wire.MaxWattageRating >= Wire.WattageRating.Max20000 ? GameUtil.WattageFormatterUnit.Kilowatts : GameUtil.WattageFormatterUnit.Watts;
-                    float maxEff = WireMaterialCapacity.GetEffectiveMax(wire);
-                    float neededWhenActive = circuitManager.GetWattsNeededWhenActive(circuitId);
-                    string wireLoadColor = GameUtil.GetWireLoadColor(wattsUsedByCircuit, maxEff, neededWhenActive);
+                    float maxEff = Mathf.Max(0f, WireMaterialCapacity.GetEffectiveMaxCached(wire));
+
+                    // GameUtil thresholds assume vanilla max-wattage mapping; recompute using our effective max instead.
+
+                    // This ensures UI color matches the gameplay overload calculation.
+                    float ratio = maxEff <= 0f ? 1f : (wattsUsedByCircuit / maxEff);
+                    string whiteHex = Color.white.ToHexString();
+                    string wireLoadColor = ratio > 1f ? Color.red.ToHexString() : whiteHex;
+
                     string current = wattsUsedByCircuit < 0f ? "?" : GameUtil.GetFormattedWattage(wattsUsedByCircuit, unit);
-                    string coloredCurrent = (wireLoadColor == Color.white.ToHexString()) ? current : ("<color=#" + wireLoadColor + ">" + current + "</color>");
+                    string coloredCurrent = (wireLoadColor == whiteHex) ? current : ("<color=#" + wireLoadColor + ">" + current + "</color>");
                     str = str.Replace("{CurrentLoadAndColor}", coloredCurrent);
                     str = str.Replace("{MaxLoad}", GameUtil.GetFormattedWattage(maxEff, unit));
                     str = str.Replace("{WireType}", wire.GetProperName());
@@ -85,7 +90,8 @@ namespace Rephysicalized.Content.System_Patches
                 };
             }
 
-            var maxStatus = (StatusItem)F_WireMaxWattageStatus.GetValue(null);
+            var maxStatus = Wire.WireMaxWattageStatus; 
+
             if (maxStatus != null)
             {
                 maxStatus.resolveStringCallback = (str, data) =>
@@ -96,9 +102,11 @@ namespace Rephysicalized.Content.System_Patches
                     int cell = Grid.PosToCell(wire.transform.GetPosition());
                     var circuitManager = Game.Instance.circuitManager;
                     float neededWhenActive = circuitManager.GetWattsNeededWhenActive(circuitManager.GetCircuitID(cell));
-                    float maxEff = WireMaterialCapacity.GetEffectiveMax(wire);
-                    string totalPotential = neededWhenActive <= maxEff ? GameUtil.GetFormattedWattage(neededWhenActive, unit) : ("<color=#" + new Color(0.9843137f, 0.6901961f, 0.2313726f).ToHexString() + ">" + GameUtil.GetFormattedWattage(neededWhenActive, unit) + "</color>");
+                    float maxEff = Mathf.Max(0f, WireMaterialCapacity.GetEffectiveMaxCached(wire));
+                    string warnHex = new Color(0.9843137f, 0.6901961f, 0.2313726f).ToHexString();
+                    string totalPotential = neededWhenActive <= maxEff ? GameUtil.GetFormattedWattage(neededWhenActive, unit) : ("<color=#" + warnHex + ">" + GameUtil.GetFormattedWattage(neededWhenActive, unit) + "</color>");
                     str = str.Replace("{TotalPotentialLoadAndColor}", totalPotential);
+
                     str = str.Replace("{MaxLoad}", GameUtil.GetFormattedWattage(maxEff, unit));
                     return str;
                 };
@@ -113,6 +121,7 @@ namespace Rephysicalized.Content.System_Patches
     {
         public static void AppendDescriptor(Element element, ref List<Descriptor> descriptors)
         {
+            if (!Config.Instance.WattageCapacity) return;
             if (element == null || descriptors == null)
                 return;
 
@@ -138,7 +147,7 @@ namespace Rephysicalized.Content.System_Patches
     {
         private static void Postfix([HarmonyArgument(0)] Tag tag, ref List<Descriptor> __result)
         {
-
+            if (!Config.Instance.WattageCapacity) return;
             var elem = ElementLoader.GetElement(tag);
             if (elem == null) return;
             WireWattageDescriptorHelper.AppendDescriptor(elem, ref __result);
@@ -152,6 +161,7 @@ namespace Rephysicalized.Content.System_Patches
         private static void Postfix([HarmonyArgument(0)] Element element, ref List<Descriptor> __result)
         {
 
+            if (!Config.Instance.WattageCapacity) return;
             WireWattageDescriptorHelper.AppendDescriptor(element, ref __result);
 
 
@@ -163,6 +173,7 @@ namespace Rephysicalized.Content.System_Patches
     {
         private static void Postfix(MaterialSelector __instance)
         {
+            if (!Config.Instance.WattageCapacity) return;
             if (__instance == null || __instance.ElementToggles == null)
                 return;
 
@@ -195,7 +206,7 @@ namespace Rephysicalized.Content.System_Patches
                 {
                     tt.AddMultiStringTooltip(extraLine, PluginAssets.Instance.defaultTextStyleSetting);
                 }
-            }
+            } 
         }
 
     }

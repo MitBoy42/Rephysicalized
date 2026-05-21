@@ -11,7 +11,7 @@ using UnityEngine;
 
 using Rephysicalized.Content.System_Patches;
 
-namespace Rephysicalized
+namespace Rephysicalized.Content.ElectricityPatches
 {
     public class ElectrobankWaterZapPatch : KMonoBehaviour, ISim1000ms
     {

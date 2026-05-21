@@ -68,7 +68,7 @@ namespace Rephysicalized.ModElements
 			[HarmonyPatch(typeof(Enum), nameof(Enum.Parse), new Type[] { typeof(Type), typeof(string), typeof(bool) })]
 			private class SimHashes_Parse_Patch
 			{
-				private static bool Prefix(Type enumType, string value, ref object __result) => SgtElementUtil.SimhashParse_EnumPatch(enumType, value, ref __result);
+				private static void Prefix(Type enumType, string value, ref object __result) => SgtElementUtil.SimhashParse_EnumPatch(enumType, value, ref __result);
 			}
 		}
 		public class ModElements 

@@ -2,16 +2,7 @@
   "version": 3,
   "targets": {
     ".NETStandard,Version=v2.1": {
-      "Aze.Publicise.MSBuild.Task/1.1.0": {
-        "type": "package",
-        "build": {
-          "build/Aze.Publicise.MSBuild.Task.props": {}
-        },
-        "buildMultiTargeting": {
-          "buildMultiTargeting/Aze.Publicise.MSBuild.Task.props": {}
-        }
-      },
-      "ILRepack.Lib.MSBuild.Task/2.0.44.2": {
+      "ILRepack.Lib.MSBuild.Task/2.0.45": {
         "type": "package",
         "build": {
           "build/ILRepack.Lib.MSBuild.Task.targets": {}
@@ -31,8 +22,11 @@
           }
         }
       },
-      "PLib/4.21.0": {
+      "PLib/4.24.0": {
         "type": "package",
+        "dependencies": {
+          "Lib.Harmony.Ref": "2.4.2"
+        },
         "compile": {
           "lib/netstandard2.1/PLib.dll": {
             "related": ".xml"
@@ -57,7 +51,7 @@
         "type": "project",
         "framework": ".NETStandard,Version=v2.1",
         "dependencies": {
-          "PLib": "4.21.0"
+          "PLib": "0.0.0"
         },
         "compile": {
           "bin/placeholder/UtilLibs.dll": {}
@@ -69,25 +63,10 @@
     }
   },
   "libraries": {
-    "Aze.Publicise.MSBuild.Task/1.1.0": {
-      "sha512": "cW6x9pPL5l8f5eueBC1N4uUstz3VScyPEgNap4mqC+sSSCZ7GPcJAMWJv862CuErmtZ75Qtq1u7utxjX+7RKBw==",
+    "ILRepack.Lib.MSBuild.Task/2.0.45": {
+      "sha512": "SWGkzp5rT48gGK1ZR0GenOHh9CWaFwxI+NsHl3Cp/+N9G1NtVjpfk3Bxl5D8Uy+ciR7Q8P//CUvFZX1tsJQnQA==",
       "type": "package",
-      "path": "aze.publicise.msbuild.task/1.1.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "LICENSE",
-        "aze.publicise.msbuild.task.1.1.0.nupkg.sha512",
-        "aze.publicise.msbuild.task.nuspec",
-        "build/Aze.Publicise.MSBuild.Task.props",
-        "buildMultiTargeting/Aze.Publicise.MSBuild.Task.props",
-        "tasks/net46/Aze.Publicise.MSBuild.Task.dll"
-      ]
-    },
-    "ILRepack.Lib.MSBuild.Task/2.0.44.2": {
-      "sha512": "53H6rOrVGPDBUU0GqEHefptus3ER34szVsVv1WfKr3Dh666ha5s0Eui9znxTztHaudWlSEUb6hJSGg4cA+wn2g==",
-      "type": "package",
-      "path": "ilrepack.lib.msbuild.task/2.0.44.2",
+      "path": "ilrepack.lib.msbuild.task/2.0.45",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -95,7 +74,7 @@
         "build/ILRepack.Lib.MSBuild.Task.targets",
         "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.dll",
         "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.targets",
-        "ilrepack.lib.msbuild.task.2.0.44.2.nupkg.sha512",
+        "ilrepack.lib.msbuild.task.2.0.45.nupkg.sha512",
         "ilrepack.lib.msbuild.task.nuspec"
       ]
     },
@@ -115,19 +94,19 @@
         "ref/netstandard2.0/0Harmony.xml"
       ]
     },
-    "PLib/4.21.0": {
-      "sha512": "Rf/xn2IknR6OqTSaffwli9Y6VbfTlMO3NhJAMqyfv03JXGNm6s8Nlr955OaCHFah0HA9CPmGEvLLjkH7vt8Nqg==",
+    "PLib/4.24.0": {
+      "sha512": "AhaVieP0WdaNe++VOytuzbTLldkxp7AiCaAe5IpeCqyvnNZ8VW3eRviCjbYomJn15aXDHHyY8xRdRRZNqzcezA==",
       "type": "package",
-      "path": "plib/4.21.0",
+      "path": "plib/4.24.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "icon.png",
-        "lib/net471/PLib.dll",
-        "lib/net471/PLib.xml",
+        "lib/net48/PLib.dll",
+        "lib/net48/PLib.xml",
         "lib/netstandard2.1/PLib.dll",
         "lib/netstandard2.1/PLib.xml",
-        "plib.4.21.0.nupkg.sha512",
+        "plib.4.24.0.nupkg.sha512",
         "plib.nuspec"
       ]
     },
@@ -193,7 +172,6 @@
   },
   "projectFileDependencyGroups": {
     ".NETStandard,Version=v2.1": [
-      "Aze.Publicise.MSBuild.Task >= *",
       "ILRepack.Lib.MSBuild.Task >= *",
       "Lib.Harmony.Ref >= 2.4.2",
       "UtilLibs >= 1.0.0"
@@ -206,11 +184,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj",
+      "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
       "projectName": "Rephysicalized",
-      "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\Rephysicalized.csproj",
+      "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
       "packagesPath": "C:\\Users\\MitBoy\\.nuget\\packages\\",
-      "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\Rephysicalized\\obj\\",
+      "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -229,11 +207,10 @@
       },
       "frameworks": {
         "netstandard2.1": {
-          "framework": "netstandard2.1",
           "targetAlias": "netstandard2.1",
           "projectReferences": {
-            "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj": {
-              "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-March26_Beta\\UtilLibs\\UtilLibs.csproj"
+            "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
+              "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj"
             }
           }
         }
@@ -252,15 +229,8 @@
     },
     "frameworks": {
       "netstandard2.1": {
-        "framework": "netstandard2.1",
         "targetAlias": "netstandard2.1",
         "dependencies": {
-          "Aze.Publicise.MSBuild.Task": {
-            "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-            "suppressParent": "All",
-            "target": "Package",
-            "version": "[*, )"
-          },
           "ILRepack.Lib.MSBuild.Task": {
             "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "suppressParent": "All",

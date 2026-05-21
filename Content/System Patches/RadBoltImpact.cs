@@ -266,7 +266,8 @@ namespace Rephysicalized
             if (emitKg > 0f)
             {
                 // Use emittedElements from the matched config; no fallback to single-element
-                var map = cfg.emittedElements;
+                var map = cfg.emittedElementIds;
+
                 if (map != null && map.Count > 0)
                 {
                     // Normalize fractions
@@ -278,9 +279,15 @@ namespace Rephysicalized
 
                     foreach (var kv in map)
                     {
-                        var elemHash = kv.Key;
+                        var elemIdString = kv.Key;
                         var frac = kv.Value;
+                        // elemIdString is SimHashes.<X>.CreateTag().ToString()
+                        if (string.IsNullOrEmpty(elemIdString)) continue;
+                        SimHashes elemHash;
+                        if (!Enum.TryParse<SimHashes>(elemIdString, true, out elemHash))
+                            continue;
                         var outElem = ElementLoader.FindElementByHash(elemHash);
+
                         if (outElem == null) continue;
                         float portion = emitKg * (frac / totalFraction);
                         if (portion <= 0f) continue;

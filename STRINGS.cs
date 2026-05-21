@@ -148,6 +148,13 @@ namespace Rephysicalized
                 public static LocString NAME = UI.FormatAsLink("Crud", nameof(CRUDBYPRODUCT));
                 public static LocString DESC = "Crud is a byproduct of various industrial or metabolic processes. It's a thick, unpleasant-looking mixture of Silicate and Carbon, suitable only for construction.";
             }
+
+            public class CORROSIVE
+            {
+          
+                public static LocString NAME = "Corrosive Element";
+            }
+
         }
 
         internal static class STATUSITEMS
@@ -177,10 +184,20 @@ namespace Rephysicalized
                 public static LocString NAME = "Scale growth stopped";
                 public static LocString TOOLTIP = "Not enough body mass to convert into scales.";
             }
+            public class NOTENOUGHBODYMASS_MILK
+            {
+                public static LocString NAME = "Not enough body mass";
+                public static LocString TOOLTIP = "Milk production paused: not enough body mass to convert into milk.";
+            }
             public class HIVE_DEPLETED
             {
                 public static LocString NAME = "Depleted";
                 public static LocString TOOLTIP = "This Hive is depleted of mass and can't spawn Beetas. A supply of Carbon Dioxide is needed.";
+            }
+            public class CORROSIVESCALDING
+            {
+                public static LocString NAME = "Corrosive liquid scalding";
+                public static LocString TOOLTIP = "This critter is scalding from a corrosive liquid.";
             }
         }
 
@@ -292,6 +309,19 @@ namespace Rephysicalized
             {
                 public static LocString NAME = "Crud Creation from Tuned-up generators";
                 public static LocString TOOLTIP = "Converts Microchips into Crud on use. You can disable it if you don't want small amount of debris around your generators.";
+
+            }
+            public class DEBRISDISSOLVING
+            {
+                public static LocString NAME = "Debris Dissolving";
+                public static LocString TOOLTIP = "Creates various reaction when specific debris comes into contact with specific liquids. For example, Polluted Dirt will pollute Water or Iron will turn into Rust in it.";
+
+            }
+            public class WATTAGECAPACITY
+            {
+                public static LocString NAME = "Wattage Capacity Modifiers";
+
+                public static LocString TOOLTIP = "Changes the wattage capacity of wires and power transformers based on the building material. Can negatively affect performance in late-game colonies.";
 
             }
         }
@@ -421,7 +451,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
     }
 
     [HarmonyPatch(typeof(global::CodexCache), nameof(global::CodexCache.CodexCacheInit))]
-[HarmonyPriority(Priority.VeryLow)] // run last after all mods/vanilla
+    [HarmonyPriority(Priority.VeryLow)] // run last after all mods/vanilla
     public static class RephysicalizedCodexRegistration
     {
         private const string CategoryKey = "REPHYSICALIZED";
@@ -440,7 +470,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
 
                 try
                 {
-Debug.Log("[Rephysicalized/Codex] Running registration (no skip)"); // removed guard
+                    Debug.Log("[Rephysicalized/Codex] Running registration (no skip)"); // removed guard
 
                     sAddedCategoryIds.Clear();
                     sAddedEntryIds.Clear();
@@ -491,14 +521,14 @@ Debug.Log("[Rephysicalized/Codex] Running registration (no skip)"); // removed g
                         // Use plain title (no UI.FormatAsLink) to avoid "MISSING." sidebar labels
                         LocString display = title;
 
-var subcatEntry = CodexEntryGenerator.GenerateCategoryEntry(
-                            subcatId,
-                            display,
-                            new Dictionary<string, CodexEntry>(),
-                            Assets.GetSprite("codexCategory_icon"),
-                            largeFormat: false,
-                            sort: false
-                        );
+                        var subcatEntry = CodexEntryGenerator.GenerateCategoryEntry(
+                                                    subcatId,
+                                                    display,
+                                                    new Dictionary<string, CodexEntry>(),
+                                                    Assets.GetSprite("codexCategory_icon"),
+                                                    largeFormat: false,
+                                                    sort: false
+                                                );
 
 
                         subcatEntry.parentId = topCategoryId;
@@ -541,7 +571,7 @@ var subcatEntry = CodexEntryGenerator.GenerateCategoryEntry(
                             sAddedCategoryIds.Add(subcatId);
                     }
 
-Debug.Log("[Rephysicalized/Codex] Registration complete, added " + sAddedCategoryIds.Count + " categories.");
+                    Debug.Log("[Rephysicalized/Codex] Registration complete, added " + sAddedCategoryIds.Count + " categories.");
 
                     sInitialized = true;
                 }
@@ -562,15 +592,15 @@ Debug.Log("[Rephysicalized/Codex] Registration complete, added " + sAddedCategor
             Strings.Add(CategoryStringPath, "Rephysicalized");
 
             LocString display = (LocString)"Rephysicalized";
-var topEntry = CodexEntryGenerator.GenerateCategoryEntry(
-                id,
-                display,
-                new Dictionary<string, CodexEntry>(),
-                Assets.GetSprite("codexCategory_icon"),
-                largeFormat: true,
-                sort: true
-            );
-topEntry.sortString = "R";
+            var topEntry = CodexEntryGenerator.GenerateCategoryEntry(
+                            id,
+                            display,
+                            new Dictionary<string, CodexEntry>(),
+                            Assets.GetSprite("codexCategory_icon"),
+                            largeFormat: true,
+                            sort: true
+                        );
+            topEntry.sortString = "R";
 
             topEntry.parentId = null;
 
@@ -580,7 +610,7 @@ topEntry.sortString = "R";
             return id;
         }
 
-private static bool EntryExistsAnywhere(string rawId)
+        private static bool EntryExistsAnywhere(string rawId)
         {
             string id = global::CodexCache.FormatLinkID(rawId);
             if (CodexCache.entries != null && CodexCache.entries.ContainsKey(id))

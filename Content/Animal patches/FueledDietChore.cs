@@ -488,7 +488,7 @@ namespace Rephysicalized.Chores
        
                 PrioritizeUpdateBrain(smi);
          
-                    GameScheduler.Instance.Schedule("FueledDiet.Recheck", 0.25f, _ => PrioritizeUpdateBrain(smi));
+                    GameScheduler.Instance.Schedule("FueledDiet.Recheck", 1f, _ => PrioritizeUpdateBrain(smi));
           
         }
     }

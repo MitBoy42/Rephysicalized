@@ -18,11 +18,7 @@ namespace Rephysicalized.Content.ModDb
         public static bool Prepare()
         {
             _target = FindTarget();
-            if (_target == null)
-            {
-             //   Debug.LogWarning("[PlantHarvestCodex] Could not find CodexEntryGenerator.GeneratePlantDescriptionContainers; panel patch disabled.");
-                return false;
-            }
+
             return true;
         }
 
@@ -35,27 +31,6 @@ namespace Rephysicalized.Content.ModDb
             if (t != null)
             {
                 var m = AccessTools.Method(t, "GeneratePlantDescriptionContainers", new Type[]
-                {
-                    typeof(GameObject),
-                    typeof(List<ContentContainer>)
-                });
-                if (m != null) return m;
-
-                // Fallback: search by name/signature
-                foreach (var mi in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-                {
-                    if (mi.Name != "GeneratePlantDescriptionContainers") continue;
-                    var ps = mi.GetParameters();
-                    if (ps.Length == 2 && typeof(GameObject).IsAssignableFrom(ps[0].ParameterType))
-                        return mi;
-                }
-            }
-
-            // Older alt
-            var alt = AccessTools.TypeByName("CodexEntryGenerator_Plants");
-            if (alt != null)
-            {
-                var m = AccessTools.Method(alt, "GeneratePlantDescriptionContainers", new Type[]
                 {
                     typeof(GameObject),
                     typeof(List<ContentContainer>)
@@ -77,11 +52,7 @@ namespace Rephysicalized.Content.ModDb
             string prefabId = kpid.PrefabID().Name; // e.g., "SwampLily"
 
             var yields = GetHarvestYieldsFromRegistry(prefabId);
-            if (yields == null || yields.Count == 0)
-            {
-         //       Debug.Log($"[PlantHarvestCodex] No registry yields found for '{prefabId}', skipping panel.");
-                return;
-            }
+
 
             var outs = BuildOutputs(yields);
             if (outs.Count == 0) return;
@@ -115,122 +86,30 @@ namespace Rephysicalized.Content.ModDb
 
         private static List<YieldSpec> GetHarvestYieldsFromRegistry(string prefabId)
         {
-            // Preferred: PlantMassTrackerRegistry.TryGetConfig(prefabId, out cfg).yields
-            var regType = AccessTools.TypeByName("Rephysicalized.PlantMassTrackerRegistry")
-                          ?? AccessTools.TypeByName("PlantMassTrackerRegistry");
-            if (regType == null)
+            // Strongly-typed lookup: avoids reflection/traversal for registry data.
+            if (string.IsNullOrWhiteSpace(prefabId))
                 return new List<YieldSpec>();
 
-            // Try TryGetConfig(string, out T)
-            foreach (var m in regType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            if (!Rephysicalized.PlantMassTrackerRegistry.TryGetConfig(prefabId, out var cfg) || cfg == null)
+                return new List<YieldSpec>();
+
+            if (cfg.yields == null || cfg.yields.Count == 0)
+                return new List<YieldSpec>();
+
+            var list = new List<YieldSpec>(cfg.yields.Count);
+            for (int i = 0; i < cfg.yields.Count; i++)
             {
-                if (m.Name != "TryGetConfig") continue;
-                var ps = m.GetParameters();
-                if (ps.Length == 2 && ps[0].ParameterType == typeof(string) && ps[1].IsOut)
-                {
-                    var args = new object[] { prefabId, null };
-                    bool ok = false;
-                    try { ok = (bool)m.Invoke(null, args); } catch { ok = false; }
-                    if (ok && args[1] != null)
-                    {
-                        var cfgObj = args[1];
-                        var yields = ReadYieldsList(cfgObj);
-                        if (yields.Count > 0) return yields;
-                    }
-                }
-            }
+                var y = cfg.yields[i];
+                if (y == null) continue;
+                if (string.IsNullOrWhiteSpace(y.id)) continue;
+                if (y.multiplier <= 0f) continue;
 
-            // Fallback: scan static fields for a registry dict keyed by string, with value that has a yields list
-            foreach (var f in regType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                var ft = f.FieldType;
-                if (!IsDictionaryOf<string>(ft)) continue;
-
-                var dictObj = f.GetValue(null);
-                if (dictObj == null) continue;
-
-                var tryGet = ft.GetMethod("TryGetValue");
-                if (tryGet == null) continue;
-
-                // Prepare args for TryGetValue(key, out value)
-                var valueType = ft.GetGenericArguments()[1];
-                object[] args2 = new object[] { prefabId, null };
-                bool found = false;
-                try { found = (bool)tryGet.Invoke(dictObj, args2); } catch { found = false; }
-                if (found && args2[1] != null)
-                {
-                    var cfgObj = args2[1];
-                    var yields = ReadYieldsList(cfgObj);
-                    if (yields.Count > 0) return yields;
-                }
-            }
-
-            return new List<YieldSpec>();
-        }
-
-        private static bool IsDictionaryOf<TK>(Type t)
-        {
-            return t.IsGenericType
-                   && (t.GetGenericTypeDefinition() == typeof(Dictionary<,>) || t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>)))
-                   && t.GetGenericArguments()[0] == typeof(TK);
-        }
-
-        private static List<YieldSpec> ReadYieldsList(object cfgObj)
-        {
-            var list = new List<YieldSpec>();
-            if (cfgObj == null) return list;
-
-            BindingFlags BF = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            object yieldsObj = null;
-
-            // Common names: yields, _yields, HarvestYields
-            foreach (var name in new[] { "yields", "_yields", "HarvestYields", "harvestYields" })
-            {
-                var f = cfgObj.GetType().GetField(name, BF);
-                if (f != null)
-                {
-                    yieldsObj = f.GetValue(cfgObj);
-                    if (yieldsObj != null) break;
-                }
-                var p = cfgObj.GetType().GetProperty(name, BF);
-                if (p != null && p.CanRead)
-                {
-                    yieldsObj = p.GetValue(cfgObj, null);
-                    if (yieldsObj != null) break;
-                }
-            }
-
-            if (yieldsObj is IEnumerable enumerable)
-            {
-                foreach (var item in enumerable)
-                {
-                    if (item == null) continue;
-
-                    // MaterialYield: fields id (string) and multiplier (float)
-                    string id = null;
-                    float mult = 0f;
-
-                    var it = item.GetType();
-                    var fid = it.GetField("id", BF) ?? it.GetField("Id", BF);
-                    if (fid != null)
-                        id = fid.GetValue(item) as string ?? fid.GetValue(item)?.ToString();
-
-                    var fmult = it.GetField("multiplier", BF) ?? it.GetField("Multiplier", BF);
-                    if (fmult != null)
-                    {
-                        var v = fmult.GetValue(item);
-                        if (v is float fv) mult = fv;
-                        else if (v is double dv) mult = (float)dv;
-                        else if (v is int iv) mult = iv;
-                    }
-
-                    if (!string.IsNullOrEmpty(id) && mult > 0f)
-                        list.Add(new YieldSpec { id = id, multiplier = mult });
-                }
+                list.Add(new YieldSpec { id = y.id, multiplier = y.multiplier });
             }
 
             return list;
         }
+
 
         // --- UI helpers ---
 

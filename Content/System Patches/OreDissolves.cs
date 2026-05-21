@@ -1,16 +1,11 @@
-﻿﻿using KSerialization;
+﻿using KSerialization;
 using System;
 using UnityEngine;
 
 namespace Rephysicalized.Content.System_Patches
 {
-    // Toggle debug output without spamming logs everywhere.
-    internal static class OreDissolvesDebug
-    {
-        public const bool Enabled = true;
-    }
 
-    // Full credit to Powerfull's Organic Overhaul for this code. This is a direct copy.
+    // Full credit to Powerfull's Organic Overhaul for the setup, this code is significantly different from the original.
     internal class OreDissolves : KMonoBehaviour, ISim4000ms
     {
         [Serialize]
@@ -33,7 +28,7 @@ namespace Rephysicalized.Content.System_Patches
         public float OreSHC;
 
         [Serialize]
-        public float DeltaT;
+        public float DeltaT = 0f;
 
         // Default emitted elements are Vacuum so nothing spawns unless explicitly configured.
         [Serialize]
@@ -50,8 +45,7 @@ namespace Rephysicalized.Content.System_Patches
         public float EmittedOreMult = 1f;
 
 
-        [Serialize]
-        public float processedMass;
+
 
         [MyCmpGet]
         private Pickupable pickupable;
@@ -80,41 +74,81 @@ namespace Rephysicalized.Content.System_Patches
 
         private void OnAbsorb(object data)
         {
-            if (data is Pickupable p)
+            // ElementChunk absorbs keep the surviving Pickupable, but it is not guaranteed that the
+            // surviving OreDissolves component has consistent runtime state after the merge.
+            //
+            // Keep runtime references coherent after absorb/merge.
+            // Dissolve logic must re-read pickupable.PrimaryElement.Mass each tick to avoid stale cached state.
+            if (data is Pickupable p && p.PrimaryElement != null)
+
             {
-                var other = p.GetComponent<OreDissolves>();
-                if (other)
-                    processedMass += other.processedMass;
+                // Force our local references to the surviving pickupable.
+                pickupable = p;
+
+                if (pickupable?.PrimaryElement?.Element != null)
+                {
+                    this.OreSHC = pickupable.PrimaryElement.Element.specificHeatCapacity;
+                }
+
+                if (ElementLoader.FindElementByHash(this.absorbedFluid) is Element el)
+                {
+                    this.absorbedFluidSHC = el.specificHeatCapacity;
+                }
+
+
             }
         }
 
         private void OnSplitFromChunk(object data)
         {
-            if (data is Pickupable p)
-            {
-                var split = p.GetComponent<OreDissolves>();
-                if (split)
-                {
-                    float total = mass + p.PrimaryElement.Mass;
-                    float fraction = mass / total;
-                    processedMass = split.processedMass * fraction;
-                    split.processedMass *= 1f - fraction;
-                }
-            }
+
         }
+
 
         public void Sim4000ms(float dt)
         {
+            if (this.pickupable == null)
+                this.pickupable = this.GetComponent<Pickupable>();
+
+            if (this.pickupable == null || this.pickupable.PrimaryElement == null)
+                return;
+
+            if (Config.Instance != null && !Config.Instance.DebrisDissolving)
+                return;
+
             if (this.respectsealed && this.pickupable.KPrefabID.HasTag(GameTags.Sealed))
                 return;
+
+
+            // Keep SHC values coherent with current elements.
+            if (this.OreSHC <= 0f)
+                this.OreSHC = this.pickupable.PrimaryElement.Element.specificHeatCapacity;
+
+            if (ElementLoader.FindElementByHash(this.absorbedFluid) is Element el && this.absorbedFluidSHC <= 0f)
+                this.absorbedFluidSHC = el.specificHeatCapacity;
 
             this.EvaluateCell(dt);
         }
 
         private void EvaluateCell(float dt)
         {
-            int cell = Grid.PosToCell(this.transform.GetPosition());
-            if (!Grid.IsValidCell(cell) || Grid.Element[cell].id != this.absorbedFluid)
+            // When multiple element chunks stack, some component instances can have a stale
+            // transform/cell relationship for a moment. Instead of trusting our own position,
+            // check the grid cell where the absorbed fluid is and dissolve based on actual cell state.
+
+            if (this.pickupable == null || this.pickupable.PrimaryElement == null)
+                return;
+
+            // Use Pickupable's cached cell for stability across absorb/stack merges.
+            // This avoids transform/cell drift when stacked chunks merge.
+            int cell = this.pickupable.GetCell();
+            if (!Grid.IsValidCell(cell))
+                return;
+
+            if (Grid.Element[cell] == null)
+                return;
+
+            if (Grid.Element[cell].id != this.absorbedFluid)
                 return;
 
             this.Dissolve(cell);
@@ -124,10 +158,14 @@ namespace Rephysicalized.Content.System_Patches
         {
             // Safety: this sim can tick on partially-initialized prefabs.
 
-            // Re-fetch current position-based cell to handle movement since last tick
-            Vector3 currentPos = this.transform.GetPosition();
-            cell = Grid.PosToCell(currentPos);
+            if (this.pickupable == null || this.pickupable.PrimaryElement == null)
+                return;
+
+            // Caller already computed the canonical cell; do not recompute again.
             if (!Grid.IsValidCell(cell))
+                return;
+
+            if (Grid.Element[cell] == null)
                 return;
 
             if (Grid.Element[cell].id != this.absorbedFluid)
@@ -138,6 +176,7 @@ namespace Rephysicalized.Content.System_Patches
             this.debristemp = this.pickupable.PrimaryElement.Temperature;
             if ((double)this.celltemp <= 1.0 || (double)this.debristemp <= 1.0)
                 return;
+
 
             float temperature = Math.Max(
                 (float)(
@@ -152,10 +191,17 @@ namespace Rephysicalized.Content.System_Patches
             this.workingmass = this.mass;
 
             bool flag1 = (double)this.workingmass * (double)this.usedoreratio > (double)this.minmass;
-            bool flag2 = (double)this.cellmass > (double)this.workingmass * (double)(1f - this.usedoreratio);
             float num = this.workingmass * this.usedoreratio / this.pickupable.PrimaryElement.Mass;
 
-            if (flag1 & flag2)
+            if (float.IsNaN(num) || float.IsInfinity(num))
+                return;
+
+            if (FallingWater.instance == null)
+                return;
+
+
+            if (flag1)
+
             {
                 // Reaction consumes both ore and absorbed fluid.
                 float conversionMass = this.workingmass * this.conversionspeed;
@@ -164,10 +210,19 @@ namespace Rephysicalized.Content.System_Patches
                 float oreConsumedMass = conversionMass * oreRatio;
                 float fluidConsumedMass = conversionMass * (1f - oreRatio);
 
+                // FX: play dissolving splash step when this tick actually reacts.
+                Vector3 fxPos = Grid.CellToPosCCC(cell, Grid.SceneLayer.FXFront) + new Vector3(-0.5f, 0.0f, 0.0f);
+                if (Game.Instance != null)
+
+                    Game.Instance.SpawnFX(SpawnFXHashes.SplashStep, fxPos, 0.0f);
+
+
+
                 SimMessages.ConsumeMass(cell, this.absorbedFluid, fluidConsumedMass, (byte)2);
                 this.pickupable.PrimaryElement.Mass -= oreConsumedMass;
                 this.pickupable.PrimaryElement.ModifyDiseaseCount((int)((double)(-1 * this.pickupable.PrimaryElement.diseaseCount) * (double)num), "Dissolving");
                 this.UpdateStorage();
+
 
                 // Emit both if both are configured.
                 float emitFluidMass = conversionMass * this.EmittedFluidMult;
@@ -188,7 +243,12 @@ namespace Rephysicalized.Content.System_Patches
                 if (this.emittedore != SimHashes.Vacuum)
 
                 {
-                    ElementLoader.GetElement(this.emittedore.CreateTag()).substance.SpawnResource(
+                    var oreElem = ElementLoader.GetElement(this.emittedore.CreateTag());
+                    if (oreElem?.substance == null)
+                        return;
+
+                    oreElem.substance.SpawnResource(
+
                         Grid.CellToPosCCC(cell, Grid.SceneLayer.Ore),
                         emitOreMass,
                         temperature,
@@ -211,7 +271,16 @@ namespace Rephysicalized.Content.System_Patches
 
 
                 if (consumeMass > 0f)
+                {
+                    // FX: play dissolving splash step when this tick actually reacts.
+                    Vector3 fxPos = Grid.CellToPosCCC(cell, Grid.SceneLayer.FXFront) + new Vector3(-0.3f, 0.2f, 0.0f);
+
+                    if (Game.Instance != null)
+                        Game.Instance.SpawnFX(SpawnFXHashes.SplashStep, fxPos, 0.0f);
+
                     SimMessages.ConsumeMass(cell, this.absorbedFluid, consumeMass, (byte)2);
+                }
+
 
                 if (this.emittedfluid != SimHashes.Vacuum && emitFluidMass > 0f)
                 {
@@ -227,7 +296,11 @@ namespace Rephysicalized.Content.System_Patches
 
                 if (this.emittedore != SimHashes.Vacuum)
                 {
-                    ElementLoader.GetElement(this.emittedore.CreateTag()).substance.SpawnResource(
+                    var oreElem = ElementLoader.GetElement(this.emittedore.CreateTag());
+                    if (oreElem?.substance == null)
+                        return;
+
+                    oreElem.substance.SpawnResource(
                         Grid.CellToPosCCC(cell, Grid.SceneLayer.Ore),
                         emitOreMass,
                         temperature,
@@ -237,53 +310,6 @@ namespace Rephysicalized.Content.System_Patches
 
                 this.pickupable.PrimaryElement.Mass -= oreConsumedMass;
                 this.UpdateStorage();
-            }
-            else
-            {
-                if (flag2)
-                    return;
-
-                // Fluid-limited branch: consume ALL available liquid in the cell.
-                float maxFluidForFullTick = this.workingmass * this.conversionspeed * (1f - this.usedoreratio);
-                float fluidInCell = this.cellmass * (1f - this.usedoreratio);
-
-                if (fluidInCell >= maxFluidForFullTick)
-                    return;
-
-                float fluidConsumedMass = fluidInCell;
-                float oreConsumedMass = fluidConsumedMass * (this.usedoreratio / (1f - this.usedoreratio));
-
-                if (fluidConsumedMass > 0f)
-                    SimMessages.ConsumeMass(cell, this.absorbedFluid, fluidConsumedMass, (byte)2);
-
-                this.pickupable.PrimaryElement.Mass -= oreConsumedMass;
-                this.UpdateStorage();
-
-                float emitOreMass = (oreConsumedMass + fluidConsumedMass) * this.EmittedOreMult;
-                float emitFluidMass = (oreConsumedMass + fluidConsumedMass) * this.EmittedFluidMult;
-
-
-                if (this.emittedfluid != SimHashes.Vacuum && emitFluidMass > 0f)
-                {
-                    FallingWater.instance.AddParticle(
-                        cell,
-                        ElementLoader.GetElementIndex(this.emittedfluid),
-                        emitFluidMass,
-                        temperature,
-                        this.pickupable.PrimaryElement.DiseaseIdx,
-                        (int)((double)this.pickupable.PrimaryElement.diseaseCount * (double)num * (double)((1 / this.usedoreratio) / (1f - this.usedoreratio))),
-                        true);
-                }
-
-                if (this.emittedore != SimHashes.Vacuum)
-                {
-                    ElementLoader.GetElement(this.emittedore.CreateTag()).substance.SpawnResource(
-                        Grid.CellToPosCCC(cell, Grid.SceneLayer.Ore),
-                        emitOreMass,
-                        temperature,
-                        this.pickupable.PrimaryElement.DiseaseIdx,
-                        (int)((double)this.pickupable.PrimaryElement.diseaseCount * (double)num * (double)(1 / this.usedoreratio)));
-                }
             }
         }
 
@@ -295,7 +321,6 @@ namespace Rephysicalized.Content.System_Patches
 
             component.storage.Trigger(-1697596308, (object)this.gameObject);
         }
-
         public override void OnCleanUp() => base.OnCleanUp();
     }
 }

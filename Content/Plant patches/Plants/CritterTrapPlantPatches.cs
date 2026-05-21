@@ -35,7 +35,6 @@ namespace Rephysicalized
     }
 
     // Harvest-time: Only trigger HarvestComplete so PlantMassTracker resets to 1 kg.
-    // Signature in your build: void Crop.SpawnConfiguredFruit(object callbackParam)
     [HarmonyPatch(typeof(Crop), nameof(Crop.SpawnConfiguredFruit))]
     internal static class Crop_SpawnConfiguredFruit_CritterTrap_Postfix
     {
@@ -54,7 +53,6 @@ namespace Rephysicalized
             }
             catch
             {
-                // Swallow to avoid interfering with harvest flow
             }
         }
     }
@@ -62,7 +60,6 @@ namespace Rephysicalized
 
 
 
-    // Keep your CreatePrefab transpiler if you need the other float tweaks (mass/water rate).
     [HarmonyPatch(typeof(CritterTrapPlantConfig), nameof(CritterTrapPlantConfig.CreatePrefab))]
     public static class CritterTrapPlant_CreatePrefab_Transpiler
     {
@@ -102,7 +99,6 @@ namespace Rephysicalized
             // Digest/emit controller
             __result.AddOrGet<CritterTrapPlantRework>();
 
-            // IMPORTANT: do NOT add any HarvestMassReset component; PlantMassTracker will handle resetting to 1 kg.
         }
     }
 

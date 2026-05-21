@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+﻿﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -110,31 +110,27 @@ namespace Rephysicalized.Content.Building_patches
                 }
             }
             if (!Config.Instance.RephysicalizedMetalOre) return;
-            // 3) Metal ore rewrites using RockCrusher's recipe id scheme
-            var metalRewrites = new (SimHashes ingredient, Tag[] tags, float[] amts)[]
+            // 3) Metal ore rewrites using RephysicalizedMetalDictionary
+         
+            foreach (var kvp in Rephysicalized.Content.System_Patches.Helper_Components.RephysicalizedMetalDictionary.MetalOresAdditionalOutputs)
             {
-               (SimHashes.Cinnabar,     new[]{ SimHashes.Mercury.CreateTag(), SimHashes.Sand.CreateTag(), SimHashes.Sulfur.CreateTag() }, new[]{ 42.5f, 50f, 12.5f }),
-                (SimHashes.IronOre,      new[]{ SimHashes.Iron.CreateTag(), SimHashes.Sand.CreateTag() }, new[]{ 33f, 67f }),
-                (SimHashes.Cuprite,      new[]{ SimHashes.Copper.CreateTag(), SimHashes.ContaminatedOxygen.CreateTag(), SimHashes.Sand.CreateTag() }, new[]{ 40f, 10f, 50f }),
-                (SimHashes.Cobaltite,    new[]{ SimHashes.Cobalt.CreateTag(), SimHashes.Sand.CreateTag(), SimHashes.Sulfur.CreateTag() }, new[]{ 35f, 50f, 15f }),
-                (SimHashes.NickelOre,    new[]{ SimHashes.Nickel.CreateTag(), SimHashes.Sand.CreateTag(), SimHashes.Sulfur.CreateTag() }, new[]{ 37.5f, 50f , 12.5f}),
-                (SimHashes.Wolframite,   new[]{ SimHashes.Tungsten.CreateTag(), SimHashes.Rust.CreateTag() , SimHashes.Sand.CreateTag() }, new[]{ 30f, 20f, 50f }),
-                (SimHashes.AluminumOre,  new[]{ SimHashes.Aluminum.CreateTag(), SimHashes.ContaminatedOxygen.CreateTag(), SimHashes.DirtyWater.CreateTag(), SimHashes.Sand.CreateTag() }, new[]{ 30f, 10f, 10f, 50f }),
-                (SimHashes.GoldAmalgam,  new[]{ SimHashes.Gold.CreateTag(), SimHashes.Mercury.CreateTag(), SimHashes.Sand.CreateTag() }, new[]{ 35f, 15f, 50f })
-            };
+                // kvp.Key is element tag string (SimHashes.*.CreateTag().ToString())
+                var ingredientTagString = kvp.Key;
+                if (string.IsNullOrEmpty(ingredientTagString)) continue;
 
-            foreach (var rw in metalRewrites)
-            {
-                var elem = ElementLoader.FindElementByHash(rw.ingredient);
+                // recipe ingredients are written as tags; element lookup expects a SimHash
+                var elem = ElementLoader.FindElementByTag(TagManager.Create(ingredientTagString));
                 if (elem == null) continue;
                 var low = elem.highTempTransition?.lowTempTransition;
                 if (low == null || low == elem) continue;
+
 
                 var inputsMeta = new ComplexRecipe.RecipeElement[] { new ComplexRecipe.RecipeElement(elem.tag, 100f) };
                 var outputsMeta = new ComplexRecipe.RecipeElement[] {
                     new ComplexRecipe.RecipeElement(low.tag, 50f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
                     new ComplexRecipe.RecipeElement(sandTag, 50f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature)
                 };
+
                 string recipeId = ComplexRecipeManager.MakeRecipeID(RockCrusherConfig.ID, inputsMeta, outputsMeta);
                 var recipe = crm.GetRecipe(recipeId);
                 if (recipe == null) continue;
@@ -142,10 +138,20 @@ namespace Rephysicalized.Content.Building_patches
                 var tempOp = ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature;
                 if (recipe.results != null && recipe.results.Length > 0) tempOp = recipe.results[0].temperatureOperation;
 
-                var newResults = new ComplexRecipe.RecipeElement[rw.tags.Length];
-                for (int i = 0; i < rw.tags.Length; i++)
-                    newResults[i] = new ComplexRecipe.RecipeElement(rw.tags[i], rw.amts[i], tempOp, true);
+                var dictOutputs = kvp.Value;
+                if (dictOutputs == null || dictOutputs.Count == 0) continue;
 
+                // +1 sand output (50f)
+                var newResults = new ComplexRecipe.RecipeElement[dictOutputs.Count + 1];
+                for (int i = 0; i < dictOutputs.Count; i++)
+                {
+                    var outputTagString = dictOutputs[i].first;
+                    var ratio = dictOutputs[i].second;
+                    var outputTag = TagManager.Create(outputTagString);
+                    newResults[i] = new ComplexRecipe.RecipeElement(outputTag, ratio * 50f, tempOp);
+                }
+
+                newResults[newResults.Length - 1] = new ComplexRecipe.RecipeElement(sandTag, 50f, tempOp);
                 recipe.results = newResults;
             }
         }

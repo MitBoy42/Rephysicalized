@@ -20,6 +20,8 @@ namespace Rephysicalized
         {
             "HatchMetal",
             "HatchMetalBaby",
+            "HatchGold",
+            "HatchGoldBaby",
             "StaterPillarLiquid",
             "BabyStaterPillarLiquid",
             "BabyBee",
@@ -42,13 +44,12 @@ namespace Rephysicalized
     {
         private static void Postfix(Database.CreatureStatusItems __instance)
         {
-            if (CorrosiveScaldingStatus.Item != null)
-                return;
+    
 
             CorrosiveScaldingStatus.Item = new StatusItem(
       id: CorrosiveScaldingStatus.Id,
-      name: "Corrosive liquid scalding",
-      tooltip: "This critter is scalding from corrosive liquid",
+      name: STRINGS.STATUSITEMS.CORROSIVESCALDING.NAME,
+      tooltip: STRINGS.STATUSITEMS.CORROSIVESCALDING.TOOLTIP,
       icon: "status_item_exclamation",
       icon_type: StatusItem.IconType.Exclamation,
       notification_type: NotificationType.Bad,   // not used since we won’t add notifications
@@ -69,8 +70,7 @@ namespace Rephysicalized
         {
             if (__instance == null) return;
             var go = __instance.gameObject;
-            if (go.GetComponent<CorrosiveScaldingCritter>() == null)
-                go.AddComponent<CorrosiveScaldingCritter>();
+                go.AddOrGet<CorrosiveScaldingCritter>();
         }
     }
 
@@ -99,11 +99,10 @@ namespace Rephysicalized
         // Runs every ~1000 ms
         public void Sim4000ms(float dt)
         {
-            // Only creatures; ignore dupes/plants
+       
             if (_kpid == null || !_kpid.HasTag(GameTags.Creature))
                 return;
 
-            // Respect immunity list
             string id = _kpid.PrefabID().Name;
             if (CorrosiveScaldingConfig.ImmuneCritterIds.Contains(id))
             {
@@ -111,7 +110,7 @@ namespace Rephysicalized
                 return;
             }
 
-            bool inHazard = IsInHeavyNuclearWaste(gameObject, CorrosiveScaldingConfig.WasteMassThresholdKg);
+            bool inHazard = IsInHazard(gameObject, CorrosiveScaldingConfig.WasteMassThresholdKg);
 
             if (inHazard)
             {
@@ -147,7 +146,7 @@ namespace Rephysicalized
             }
         }
 
-        private static bool IsInHeavyNuclearWaste(GameObject go, float thresholdKg)
+        private static bool IsInHazard(GameObject go, float thresholdKg)
         {
             int root = Grid.PosToCell(go);
             if (!Grid.IsValidCell(root))
@@ -160,13 +159,39 @@ namespace Rephysicalized
                 {
                     int c = Grid.OffsetCell(root, occ.OccupiedCellsOffsets[i]);
                     if (!Grid.IsValidCell(c)) continue;
-                    if (Grid.Element[c].id == SimHashes.NuclearWaste && Grid.Mass[c] > thresholdKg)
+
+                    if (IsHazardousElement(c, thresholdKg))
                         return true;
                 }
                 return false;
             }
 
-            return Grid.Element[root].id == SimHashes.NuclearWaste && Grid.Mass[root] > thresholdKg;
+            return IsHazardousElement(root, thresholdKg);
+        }
+
+        // Dictionary of hazardous elements for corrosive liquid scalding.
+
+        private static readonly Dictionary<string, string> HazardousElements =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { SimHashes.NuclearWaste.CreateTag().ToString(), "" },
+     { "LiquidSulfuric", "" },
+            };
+
+        private static bool IsHazardousElement(int cell, float thresholdKg)
+        {
+            if (!Grid.IsValidCell(cell))
+                return false;
+
+            if (Grid.Mass[cell] <= thresholdKg)
+                return false;
+
+            var el = Grid.Element[cell];
+            if (el == null)
+                return false;
+
+            var key = el.id.CreateTag().ToString();
+            return HazardousElements.ContainsKey(key);
         }
     }
 }

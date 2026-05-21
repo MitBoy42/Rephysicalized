@@ -1,11 +1,10 @@
-using Rephysicalized;
 using STRINGS;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Rephysicalized.Content.System_Patches;
 
-namespace Rephysicalized {
+namespace Rephysicalized.Content.ElectricityPatches {
 
 
     public class BatteryWaterDamagePatch : KMonoBehaviour, ISim1000ms

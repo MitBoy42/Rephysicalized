@@ -15,41 +15,58 @@ namespace Rephysicalized.Content.System_Patches
 
 internal static class StorageCapacitySettings
     {
-        public static Dictionary<SimHashes, float> Multipliers = new();
+        public static Dictionary<string, float> Multipliers = new();
+
 
         public static void InitializeBaseMultipliers()
         {
-            Multipliers = new Dictionary<SimHashes, float>
+            Multipliers = new Dictionary<string, float>
             {
-              { SimHashes.Cinnabar, 0.4f },
-           { SimHashes.SolidMercury, 0.4f },
+              { SimHashes.Cinnabar.CreateTag().ToString(), 0.4f },
+           { SimHashes.SolidMercury.CreateTag().ToString(), 0.4f },
 
-            { SimHashes.Aluminum, 0.6f },
-            { SimHashes.AluminumOre, 0.6f },
-            { SimHashes.Lead, 0.6f },
+            { SimHashes.Aluminum.CreateTag().ToString(), 0.6f },
+            { SimHashes.AluminumOre.CreateTag().ToString(), 0.6f },
+            { SimHashes.Lead.CreateTag().ToString(), 0.6f },
 
-            { SimHashes.Gold, 0.8f },
-            { SimHashes.GoldAmalgam, 0.8f },
+            { SimHashes.Gold.CreateTag().ToString(), 0.8f },
+            { SimHashes.GoldAmalgam.CreateTag().ToString(), 0.8f },
 
-            { SimHashes.Cobalt, 1.2f },
-            { SimHashes.Cobaltite, 1.2f },
-          { SimHashes.Niobium, 1.2f },
-           { SimHashes.Steel, 1.2f },
+            { SimHashes.Cobalt.CreateTag().ToString(), 1.2f },
+            { SimHashes.Cobaltite.CreateTag().ToString(), 1.2f },
+          { SimHashes.Niobium.CreateTag().ToString(), 1.2f },
+           { SimHashes.Steel.CreateTag().ToString(), 1.2f },
 
-           { SimHashes.Nickel, 1.4f },
-           { SimHashes.NickelOre, 1.4f },
-           { SimHashes.Wolframite, 1.4f },
-           { SimHashes.Tungsten, 1.4f },
-          { SimHashes.TempConductorSolid, 1.4f },
+           { SimHashes.Nickel.CreateTag().ToString(), 1.4f },
+           { SimHashes.NickelOre.CreateTag().ToString(), 1.4f },
+           { SimHashes.Wolframite.CreateTag().ToString(), 1.4f },
+           { SimHashes.Tungsten.CreateTag().ToString(), 1.4f },
+          { SimHashes.TempConductorSolid.CreateTag().ToString(), 1.4f },
 
-       { SimHashes.Iridium, 1.6f },
+       { SimHashes.Iridium.CreateTag().ToString(), 1.6f },
+
+       //Ronivans Elements
+            { "SolidSilver", 1.1f },
+            { "Plasteel", 1.5f },
+            { "AIO_Permendur_Solid", 1.2f },
+            { "AIO_Invar_Solid", 1.2f},
+            { "AIO_StainlessSteel_Solid", 1.3f},
+            { "AIO_FerroChrome_Solid", 0.6f},
+            { "AIO_Chromium_Solid", 0.6f},
+            { "SolidFiberGlass", 1.2f},
+            { "CarbonFiber", 2f},
+
+
             };
         }
 
+
         public static float GetMultiplier(SimHashes id)
         {
-            return Multipliers.TryGetValue(id, out var mult) ? Mathf.Max(0f, mult) : 1f;
+            var key = id.CreateTag().ToString();
+            return Multipliers.TryGetValue(key, out var mult) ? Mathf.Max(0f, mult) : 1f;
         }
+
     }
 
     [HarmonyPatch(typeof(Db), "Initialize")]

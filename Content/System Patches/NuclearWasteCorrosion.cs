@@ -16,12 +16,7 @@ using static ElementLoader;
 
 namespace Rephysicalized
 {
-    // Public strings the UI (or other mods) can call into
-    public static class CorrosiveWasteStrings
-    {
-        // As requested: a public static LocString used for corrosion damage source/poptext
-        public static LocString CORROSIVE_ELEMENT = (LocString)"corrosive element";
-    }
+
 
     // Global manager that scans for high-mass nuclear waste and corrodes neighboring solids
     public sealed class NuclearWasteCorrosionManager : KMonoBehaviour, ISim1000ms
@@ -152,8 +147,8 @@ namespace Rephysicalized
                         var damageInfo = new BuildingHP.DamageSourceInfo
                         {
                             damage = BuildingHpDamagePerTick,
-                            source = (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT,
-                            popString = (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT,
+                            source = STRINGS.ELEMENTS.CORROSIVE.NAME,
+                            popString = STRINGS.ELEMENTS.CORROSIVE.NAME,
                             // Optional: reuse Overheatable's small smoke effect
                             fullDamageEffectName = "smoke_damage_kanim"
                         };
@@ -177,8 +172,8 @@ namespace Rephysicalized
                 cell,
                 amount,
                 fromCell,
-                (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT,
-                (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT
+               STRINGS.ELEMENTS.CORROSIVE.NAME,
+               STRINGS.ELEMENTS.CORROSIVE.NAME
             );
         }
     }

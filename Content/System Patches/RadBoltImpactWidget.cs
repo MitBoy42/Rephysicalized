@@ -24,6 +24,7 @@ namespace Rephysicalized.Content.ModDb
                 var widgets = new List<ICodexWidget>();
                 var unique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+
                 foreach (var cfg in configs)
                 {
                     if (cfg == null) continue;
@@ -55,10 +56,11 @@ namespace Rephysicalized.Content.ModDb
             if (cfg == null) return "null";
             // For uniqueness, summarise by first emitted element key (if any)
             string emittedKey = "none";
-            if (cfg.emittedElements != null && cfg.emittedElements.Count > 0)
+            if (cfg.emittedElementIds != null && cfg.emittedElementIds.Count > 0)
             {
-                foreach (var kv in cfg.emittedElements) { emittedKey = kv.Key.ToString(); break; }
+                foreach (var kv in cfg.emittedElementIds) { emittedKey = kv.Key; break; }
             }
+
             return $"{cfg.id ?? emittedKey}::{cfg.emissionMultiplier:F3}::{cfg.removalMultiplier:F3}";
         }
 
@@ -69,11 +71,12 @@ namespace Rephysicalized.Content.ModDb
                 if (cfg == null) return null;
 
                 var inputs = new List<ElementUsage>();
-                if (cfg.affectedElements != null)
+                if (cfg.affectedElementIds != null)
                 {
-                    foreach (var h in cfg.affectedElements)
+                    foreach (var h in cfg.affectedElementIds)
+
                     {
-                        var inEl = ElementLoader.FindElementByHash(h);
+                        var inEl = ElementLoader.FindElementByTag(h);
                         if (inEl == null) continue;
                         float inAmt = 0.001f * cfg.removalMultiplier;
                         inputs.Add(new ElementUsage(inEl.tag, inAmt, false, (t, a, c) => inEl.name));
@@ -81,17 +84,21 @@ namespace Rephysicalized.Content.ModDb
                 }
 
                 var outputs = new List<ElementUsage>();
-                if (cfg.emittedElements != null && cfg.emittedElements.Count > 0)
+                if (cfg.emittedElementIds != null && cfg.emittedElementIds.Count > 0)
                 {
+
                     // Normalize fractions like runtime emission
                     float totalFraction = 0f;
-                    foreach (var kv in cfg.emittedElements)
+                    foreach (var kv in cfg.emittedElementIds)
                         totalFraction += kv.Value;
+
+
                     if (totalFraction <= 0f) totalFraction = 1f;
 
-                    foreach (var kv in cfg.emittedElements)
+                    foreach (var kv in cfg.emittedElementIds)
                     {
-                        var outEl = ElementLoader.FindElementByHash(kv.Key);
+
+                        var outEl = ElementLoader.FindElementByTag(kv.Key);
                         if (outEl == null) continue;
                         float frac = kv.Value / totalFraction;
                         float outAmt = 0.001f * cfg.emissionMultiplier * frac;
