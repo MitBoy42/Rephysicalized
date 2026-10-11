@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using PeterHan.PLib.Core;
 
@@ -12,79 +12,72 @@ namespace Rephysicalized.Content.System_Patches.Helper_Components
             PRegistry.PutData(PRegistryKeyMetalDictionary, MetalOresAdditionalOutputs);
         }
         /// Key: element tag (string), value: list of additional outputs, with percentage of output mass.
-        internal static readonly Dictionary<string, List<Tuple<string, float>>> MetalOresAdditionalOutputs;
-
-        static RephysicalizedMetalDictionary()
-        {
-            MetalOresAdditionalOutputs = new Dictionary<string, List<Tuple<string, float>>>();
-
-            // Always present
-            MetalOresAdditionalOutputs[SimHashes.Cinnabar.CreateTag().ToString()] = new List<Tuple<string, float>>
+        internal static readonly Dictionary<string, List<Tuple<string, float>>> MetalOresAdditionalOutputs =
+            new Dictionary<string, List<Tuple<string, float>>>
             {
-                new Tuple<string, float>(SimHashes.Mercury.CreateTag().ToString(), 0.86f),
-                new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.14f),
+                [SimHashes.Cinnabar.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Mercury.CreateTag().ToString(), 0.86f),
+                    new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.14f),
+                },
+
+                [SimHashes.IronOre.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Iron.CreateTag().ToString(), 0.67f),
+                    new Tuple<string, float>(SimHashes.IgneousRock.CreateTag().ToString(), 0.33f),
+                },
+
+                [SimHashes.Cuprite.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Copper.CreateTag().ToString(), 0.80f),
+                    new Tuple<string, float>(SimHashes.Oxygen.CreateTag().ToString(), 0.20f),
+                },
+
+                [SimHashes.Cobaltite.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Cobalt.CreateTag().ToString(), 0.71f),
+                    new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.29f),
+                },
+
+                [SimHashes.NickelOre.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Nickel.CreateTag().ToString(), 0.73f),
+                    new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.27f),
+                },
+
+                [SimHashes.Wolframite.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Tungsten.CreateTag().ToString(), 0.60f),
+                    new Tuple<string, float>(SimHashes.Rust.CreateTag().ToString(), 0.40f),
+                },
+
+                [SimHashes.AluminumOre.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Aluminum.CreateTag().ToString(), 0.60f),
+                    new Tuple<string, float>(SimHashes.Oxygen.CreateTag().ToString(), 0.20f),
+                    new Tuple<string, float>(SimHashes.Water.CreateTag().ToString(), 0.20f),
+                },
+
+                [SimHashes.GoldAmalgam.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Gold.CreateTag().ToString(), 0.67f),
+                    new Tuple<string, float>(SimHashes.Mercury.CreateTag().ToString(), 0.33f),
+                },
+
+                ["ArgentiteOre"] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>("SolidSilver", 0.8f),
+                    new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.2f),
+                },
+                [SimHashes.ZincOre.CreateTag().ToString()] = new List<Tuple<string, float>>
+                {
+                    new Tuple<string, float>(SimHashes.Zinc.CreateTag().ToString(), 0.67f),
+                 new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.33f),
+
+                },
             };
 
-            // Only include the rest when metal ore rephysicalization is enabled
-            if (!Config.Instance.RephysicalizedMetalOre)
-                return;
-
-            MetalOresAdditionalOutputs[SimHashes.IronOre.CreateTag().ToString()] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>(SimHashes.Iron.CreateTag().ToString(), 0.67f),
-                new Tuple<string, float>(SimHashes.IgneousRock.CreateTag().ToString(), 0.33f),
-            };
-
-            MetalOresAdditionalOutputs[SimHashes.Cuprite.CreateTag().ToString()] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>(SimHashes.Copper.CreateTag().ToString(), 0.80f),
-                new Tuple<string, float>(SimHashes.Oxygen.CreateTag().ToString(), 0.20f),
-            };
-
-            MetalOresAdditionalOutputs[SimHashes.Cobaltite.CreateTag().ToString()] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>(SimHashes.Cobalt.CreateTag().ToString(), 0.71f),
-                new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.29f),
-            };
-
-            MetalOresAdditionalOutputs[SimHashes.NickelOre.CreateTag().ToString()] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>(SimHashes.Nickel.CreateTag().ToString(), 0.73f),
-                new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.27f),
-            };
-
-            MetalOresAdditionalOutputs[SimHashes.Wolframite.CreateTag().ToString()] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>(SimHashes.Tungsten.CreateTag().ToString(), 0.60f),
-                new Tuple<string, float>(SimHashes.Rust.CreateTag().ToString(), 0.40f),
-            };
-
-            MetalOresAdditionalOutputs[SimHashes.AluminumOre.CreateTag().ToString()] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>(SimHashes.Aluminum.CreateTag().ToString(), 0.60f),
-                new Tuple<string, float>(SimHashes.Oxygen.CreateTag().ToString(), 0.20f),
-                new Tuple<string, float>(SimHashes.Water.CreateTag().ToString(), 0.20f),
-            };
-
-            MetalOresAdditionalOutputs[SimHashes.GoldAmalgam.CreateTag().ToString()] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>(SimHashes.Gold.CreateTag().ToString(), 0.67f),
-                new Tuple<string, float>(SimHashes.Mercury.CreateTag().ToString(), 0.33f),
-            };
-            //Ronivans Ores
-            MetalOresAdditionalOutputs["ArgentiteOre"] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>("SolidSilver", 0.80f),
-                new Tuple<string, float>(SimHashes.Sulfur.CreateTag().ToString(), 0.20f),
-            };
-            MetalOresAdditionalOutputs["AurichalciteOre"] = new List<Tuple<string, float>>
-            {
-                new Tuple<string, float>("SolidZinc", 0.70f),
-                new Tuple<string, float>(SimHashes.CarbonDioxide.CreateTag().ToString(), 0.15f),
-                          new Tuple<string, float>(SimHashes.Water.CreateTag().ToString(), 0.15f),
-            };
-        }
-
+    
     }
 }
 

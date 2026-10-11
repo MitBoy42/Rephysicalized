@@ -1,23 +1,110 @@
 ﻿using HarmonyLib;
-using HarmonyLib;
 using Klei.AI;
-using Rephysicalized;
-using STRINGS;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Reflection;
+
 using System.Reflection.Emit;
-using System.Reflection.Emit;
+
 using UnityEngine;
 using static STRINGS.ITEMS;
 
 
 namespace Rephysicalized
 {
+
+    [HarmonyPatch(typeof(GasketConfig), nameof(GasketConfig.CreatePrefab))]
+    internal static class GasketConfig_CreatePrefab_Postfix
+    {
+        private static void Postfix(GameObject __result)
+        {
+
+            var pe = __result.GetComponent<PrimaryElement>() ?? __result.AddComponent<PrimaryElement>();
+
+
+            pe.SetElement(SimHashes.Polypropylene);
+            pe.Mass = 50f;
+
+     
+        }
+    }
+    [HarmonyPatch(typeof(RubberGasketConfig), nameof(RubberGasketConfig.CreatePrefab))]
+    internal static class RubberGasketConfig_CreatePrefab_Postfix
+    {
+        private static void Postfix(GameObject __result)
+        {
+            var pe = __result.GetComponent<PrimaryElement>() ?? __result.AddComponent<PrimaryElement>();
+
+            pe.SetElement(SimHashes.Rubber);
+            pe.Mass = 50f;
+
+        }
+    }
+    [HarmonyPatch(typeof(UrchinConfig), nameof(UrchinConfig.CreatePrefab))]
+    internal static class UrchinConfig_CreatePrefab_Postfix
+    {
+        private static void Postfix(GameObject __result)
+        {
+            var pe = __result.GetComponent<PrimaryElement>() ?? __result.AddComponent<PrimaryElement>();
+
+            pe.Mass = 1f;
+
+        }
+    }
+    [HarmonyPatch(typeof(FishFoodConfig), nameof(FishFoodConfig.CreatePrefab))]
+    internal static class FishFoodConfig_CreatePrefab_Postfix
+    {
+        private static void Postfix(GameObject __result)
+        {
+            var pe = __result.GetComponent<PrimaryElement>() ?? __result.AddComponent<PrimaryElement>();
+
+            pe.Mass = 6f;
+
+        }
+    }
+
+    [HarmonyPatch(typeof(EntityTemplates))]
+    internal static class EntityTemplates_CreateLooseEntity_GasketOrRubberGasket
+    {
+        // Match the commonly used CreateLooseEntity overload
+        public static MethodBase TargetMethod()
+        {
+            var types = new Type[] {
+                typeof(string), typeof(string), typeof(string), typeof(float), typeof(bool),
+                typeof(KAnimFile), typeof(string), typeof(Grid.SceneLayer),
+                typeof(EntityTemplates.CollisionShape), typeof(float), typeof(float),
+                typeof(bool), typeof(int), typeof(SimHashes), typeof(List<Tag>)
+            };
+            return AccessTools.Method(typeof(EntityTemplates), "CreateLooseEntity", types);
+        }
+
+        public static void Prefix(string id, ref float mass)
+        {
+            if (string.Equals(id, "PlasticGasket", StringComparison.Ordinal) ||
+                string.Equals(id, "RubberGasket", StringComparison.Ordinal))
+            {
+                mass = 50f;
+            }
+            if (string.Equals(id, "PinkRockCarved", StringComparison.Ordinal))
+            {
+                mass = 25f;
+            }
+
+            if (
+                string.Equals(id, "Urchin", StringComparison.Ordinal))
+            {
+                mass = 1f;
+            }
+            if (
+           string.Equals(id, "FishFood", StringComparison.Ordinal))
+            {
+                mass = 6f;
+            }
+        }
+    }
 
     // Patch Kelp: add ModTags.Distillable on prefab creation
     [HarmonyPatch(typeof(KelpConfig), nameof(KelpConfig.CreatePrefab))]
@@ -34,6 +121,23 @@ namespace Rephysicalized
             }
         }
     }
+    [HarmonyPatch(typeof(NoriConfig), nameof(NoriConfig.CreatePrefab))]
+    public static class NoriConfig_CreatePrefab_Patch
+    {
+        public static void Postfix(GameObject __result)
+        {
+
+
+            var kpid = __result.GetComponent<KPrefabID>();
+            if (kpid != null && ModTags.Distillable.IsValid)
+            {
+                kpid.AddTag(ModTags.Distillable, false);
+            }
+        }
+    }
+
+    
+
 
     // Makes the existing Tallow Lubrication Stick recipe accept either 10f Tallow OR 10f Graphite (same recipe entry).
     [HarmonyPatch(typeof(TallowLubricationStickConfig), nameof(TallowLubricationStickConfig.CreatePrefab))]
@@ -125,48 +229,6 @@ namespace Rephysicalized
         }
     }
 
-  
 
-
-   [HarmonyPatch(typeof(ClothingFabricatorConfig), "ConfigureRecipes")]
-    internal static class ClothingFabricatorConfig_AddBasicFabricFromFeathers
-    {
-        public static void Postfix()
-        {  Tag featherFabric = TagManager.Create("FeatherFabric");
-            Tag naturalResin = TagManager.Create("NaturalResin"); 
-            Tag plantFiber = TagManager.Create("PlantFiber"); 
-            Tag basicFabric = TagManager.Create(BasicFabricConfig.ID);
-            // Build ingredient and result arrays
-            var ingredients = new ComplexRecipe.RecipeElement[]
-        {
-            new ComplexRecipe.RecipeElement(featherFabric, 1f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
-            new ComplexRecipe.RecipeElement(naturalResin, 1f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
-            new ComplexRecipe.RecipeElement(plantFiber, 2f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
-        };
-
-            var results = new ComplexRecipe.RecipeElement[]
-            {
-            new ComplexRecipe.RecipeElement(basicFabric, 4f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
-            };
-
-            string fabId = ClothingFabricatorConfig.ID; // "ClothingFabricator"
-            string recipeId = ComplexRecipeManager.MakeRecipeID(fabId, ingredients, results);
-
-            // Avoid duplicating if something already registered same recipe
-            if (ComplexRecipeManager.Get().GetRecipe(recipeId) != null)
-                return;
-
-            var recipe = new ComplexRecipe(recipeId, ingredients, results)
-            {
-                time = 20f,
-                description = STRINGS.BUILDINGS.ClOTHING_FABRICATOR.FIBER, 
-                nameDisplay = ComplexRecipe.RecipeNameDisplay.Result,
-                fabricators = new List<Tag> { fabId },
-                sortOrder = 100 
-            };
-
-      
-        }
-    }
 
 } 

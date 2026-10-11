@@ -1,364 +1,229 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using Klei.AI;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 
 namespace Rephysicalized
 {
-    
-    // Minimal patch: for ForestTree only, increase high-pressure thresholds 10x
+    /// <summary>
+    /// Forest Tree tweaks: more water and fertiliser, RichSoil instead of Dirt, a 10x higher pressure
+    /// ceiling, and trunk mass feeding its branches.
+    /// </summary>
     [HarmonyPatch(typeof(ForestTreeConfig), nameof(ForestTreeConfig.CreatePrefab))]
-    internal static class ForestTreeConfig_CreatePrefab_PressurePatch
+    internal static class ForestTreeConfig_CreatePrefab_Patch
     {
-        private static void Postfix(ref GameObject __result)
-        {
-            if (__result == null) return;
+        // Vanilla rates (per second), from ForestTreeConfig.CreatePrefab.
+        private const float VanillaDirtyWaterRate = 0.1166667f;
+        private const float VanillaDirtRate = 0.01666667f;
 
-            var pv = __result.GetComponent<PressureVulnerable>();
-            if (pv == null) return;
-
-            // Ensure pressure sensitivity remains enabled (vanilla defaults to true)
-            pv.pressure_sensitive = true;
-
-            pv.pressureWarning_High *= 10f;
-            pv.pressureLethal_High *= 10f;
-        }
-    }
-
-
-    
-
-    [HarmonyPatch(typeof(ForestTreeConfig), nameof(ForestTreeConfig.CreatePrefab))]
-    public static class ForestTreeConfig_CreatePrefab_Patch
-    {
-        private static void Postfix(ref GameObject __result)
-        {
-            if (__result == null) return;
-            __result.AddOrGet<ForestTreeTrunkDrainController>();
-         
-        }
-
-        // New desired rates (per second)
-        private const float NewDirtyWaterRate = 0.225f;     // 135 kg/cycle
-        private const float NewDirtRate = 0.05277778f;      // ~31.66668 kg/cycle
-
-        // Original inlined rates in the stock method (per second)
-        private const float OldDirtyWaterRate = 0.1166667f;
-        private const float OldDirtRate = 0.01666667f;
+        // Replacement rates (per second).
+        private const float DirtyWaterRate = 0.225f;    // 135 kg/cycle
+        private const float DirtRate = 0.05277778f;     // ~31.66668 kg/cycle
 
         private const float Epsilon = 0.000001f;
         private static bool Approximately(float a, float b) => Mathf.Abs(a - b) <= Epsilon;
 
+        /// <summary>
+        /// Retunes only the two plant consumption literals.
+
+        /// </summary>
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            foreach (var instr in instructions)
+            var list = new List<CodeInstruction>(instructions);
+
+            for (int i = 0; i < list.Count - 3; i++)
             {
-                if (instr.opcode == OpCodes.Ldc_R4 && instr.operand is float f)
+                // PlantElementAbsorber.ConsumeInfo[] array initialiser
+                if (list[i].opcode != OpCodes.Newarr ||
+                    !Equals(list[i].operand, typeof(PlantElementAbsorber.ConsumeInfo)))
                 {
-                    if (Approximately(f, OldDirtyWaterRate))
-                        instr.operand = NewDirtyWaterRate;
-                    else if (Approximately(f, OldDirtRate))
-                        instr.operand = NewDirtRate;
+                    continue;
                 }
 
-                yield return instr;
+                // Inside it: a Tag field store and a float rate store, e.g. ldc.r4 <rate>; stfld MassConsumptionRate
+                for (int j = i + 1; j < list.Count && list[j].opcode != OpCodes.Newarr; j++)
+                {
+                    if (list[j].opcode != OpCodes.Stfld ||
+                        !Equals(list[j].operand, AccessTools.Field(typeof(PlantElementAbsorber.ConsumeInfo), "massConsumptionRate")))
+                    {
+                        continue;
+                    }
+
+                    if (list[j - 1].opcode == OpCodes.Ldc_R4 && list[j - 1].operand is float rate)
+                    {
+                        if (Approximately(rate, VanillaDirtyWaterRate))
+                            list[j - 1].operand = DirtyWaterRate;
+                        else if (Approximately(rate, VanillaDirtRate))
+                            list[j - 1].operand = DirtRate;
+                    }
+                }
             }
+
+            return list;
         }
 
         [HarmonyPostfix]
-        public static void SwapDirtToRichSoil(ref GameObject __result)
+        private static void Postfix(ref GameObject __result)
         {
-                bool changed = false;
+            if (__result == null)
+                return;
 
-                // Update FertilizationMonitor.Def consumed elements (source of fertilizer requirement)
-                var fertDef = __result.GetDef<FertilizationMonitor.Def>();
-                if (fertDef != null && fertDef.consumedElements != null)
-                {
-                    var arr = fertDef.consumedElements;
-                    for (int i = 0; i < arr.Length; i++)
-                    {
-                        if (arr[i].tag == GameTags.Dirt)
-                        {
-                            arr[i].tag = ModTags.RichSoil;
-                            changed = true;
-                        }
-                    }
-                    fertDef.consumedElements = arr;
-                }
+            __result.AddOrGet<ForestTreeTrunkDrainController>();
 
-                // Update delivery requests so farmers bring RichSoil instead of Dirt
-                var deliveries = __result.GetComponents<ManualDeliveryKG>();
-                if (deliveries != null)
-                {
-                    foreach (var md in deliveries)
-                    {
-                        if (md != null && md.RequestedItemTag == GameTags.Dirt)
-                        {
-                            md.RequestedItemTag = ModTags.RichSoil;
-                            changed = true;
-                        }
-                    }
-                }
-
-            }
-         
+            RaisePressureThresholds(__result);
+            SwapDirtToRichSoil(__result);
         }
-    
 
-    [HarmonyLib.HarmonyPatch(typeof(MinionVitalsPanel), nameof(MinionVitalsPanel.GetFertilizationLabel))]
-    internal static class MinionVitalsPanel_GetFertilizationLabel_Safe_Patch
-    {
-        private static bool Prefix(UnityEngine.GameObject go, ref string __result)
+        /// <summary>Forest Trees tolerate 10x more pressure before warning and before dying.</summary>
+        private static void RaisePressureThresholds(GameObject prefab)
         {
-            try
+            var pv = prefab.GetComponent<PressureVulnerable>();
+            if (pv == null)
+                return;
+
+            pv.pressure_sensitive = true;
+            pv.pressureWarning_High *= 10f;
+            pv.pressureLethal_High *= 10f;
+        }
+
+
+        /// Requires RichSoil rather than Dirt. 
+  
+        private static void SwapDirtToRichSoil(GameObject prefab)
+        {
+            var fertDef = prefab.GetDef<FertilizationMonitor.Def>();
+            if (fertDef?.consumedElements != null)
             {
-                string label = Db.Get().Amounts.Fertilization.Name;
-
-                if (go == null)
+                for (int i = 0; i < fertDef.consumedElements.Length; i++)
                 {
-                    __result = label;
-                    return false;
+                    if (fertDef.consumedElements[i].tag == GameTags.Dirt)
+                        fertDef.consumedElements[i].tag = ModTags.RichSoil;
                 }
-
-                var smi = go.GetSMI<FertilizationMonitor.Instance>();
-                var consumed = smi?.def?.consumedElements;
-                if (consumed == null || consumed.Length == 0)
-                {
-                    __result = label;
-                    return false;
-                }
-
-                // Fertilizer usage multiplier (null-safe)
-                float usageMult = 1f;
-                var attrs = go.GetAttributes();
-                if (attrs != null)
-                {
-                    var amt = attrs.Get(Db.Get().PlantAttributes.FertilizerUsageMod);
-                    if (amt != null)
-                        usageMult = amt.GetTotalValue();
-                }
-
-                for (int i = 0; i < consumed.Length; i++)
-                {
-                    var entry = consumed[i];
-
-                    // Try resolve as element; fall back to tag name if it's a custom Tag
-                    var elem = ElementLoader.GetElement(entry.tag);
-                    string name = elem != null ? elem.name : entry.tag.ProperName();
-
-                    // ONI formats per-cycle mass from per-second rates via GameUtil
-                    float perSec = entry.massConsumptionRate * usageMult;
-
-                    label += "\n    • " + name + " " + GameUtil.GetFormattedMass(perSec, GameUtil.TimeSlice.PerCycle);
-                }
-
-                __result = label;
-                return false; // skip original to avoid its null assumptions
             }
-            catch
+
+            var deliveries = prefab.GetComponents<ManualDeliveryKG>();
+            foreach (var delivery in deliveries)
             {
-                // Fail-safe: return just the section header
-                __result = Db.Get().Amounts.Fertilization.Name;
-                return false;
+                if (delivery != null && delivery.RequestedItemTag == GameTags.Dirt)
+                    delivery.RequestedItemTag = ModTags.RichSoil;
             }
         }
     }
 
-      
+    /// <summary>
+    /// Shows the real fertiliser requirement on the plant instead of vanilla's hardcoded Dirt label.
+    /// Vanilla's GetFertilizationLabel assumes a Dirt tag and null-checks loosely, so the label is rebuilt
+    /// here from the Def, which keeps working for custom fertilisers such as RichSoil.
+    /// </summary>
+    [HarmonyPatch(typeof(MinionVitalsPanel), nameof(MinionVitalsPanel.GetFertilizationLabel))]
+    internal static class MinionVitalsPanel_GetFertilizationLabel_Patch
+    {
+        private static bool Prefix(GameObject go, ref string __result)
+        {
+            string header = Db.Get().Amounts.Fertilization.Name;
+            __result = header;
 
-        // Ensure PMT component is present on branch prefab
+            try
+            {
+                if (go == null)
+                    return false;
+
+                var consumed = go.GetSMI<FertilizationMonitor.Instance>()?.def?.consumedElements;
+                if (consumed == null || consumed.Length == 0)
+                    return false;
+
+                float usageMultiplier = 1f;
+                var attributes = go.GetAttributes();
+                if (attributes != null)
+                {
+                    var amount = attributes.Get(Db.Get().PlantAttributes.FertilizerUsageMod);
+                    if (amount != null)
+                        usageMultiplier = amount.GetTotalValue();
+                }
+
+                foreach (var entry in consumed)
+                {
+                    // Resolve as an element where possible; fall back to the tag name for custom items.
+                    var element = ElementLoader.GetElement(entry.tag);
+                    string name = element != null ? element.name : entry.tag.ProperName();
+
+                    // ONI formats a per-cycle mass from a per-second rate via GameUtil.
+                    float perSecond = entry.massConsumptionRate * usageMultiplier;
+                    header += "\n    • " + name + " " + GameUtil.GetFormattedMass(perSecond, GameUtil.TimeSlice.PerCycle);
+                }
+
+                __result = header;
+            }
+            catch
+            {
+                // Fail safe: show just the section header rather than breaking the panel.
+                __result = Db.Get().Amounts.Fertilization.Name;
+            }
+
+            return false; // skip vanilla, which assumes Dirt
+        }
+    }
+
+    /// <summary>
+    /// Branches drop WoodLog through the Plant Mass Tracker instead of vanilla's hardcoded spawn, so the
+    /// amount matches the branch's tracked mass.
+    /// </summary>
+    internal static class ForestTreeBranch_MassTracker
+    {
         [HarmonyPatch(typeof(ForestTreeBranchConfig), nameof(ForestTreeBranchConfig.CreatePrefab))]
-        internal static class ForestTreeBranchConfig_CreatePrefab_Patch
+        internal static class CreatePrefab_Patch
         {
             private static void Postfix(ref GameObject __result)
             {
-                if (__result == null) return;
-                __result.AddOrGet<PlantMassTrackerComponent>();
+                __result?.AddOrGet<PlantMassTrackerComponent>();
             }
         }
 
-        // Register PMT configs and zero vanilla wood crop so only PMT handles branch drops
-        [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-        internal static class ForestTree_PMT_Registration
-        {
-            private static void Postfix()
-            {
-                // Register branch to drop WoodLog via PMT (100% of mass-to-drop)
-                PlantMassTrackerRegistry.ApplyToCrop(
-                    plantPrefabId: "ForestTreeBranch",
-                    yields: new List<MaterialYield> { new MaterialYield("WoodLog", 1f) },
-                    realHarvestSubtractKg: 30f
-                );
-            }
-        }
 
-        // Initialize PMT for ForestTreeBranch instances when the SMI starts
-        // PlantBranch has no OnSpawn; StartSM is the correct hook.
+        // PlantBranch has no OnSpawn, so StartSM is where a spawned branch is initialised.
         [HarmonyPatch(typeof(PlantBranch.Instance), nameof(PlantBranch.Instance.StartSM))]
-        internal static class PlantBranch_Instance_StartSM_ForestTreeBranch_Init_Patch
+        internal static class StartSM_Patch
         {
             private static void Postfix(PlantBranch.Instance __instance)
             {
+                if (__instance == null)
+                    return;
 
-                var go = __instance.gameObject;
-
-                var kpid = go.GetComponent<KPrefabID>();
+                var kpid = __instance.gameObject.GetComponent<KPrefabID>();
                 if (kpid == null || kpid.PrefabTag != (Tag)"ForestTreeBranch")
                     return;
 
-                var pmt = go.AddOrGet<PlantMassTrackerComponent>();
+                var pmt = __instance.gameObject.AddOrGet<PlantMassTrackerComponent>();
                 if (PlantMassTrackerRegistry.TryGetConfig(kpid.PrefabID().Name, out var cfg) && cfg != null)
                     pmt.InitializeFromConfig(cfg);
             }
         }
+    }
 
-        // Trunk-to-branch mass transfer while branches are growing (and not wilting).
-        // Each growing branch drains 50 kg per cycle from the trunk (cycle = 600 s => ~0.083333 kg/s per branch).
-        // The trunk is clamped to a minimum mass of 1 kg; branches stop draining if trunk would drop below 1 kg.
-        public sealed class ForestTreeTrunkDrainController : KMonoBehaviour, ISim1000ms
+    /// <summary>
+    /// Moves trunk mass into each growing branch. Shares its implementation with the Space Tree via
+    /// </summary>
+    public sealed class ForestTreeTrunkDrainController : TreeTrunkDrainControllerBase
+    {
+        // Vanilla effectively doubles this, so the observed drain is ~50 kg per branch per cycle.
+        protected override float DrainPerCycleKg => 25f;
+
+        protected override bool IsBranchEligible(GameObject branch)
         {
-            private const float DrainPerCycleKg = 25f; //For some reason is double counted idk why
-            private const float SecondsPerCycle = 600f;
-            private const float PerBranchRateKgPerSec = DrainPerCycleKg / SecondsPerCycle; // ~0.083333 kg/s
+            if (branch == null)
+                return false;
 
-            [MyCmpGet] private PrimaryElement _trunkPE;
-            [MyCmpGet] private WiltCondition _trunkWilt;
-            private PlantMassTrackerComponent _trunkPMT;
-            private PlantBranchGrower.Instance _grower;
+            var growing = branch.GetComponent<Growing>();
+            if (growing != null && growing.IsGrown())
+                return false; // fully grown: no drain
 
-            public override void OnSpawn()
-            {
-                base.OnSpawn();
-                _trunkPMT = GetComponent<PlantMassTrackerComponent>();
-                _grower = gameObject.GetSMI<PlantBranchGrower.Instance>();
-            }
+            var wilt = branch.GetComponent<WiltCondition>();
+            if (wilt != null && wilt.IsWilting())
+                return false; // wilted branch: no drain
 
-            public void Sim1000ms(float dt)
-            {
-                if (_trunkWilt == null) _trunkWilt = GetComponent<WiltCondition>();
-                if (_trunkWilt != null && _trunkWilt.IsWilting())
-                    return; // No drain while trunk is wilting
-
-                if (_grower == null)
-                    _grower = gameObject.GetSMI<PlantBranchGrower.Instance>();
-                if (_grower == null)
-                    return;
-
-                // Collect eligible branches: not fully grown AND not wilting
-                var branches = ListPool<GameObject, ForestTreeTrunkDrainController>.Allocate();
-                var eligible = ListPool<GameObject, ForestTreeTrunkDrainController>.Allocate();
-                try
-                {
-                    _grower.ActionPerBranch(branch =>
-                    {
-                        if (branch != null)
-                            branches.Add(branch);
-                    });
-
-                    if (branches.Count == 0)
-                        return;
-
-                    for (int i = 0; i < branches.Count; i++)
-                    {
-                        var b = branches[i];
-                        if (b == null) continue;
-
-                        var growing = b.GetComponent<Growing>();
-                        if (growing != null && growing.IsGrown())
-                            continue; // fully grown: no drain
-
-                        var bwilt = b.GetComponent<WiltCondition>();
-                        if (bwilt != null && bwilt.IsWilting())
-                            continue; // wilted branch: no drain
-
-                        eligible.Add(b);
-                    }
-
-                    if (eligible.Count == 0)
-                        return;
-
-                    float trunkMass = GetTrunkMass();
-                    float availableAboveBaseline = trunkMass - 10f;
-                    if (availableAboveBaseline <= 0f)
-                        return;
-
-                    float perBranchDesired = Mathf.Max(0.001f, dt) * PerBranchRateKgPerSec;
-                    float totalDesired = perBranchDesired * eligible.Count;
-
-                    float scale = totalDesired > 0f ? Mathf.Min(1f, availableAboveBaseline / totalDesired) : 0f;
-                    if (scale <= 0f)
-                        return;
-
-                    float totalDrainApplied = 0f;
-
-                    // Transfer mass to each branch, scaled if trunk is near baseline
-                    for (int i = 0; i < eligible.Count; i++)
-                    {
-                        float applied = perBranchDesired * scale;
-                        if (applied <= 0f) continue;
-
-                        var b = eligible[i];
-                        AddMassToBranch(b, applied);
-                        totalDrainApplied += applied;
-                    }
-
-                    // Subtract from trunk once
-                    if (totalDrainApplied > 0f)
-                        ApplyDrainToTrunk(totalDrainApplied);
-                }
-                finally
-                {
-                    branches.Recycle();
-                    eligible.Recycle();
-                }
-            }
-
-            private float GetTrunkMass()
-            {
-                if (_trunkPMT != null)
-                    return Mathf.Max(0f, _trunkPMT.TrackedMassKg);
-                if (_trunkPE != null)
-                    return Mathf.Max(0f, _trunkPE.Mass);
-                return 0f;
-            }
-
-            private void ApplyDrainToTrunk(float kg)
-            {
-                if (kg <= 0f) return;
-
-                if (_trunkPMT != null)
-                {
-                    _trunkPMT.AddExternalMass(-kg);
-                    if (_trunkPE != null)
-                        _trunkPE.Mass = Mathf.Max(1f, _trunkPE.Mass - kg);
-                }
-                else if (_trunkPE != null)
-                {
-                    _trunkPE.Mass = Mathf.Max(1f, _trunkPE.Mass - kg);
-                }
-            }
-
-            private static void AddMassToBranch(GameObject branch, float kg)
-            {
-                if (branch == null || kg <= 0f) return;
-
-                var pmt = branch.GetComponent<PlantMassTrackerComponent>();
-                if (pmt != null)
-                {
-                    pmt.AddExternalMass(+kg);
-                    var pe = branch.GetComponent<PrimaryElement>();
-                    if (pe != null) pe.Mass = Mathf.Max(1f, pe.Mass + kg);
-                    return;
-                }
-
-                var bpe = branch.GetComponent<PrimaryElement>();
-                if (bpe != null)
-                    bpe.Mass = Mathf.Max(1f, bpe.Mass + kg);
-            }
+            return true;
         }
     }
+}

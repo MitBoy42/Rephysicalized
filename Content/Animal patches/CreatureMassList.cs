@@ -9,418 +9,7 @@ using System.Reflection;
 using UnityEngine;
 
 namespace Rephysicalized
-{ 
-
-       // Configurable default mass (kg) per species prefix. Update values as needed.
-    internal static class BaseCreatureDefaultMassConfig
 {
-    public static readonly Dictionary<string, float> DefaultSpeciesMassKg =
-        new Dictionary<string, float>(StringComparer.InvariantCultureIgnoreCase)
-        {
-                // Vanilla
-                { "Hatch", 1f },
-                { "Puft", 0.25f },
-                { "Drecko", 1f },
-                { "Squirrel", 1f },
-                { "Pacu", 2f },
-                { "OilFloater", 1f },
-                { "LightBug", 0.1f },
-                { "Crab", 1f },
-                { "DivergentBeetle", 1f },
-                { "Divergent", 1f },
-                { "Staterpillar", 1f },
-                { "Mole", 1f },
-                { "Bee", 1f },
-                { "Moo", 10f },
-                { "Glom", 1f },
-
-                // Modded / extended list
-                { "WoodDeer", 1f },
-                    { "GlassDeer", 1f },
-                { "Seal", 1f },
-                { "GoldBelly", 4f },
-                { "IceBelly", 4f },
-                { "Stego", 4f },
-                 { "Raptor", 4f },
-                { "Butterfly", 1f },
-                { "Mosquito", 1f },
-                { "Chameleon", 0.5f },
-                { "PrehistoricPacu", 2f },
-                     { "AlgaeStego", 4f },
-        };
-
-    public static bool TryGetDesiredMass(string prefabId, out float mass)
-    {
-        mass = 0f;
-        if (string.IsNullOrEmpty(prefabId))
-            return false;
-
-        foreach (var kvp in DefaultSpeciesMassKg)
-        {
-            // Prefix match to cover variants and babies
-            if (prefabId.StartsWith(kvp.Key, true, CultureInfo.InvariantCulture))
-            {
-                mass = kvp.Value;
-                return mass > 0f;
-            }
-        }
-        return false;
-    }
-}
-
-// Patch all overloads of EntityTemplates.CreatePlacedEntity where arg4 is float mass.
-[HarmonyPatch]
-internal static class BaseCreatureDefaultMassPatch
-{
-    static IEnumerable<MethodBase> TargetMethods()
-    {
-        var methods = AccessTools.GetDeclaredMethods(typeof(EntityTemplates))
-                                 .Where(m => m.Name == "CreatePlacedEntity");
-
-        foreach (var m in methods)
-        {
-            var p = m.GetParameters();
-            if (p.Length >= 5
-                && p[0].ParameterType == typeof(string)     // id
-                && p[1].ParameterType == typeof(string)     // name
-                && p[2].ParameterType == typeof(string)     // desc
-                && p[3].ParameterType == typeof(float))     // mass
-            {
-
-                yield return m;
-            }
-        }
-    }
-
-    // Common prefix for all matched overloads
-    static void Prefix(ref string id, ref float mass)
-    {
-        if (BaseCreatureDefaultMassConfig.TryGetDesiredMass(id, out var desiredMass))
-        {
-            if (!Mathf.Approximately(mass, desiredMass))
-            {
-
-                mass = desiredMass;
-            }
-        }
-
-    }
-}
-
-
-    //WoodDeer tracker
-
-    [HarmonyPatch(typeof(GlassDeerConfig), nameof(GlassDeerConfig.CreatePrefab))]
-    public static class GlassDeerConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 1f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-            __result.AddOrGet<CreatureMassTrackerLink>();
-
-
-
-        }
-    }
-    //WoodDeer tracker
-
-    [HarmonyPatch(typeof(WoodDeerConfig), nameof(WoodDeerConfig.CreatePrefab))]
-    public static class WoodDeerConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 1f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-            __result.AddOrGet<CreatureMassTrackerLink>();
-
-
-
-        }
-    }
-
-    // Apply the tracker to baby WoodDeer as well so it carries into adulthood
-    [HarmonyPatch(typeof(BabyWoodDeerConfig), nameof(BabyWoodDeerConfig.CreatePrefab))]
-    public static class BabyWoodDeerConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 1f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-
-        }
-    }
-    // Apply the tracker to baby WoodDeer as well so it carries into adulthood
-    [HarmonyPatch(typeof(BabyGlassDeerConfig), nameof(BabyGlassDeerConfig.CreatePrefab))]
-    public static class BabyGlassDeerConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 1f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-
-        }
-    }
-
-
-
-    // Apply deer-specific mass-gain per food by intercepting the tracker’s event handler for deer only.
-    [HarmonyPatch(typeof(CreatureMassTracker), "OnCaloriesConsumed")]
-    internal static class WoodDeer_PerFoodMassGain_Prefix
-    {
-
-        // Return false to skip original when we handle the event here.
-        private static bool Prefix(CreatureMassTracker __instance, object data)
-        {
-           
-                // Only handle wooddeer while in mass mode
-                var go = __instance.gameObject;
-                if (!IsWoodDeer(go) || __instance.Mode != CreatureMassTracker.AccumulationMode.ConsumedMass)
-                    return true;
-
-            if (data is not Boxed<CreatureCalorieMonitor.CaloriesConsumedEvent> boxed)
-                return true;
-
-            var evt = boxed.value;
-            if (evt.calories <= 0f)
-                return true;
-
-            // Resolve the consumed kg via the diet entry used
-            var smi = go.GetSMI<CreatureCalorieMonitor.Instance>();
-                var diet = smi?.stomach?.diet;
-                var info = diet?.GetDietInfo(evt.tag);
-                if (info == null)
-                    return false; // politely skip any mass update (matches tracker’s safe behavior)
-
-                float consumedKg = info.ConvertCaloriesToConsumptionMass(evt.calories);
-                if (consumedKg <= 0f)
-                    return false;
-
-                // Apply deer-specific per-food ratios
-                float ratio = GetDeerPerFoodMassGainRatio(evt.tag);
-                if (ratio <= 0f)
-                    return false;
-
-                __instance.ReportConsumedMass(consumedKg * ratio);
-
-                // We’ve handled this event for deer; skip the original to avoid double-counting
-                return false;
-            
-           
-        }
-
-        private static bool IsWoodDeer(GameObject go)
-        {
-            var kpid = go != null ? go.GetComponent<KPrefabID>() : null;
-            if (kpid == null) return false;
-
-            string id = kpid.PrefabTag.Name;
-            if (string.IsNullOrEmpty(id)) return false;
-
-            // Accept both adult and baby variants by substring
-            return id.IndexOf("Deer", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private static float GetDeerPerFoodMassGainRatio(Tag consumedTag)
-        {
-      
-
-            // Plants:
-            if (consumedTag == "HardSkinBerryPlant")
-                return 0.3334f; // ~1/3
-            if (consumedTag == "PrickleFlower")
-                return 1f / 12f; // ~0.0833333
-            if (consumedTag == "Katairite")
-                return 0.5f;
-
-            return 1f;
-        }
-    }
-
-    //Bammoth tracker
-
-    [HarmonyPatch(typeof(IceBellyConfig), nameof(IceBellyConfig.CreatePrefab))]
-    public static class IceBellyConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 4f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-            __result.AddOrGet<CreatureMassTrackerLink>();
-
-            tracker.ExtraDrops = new List<CreatureMassTracker.ExtraDropSpec>
-            {
-
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.66f },
-                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.34f },
-            };
-            var kpid = __result.GetComponent<KPrefabID>();
-            CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
-
-        }
-    }
-
-    // Apply the tracker to baby IceBelly as well so it carries into adulthood
-    [HarmonyPatch(typeof(BabyIceBellyConfig), nameof(BabyIceBellyConfig.CreatePrefab))]
-    public static class BabyIceBellyConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 4f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-            tracker.ExtraDrops = new List<CreatureMassTracker.ExtraDropSpec>
-            {
-
-
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 0.66f },
-                                  new CreatureMassTracker.ExtraDropSpec { id = "Rotpile", fraction = 0.34f },
-            };
-            var kpid = __result.GetComponent<KPrefabID>();
-            CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
-
-        }
-    }
-    //GoldBammoth tracker
-
-    [HarmonyPatch(typeof(GoldBellyConfig), nameof(GoldBellyConfig.CreatePrefab))]
-    public static class GoldBellyConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 4f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-            __result.AddOrGet<CreatureMassTrackerLink>();
-
-            tracker.ExtraDrops = new List<CreatureMassTracker.ExtraDropSpec>
-            {
-
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 1f },
-                                
-            };
-            var kpid = __result.GetComponent<KPrefabID>();
-            CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
-
-        }
-    }
-
-    // Apply the tracker to baby GoldBelly as well so it carries into adulthood
-    [HarmonyPatch(typeof(BabyGoldBellyConfig), nameof(BabyGoldBellyConfig.CreatePrefab))]
-    public static class BabyGoldBellyConfig_CreatePrefab_AddMassTracker
-    {
-        public static void Postfix(ref GameObject __result)
-        {
-
-            var tracker = __result.AddOrGet<CreatureMassTracker>();
-            tracker.STARTING_MASS = 4f;
-            tracker.MASS_RATIO = 1f;
-            tracker.Mode = CreatureMassTracker.AccumulationMode.ConsumedMass;
-            tracker.ExtraDrops = new List<CreatureMassTracker.ExtraDropSpec>
-            {
-
-
-                 new CreatureMassTracker.ExtraDropSpec { id = "Meat", fraction = 1f },
-                                
-            };
-            var kpid = __result.GetComponent<KPrefabID>();
-            CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, tracker.ExtraDrops);
-        }
-    }
-
-  
-
-    // Apply belly-specific mass-gain per food by intercepting the tracker’s event handler for belly only.
-    [HarmonyPatch(typeof(CreatureMassTracker), "OnCaloriesConsumed")]
-    internal static class IceBelly_PerFoodMassGain_Prefix
-    {
-
-
-
-        // Return false to skip original when we handle the event here.
-        private static bool Prefix(CreatureMassTracker __instance, object data)
-        {
-         
-                // Only handle wooddeer while in mass mode
-                var go = __instance.gameObject;
-                if (!IsBelly(go) || __instance.Mode != CreatureMassTracker.AccumulationMode.ConsumedMass)
-                    return true;
-
-            if (data is not Boxed<CreatureCalorieMonitor.CaloriesConsumedEvent> boxed)
-                return true;
-
-            var evt = boxed.value;
-            if (evt.calories <= 0f)
-                return true;
-
-            // Resolve the consumed kg via the diet entry used
-            var smi = go.GetSMI<CreatureCalorieMonitor.Instance>();
-                var diet = smi?.stomach?.diet;
-                var info = diet?.GetDietInfo(evt.tag);
-                if (info == null)
-                    return false; // politely skip any mass update (matches tracker’s safe behavior)
-
-                float consumedKg = info.ConvertCaloriesToConsumptionMass(evt.calories);
-                if (consumedKg <= 0f)
-                    return false;
-
-                // Apply belly-specific per-food ratios
-                float ratio = GetBellyPerFoodMassGainRatio(evt.tag);
-                if (ratio <= 0f)
-                    return false;
-
-                __instance.ReportConsumedMass(consumedKg * ratio);
-
-                // We’ve handled this event for belly; skip the original to avoid double-counting
-                return false;
-            
-          
-        }
-
-        private static bool IsBelly(GameObject go)
-        {
-            var kpid = go != null ? go.GetComponent<KPrefabID>() : null;
-            if (kpid == null) return false;
-
-            string id = kpid.PrefabTag.Name;
-            if (string.IsNullOrEmpty(id)) return false;
-
-            // Accept both adult and baby variants by substring
-            return id.IndexOf("Belly", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private static float GetBellyPerFoodMassGainRatio(Tag consumedTag)
-        {
-
-            if (consumedTag == "CarrotPlant")
-                return 0.033334f;
-            if (consumedTag == "BeanPlant")
-                return 0.033334f;
-
-            return 1f;
-        }
-    }
-
-
 
     [HarmonyPatch]
     internal static class CreatureMassTracker_CompactLists
@@ -433,267 +22,250 @@ internal static class BaseCreatureDefaultMassPatch
             public Drop(string id, float fraction) { this.id = id; this.fraction = fraction; }
         }
 
+        // Per-food ratio override
+        private readonly struct FoodRatio
+        {
+            public readonly string consumedTagName;
+            public readonly float ratio;
+            public FoodRatio(string consumedTagName, float ratio) { this.consumedTagName = consumedTagName; this.ratio = ratio; }
+        }
+
         // Generic entry used for both calorie- and mass-based configs
         private sealed class Entry
         {
             public readonly Type configType;       // Config class type (e.g., typeof(HatchConfig))
             public readonly string methodName;     // Usually "CreatePrefab" (some mods use "CreateStego", etc.)
             public readonly float? startMass;
-            public readonly float? calorieRatio;   // If set => calorie-based
             public readonly float? massRatio;      // If set or explicit mass mode => mass-based
-       
+
             public readonly bool addLink;
             public readonly Drop[] drops;
+            public readonly FoodRatio[] perFood;
             public readonly float? growDropUnits;  // e.g., BabyCrab Wood/Normal
 
-            public Entry(Type type, string method, float? startMass = null, float? cal = null, float? mass = null,
-                         float? maxMult = null, bool addLink = false, Drop[] drops = null)
+            public Entry(Type type, string method, float? startMass = null, float? mass = null,
+                         float? maxMult = null, bool addLink = false, Drop[] drops = null, FoodRatio[] perFood = null)
             {
                 this.configType = type;
                 this.methodName = method;
                 this.startMass = startMass;
-                this.calorieRatio = cal;
+
                 this.massRatio = mass;
 
                 this.addLink = addLink;
                 this.drops = drops;
-              
+                this.perFood = perFood;
+
             }
         }
+        private static readonly Entry[] MassEntries =
+        {      
+    // Hatches
+            new Entry(typeof(HatchConfig), nameof(HatchConfig.CreatePrefab), startMass: 1f, mass: 1f/140f, addLink: true,    drops: new[] { new Drop("CrudByproduct", 1f) }),
+            new Entry(typeof(BabyHatchConfig), nameof(BabyHatchConfig.CreatePrefab), startMass: 1f, mass: 1f/140f,  drops: new[] { new Drop("CrudByproduct", 1f) }),
 
-        // Calorie-ratio (CALORIE_RATIO) species
-        private static readonly Entry[] CalorieEntries =
-        {
-          
+            new Entry(typeof(HatchHardConfig), nameof(HatchHardConfig.CreatePrefab), startMass: 1f, mass: 1f/140f, addLink: true,     drops: new[] { new Drop("SedimentaryRock", 1f) }),
+            new Entry(typeof(BabyHatchHardConfig), nameof(BabyHatchHardConfig.CreatePrefab), startMass: 1f, mass: 1f/140f,   drops: new[] { new Drop("SedimentaryRock", 1f) }),
 
-            // Hatches
-            new Entry(typeof(HatchConfig), nameof(HatchConfig.CreatePrefab), startMass: 1f, cal: 700000f, addLink: true,
-                 drops: new[] { new Drop("CrudByproduct", 1f) }),
-            new Entry(typeof(BabyHatchConfig), nameof(BabyHatchConfig.CreatePrefab), startMass: 1f, cal: 700000f,
-                drops: new[] { new Drop("CrudByproduct", 1f) }),
+            new Entry(typeof(HatchMetalConfig), nameof(HatchMetalConfig.CreatePrefab), startMass: 1f, mass: 5f/100f, addLink: true,   drops: new[] { new Drop("Katairite", 1f) }),
+            new Entry(typeof(BabyHatchMetalConfig), nameof(BabyHatchMetalConfig.CreatePrefab), startMass: 1f, mass: 5f/100f,   drops: new[] { new Drop("Katairite", 1f) }),
 
-            new Entry(typeof(HatchHardConfig), nameof(HatchHardConfig.CreatePrefab), startMass: 1f, cal: 700000f, addLink: true,
-                      drops: new[] { new Drop("SedimentaryRock", 1f) }),
-            new Entry(typeof(BabyHatchHardConfig), nameof(BabyHatchHardConfig.CreatePrefab), startMass: 1f, cal: 700000f,
-                      drops: new[] { new Drop("SedimentaryRock", 1f) }),
+            new Entry(typeof(HatchVeggieConfig), nameof(HatchVeggieConfig.CreatePrefab), startMass: 1f, mass: 5f/140f, addLink: true,   drops: new[] { new Drop("Algae", 1f) }),
+            new Entry(typeof(BabyHatchVeggieConfig), nameof(BabyHatchVeggieConfig.CreatePrefab), startMass: 1f, mass: 5f/140f,   drops: new[] { new Drop("Algae", 1f) }),
 
-            new Entry(typeof(HatchMetalConfig), nameof(HatchMetalConfig.CreatePrefab), startMass: 1f, cal: 140000f, maxMult: 500f, addLink: true,
-                      drops: new[] { new Drop("Katairite", 1f) }),
-            new Entry(typeof(BabyHatchMetalConfig), nameof(BabyHatchMetalConfig.CreatePrefab), startMass: 1f, cal: 140000f, maxMult: 500f,
-                      drops: new[] { new Drop("Katairite", 1f) }),
+  // Raptors
+            new Entry(typeof(RaptorConfig), nameof(RaptorConfig.CreatePrefab), startMass: 4f, mass: 1f, addLink: true,  drops: new[] { new Drop("DinosaurMeat", 1f) }  ),
+            new Entry(typeof(BabyRaptorConfig), nameof(BabyRaptorConfig.CreatePrefab), startMass: 4f, mass: 1f,   drops: new[] { new Drop("DinosaurMeat", 1f) }    ),
 
-            new Entry(typeof(HatchVeggieConfig), nameof(HatchVeggieConfig.CreatePrefab), startMass: 1f, cal: 140000f, maxMult: 500f, addLink: true,
-                      drops: new[] { new Drop("Algae", 1f) }),
-        
-            new Entry(typeof(BabyHatchVeggieConfig), nameof(BabyHatchVeggieConfig.CreatePrefab), startMass: 1f, cal: 140000f, maxMult: 500f,
-                      drops: new[] { new Drop("Algae", 1f) }),
+  // Drecko (base)
+            new Entry(typeof(DreckoConfig), nameof(DreckoConfig.CreatePrefab), startMass: 1f, mass: 1f/11f,  addLink: true),
+            new Entry(typeof(BabyDreckoConfig), nameof(BabyDreckoConfig.CreatePrefab), startMass: 1f, mass: 1f/11f),
 
+  // Pufts
+            new Entry(typeof(PuftConfig), nameof(PuftConfig.CreatePrefab), startMass: 0.25f, mass: 0.05f, addLink: true),
+            new Entry(typeof(BabyPuftConfig), nameof(BabyPuftConfig.CreatePrefab), startMass: 0.25f, mass: 0.05f),
 
-                 // Raptors
-            new Entry(typeof(RaptorConfig), nameof(RaptorConfig.CreatePrefab), startMass: 4f, cal: 1600000f, maxMult: 100f, addLink: true,
-                drops: new[] { new Drop("DinosaurMeat", 1f) }
-                      ),
-            new Entry(typeof(BabyRaptorConfig), nameof(BabyRaptorConfig.CreatePrefab), startMass: 4f, cal: 1600000f, maxMult: 100f,
+            new Entry(typeof(PuftOxyliteConfig), nameof(PuftOxyliteConfig.CreatePrefab), startMass: 0.25f, mass: 0.05f, addLink: true),
+            new Entry(typeof(BabyPuftOxyliteConfig), nameof(BabyPuftOxyliteConfig.CreatePrefab), startMass: 0.25f, mass: 0.05f),
 
+            new Entry(typeof(PuftBleachstoneConfig), nameof(PuftBleachstoneConfig.CreatePrefab), startMass: 0.25f, mass: 0.05f,  addLink: true),
+            new Entry(typeof(BabyPuftBleachstoneConfig), nameof(BabyPuftBleachstoneConfig.CreatePrefab), startMass: 0.25f, mass: 0.05f),
 
-                   drops: new[] { new Drop("DinosaurMeat", 1f) }    ),
+            new Entry(typeof(PuftAlphaConfig), nameof(PuftAlphaConfig.CreatePrefab), startMass: 0.25f, mass: 0.9f, addLink: true, drops: new[] { new Drop("ContaminatedOxygen", 0.25f) , new Drop("CrudByproduct", 0.75f)}),
+            new Entry(typeof(BabyPuftAlphaConfig), nameof(BabyPuftAlphaConfig.CreatePrefab), startMass: 0.25f, mass: 0.9f, drops: new[] { new Drop("ContaminatedOxygen", 0.25f) , new Drop("CrudByproduct", 0.75f)}),
 
-                
-            // Seals
-            new Entry(typeof(SealConfig), nameof(SealConfig.CreatePrefab), startMass: 1f, cal: 12500f, maxMult: 700f, addLink: true,
-                      drops: new[] { new Drop("Tallow", 1f) }),
-            new Entry(typeof(BabySealConfig), nameof(BabySealConfig.CreatePrefab), startMass: 1f, cal: 12500f, maxMult: 700f,
-                      drops: new[] { new Drop("Tallow", 1f) }),
-                // PrehistoricPacu
-            new Entry(typeof(PrehistoricPacuConfig), nameof(PrehistoricPacuConfig.CreatePrefab), startMass: 2f, cal: 50000f, maxMult: 100f, addLink: true,
-                      drops: new[] { new Drop("PrehistoricPacuFillet", 1f)  }),
-            new Entry(typeof(PrehistoricPacuConfig), nameof(PrehistoricPacuConfig.CreatePrefab), startMass: 2f, cal: 50000f, maxMult: 100f,
-                      drops: new[] { new Drop("PrehistoricPacuFillet", 1f)  }),
+  // Crabs
+            new Entry(typeof(CrabConfig), nameof(CrabConfig.CreatePrefab), startMass: 1f, mass: 1f/7f, addLink: true,    drops: new[] { new Drop("Coquina", 1f) }),
+            new Entry(typeof(BabyCrabConfig), nameof(BabyCrabConfig.CreatePrefab), startMass: 1f, mass: 1f/7f,   drops: new[] { new Drop("Coquina", 1f) }),
 
-            // Drecko (base)
-            new Entry(typeof(DreckoConfig), nameof(DreckoConfig.CreatePrefab), startMass: 1f, cal: 2000000f, maxMult: 150f, addLink: true),
-            new Entry(typeof(BabyDreckoConfig), nameof(BabyDreckoConfig.CreatePrefab), startMass: 1f, cal: 2000000f, maxMult: 150f),
+            new Entry(typeof(CrabWoodConfig), nameof(CrabWoodConfig.CreatePrefab), startMass: 1f, mass: 105f/140f, addLink: true, drops: new[] { new Drop("RotPile", 1f) }),
+            new Entry(typeof(BabyCrabWoodConfig), nameof(BabyCrabWoodConfig.CreatePrefab), startMass: 1f, mass: 105f/140f,     drops: new[] { new Drop("RotPile", 1f) }),
 
-            // Pufts
-            new Entry(typeof(PuftConfig), nameof(PuftConfig.CreatePrefab), startMass: 0.25f, cal: 80000f, maxMult: 1000f, addLink: true),
-            new Entry(typeof(BabyPuftConfig), nameof(BabyPuftConfig.CreatePrefab), startMass: 0.25f, cal: 80000f, maxMult : 1000f),
+            new Entry(typeof(CrabFreshWaterConfig), nameof(CrabFreshWaterConfig.CreatePrefab), startMass: 1f, mass: 10f/15f, addLink: true,  drops: new[] { new Drop("Clay", 1f) }),
+            new Entry(typeof(BabyCrabFreshWaterConfig), nameof(BabyCrabFreshWaterConfig.CreatePrefab), startMass: 1f, mass: 10f/15f,  drops: new[] { new Drop("Clay", 1f) }),
 
-            new Entry(typeof(PuftOxyliteConfig), nameof(PuftOxyliteConfig.CreatePrefab), startMass: 0.25f, cal: 80000f, maxMult: 1000f, addLink: true),
-            new Entry(typeof(BabyPuftOxyliteConfig), nameof(BabyPuftOxyliteConfig.CreatePrefab), startMass: 0.25f, cal: 80000f, maxMult: 1000f),
+    
+    // Seals
+            new Entry(typeof(SealConfig), nameof(SealConfig.CreatePrefab), startMass: 1f, mass: 8f/60f, addLink: true,    drops: new[] { new Drop("Tallow", 1f) }),
+            new Entry(typeof(BabySealConfig), nameof(BabySealConfig.CreatePrefab), startMass: 1f, mass: 8f/60f, drops: new[] { new Drop("Tallow", 1f) }),
+  // PrehistoricPacu
+            new Entry(typeof(PrehistoricPacuConfig), nameof(PrehistoricPacuConfig.CreatePrefab), startMass: 2f, mass: 1f, addLink: true,   drops: new[] { new Drop("PrehistoricPacuFillet", 1f)  }),
+            new Entry(typeof(PrehistoricPacuConfig), nameof(PrehistoricPacuConfig.CreatePrefab), startMass: 2f, mass: 1f,     drops: new[] { new Drop("PrehistoricPacuFillet", 1f)  }),
+  // Staterpillars (Plug/Sponge/Gas Slug families)
+            new Entry(typeof(StaterpillarConfig), nameof(StaterpillarConfig.CreatePrefab), startMass: 1f, mass: 0.05f, addLink: true,  drops: new[] { new Drop("RotPile", 1f) }),
+            new Entry(typeof(BabyStaterpillarConfig), nameof(BabyStaterpillarConfig.CreatePrefab), startMass: 1f, mass: 0.05f,  drops: new[] { new Drop("RotPile", 1f) }),
 
-            new Entry(typeof(PuftBleachstoneConfig), nameof(PuftBleachstoneConfig.CreatePrefab), startMass: 0.25f, cal: 133333f, maxMult: 500f, addLink: true),
-            new Entry(typeof(BabyPuftBleachstoneConfig), nameof(BabyPuftBleachstoneConfig.CreatePrefab), startMass: 0.25f, cal: 133333f, maxMult: 500f),
+            new Entry(typeof(StaterpillarLiquidConfig), nameof(StaterpillarLiquidConfig.CreatePrefab), startMass: 1f, mass: 0.05f, addLink: true,    drops: new[] { new Drop("CrudByproduct", 1f) }),
+            new Entry(typeof(BabyStaterpillarLiquidConfig), nameof(BabyStaterpillarLiquidConfig.CreatePrefab), startMass: 1f, mass: 0.05f, drops: new[] { new Drop("CrudByproduct", 1f) }),
 
-            new Entry(typeof(PuftAlphaConfig), nameof(PuftAlphaConfig.CreatePrefab), startMass: 0.25f, cal: 7407f, maxMult: 8000f, addLink: true,
-                      drops: new[] { new Drop("ContaminatedOxygen", 0.25f) , new Drop("CrudByproduct", 0.75f)}),
-            new Entry(typeof(BabyPuftAlphaConfig), nameof(BabyPuftAlphaConfig.CreatePrefab), startMass: 0.25f, cal: 7407f, maxMult: 8000f,
-                      drops: new[] { new Drop("ContaminatedOxygen", 0.25f) , new Drop("CrudByproduct", 0.75f)}),
+            new Entry(typeof(StaterpillarGasConfig), nameof(StaterpillarGasConfig.CreatePrefab), startMass: 1f, mass: 0.05f, addLink: true,  drops: new[] { new Drop("CrudByproduct", 1f) }),
+            new Entry(typeof(BabyStaterpillarGasConfig), nameof(BabyStaterpillarGasConfig.CreatePrefab), startMass: 1f, mass: 0.05f,  drops: new[] { new Drop("CrudByproduct", 1f) }),
 
-            // Crabs
-            new Entry(typeof(CrabConfig), nameof(CrabConfig.CreatePrefab), startMass: 1f, cal: 10000f, addLink: true,
-                      drops: new[] { new Drop("SedimentaryRock", 1f) }),
-            new Entry(typeof(BabyCrabConfig), nameof(BabyCrabConfig.CreatePrefab), startMass: 1f, cal: 10000f,
-                      drops: new[] { new Drop("SedimentaryRock", 1f) }),
-             
-            new Entry(typeof(CrabWoodConfig), nameof(CrabWoodConfig.CreatePrefab), startMass: 1f, cal: 952.38095f, maxMult: 5000f, addLink: true,
-                      drops: new[] { new Drop("Woodlog", 1f) }), // kept original string
-            new Entry(typeof(BabyCrabWoodConfig), nameof(BabyCrabWoodConfig.CreatePrefab), startMass: 1f, cal: 952.38095f, maxMult: 5000f,
-                      drops: new[] { new Drop("Woodlog", 1f) }),
-
-            new Entry(typeof(CrabFreshWaterConfig), nameof(CrabFreshWaterConfig.CreatePrefab), startMass: 1f, cal: 10000f, addLink: true,
-                      drops: new[] { new Drop("Clay", 1f) }),
-            new Entry(typeof(BabyCrabFreshWaterConfig), nameof(BabyCrabFreshWaterConfig.CreatePrefab), startMass: 1f, cal: 10000f,
-                      drops: new[] { new Drop("Clay", 1f) }),
-
-            // Staterpillars (Plug/Sponge/Gas Slug families)
-            new Entry(typeof(StaterpillarConfig), nameof(StaterpillarConfig.CreatePrefab), startMass: 1f, cal: 2000000f, addLink: true,
-                      drops: new[] { new Drop("RotPile", 1f) }),
-            new Entry(typeof(BabyStaterpillarConfig), nameof(BabyStaterpillarConfig.CreatePrefab), startMass: 1f, cal: 2000000f,
-                      drops: new[] { new Drop("RotPile", 1f) }),
-
-            new Entry(typeof(StaterpillarLiquidConfig), nameof(StaterpillarLiquidConfig.CreatePrefab), startMass: 1f, cal: 2000000f, addLink: true,
-                      drops: new[] { new Drop("CrudByproduct", 1f) }),
-            new Entry(typeof(BabyStaterpillarLiquidConfig), nameof(BabyStaterpillarLiquidConfig.CreatePrefab), startMass: 1f, cal: 2000000f,
-                      drops: new[] { new Drop("CrudByproduct", 1f) }),
-
-            new Entry(typeof(StaterpillarGasConfig), nameof(StaterpillarGasConfig.CreatePrefab), startMass: 1f, cal: 2000000f, addLink: true,
-                      drops: new[] { new Drop("CrudByproduct", 1f) }),
-            new Entry(typeof(BabyStaterpillarGasConfig), nameof(BabyStaterpillarGasConfig.CreatePrefab), startMass: 1f, cal: 2000000f,
-                      drops: new[] { new Drop("CrudByproduct", 1f) }),
-
-
-            // Moles
-            new Entry(typeof(MoleConfig), nameof(MoleConfig.CreatePrefab), startMass: 1f, cal: 20000f, maxMult: 100000f, addLink: true,
+   // Moles
+            new Entry(typeof(MoleConfig), nameof(MoleConfig.CreatePrefab), startMass: 1f, mass: 0.5f, addLink: true,
                       drops: new[] { new Drop("CrudByproduct", 0.983f), new Drop("Meat", 0.007f), new Drop("RefinedLipid", 0.01f) }),
-            new Entry(typeof(BabyMoleConfig), nameof(BabyMoleConfig.CreatePrefab), startMass: 1f, cal: 20000f, maxMult: 100000f,
+            new Entry(typeof(BabyMoleConfig), nameof(BabyMoleConfig.CreatePrefab), startMass: 1f, mass: 0.5f,
                       drops: new[] { new Drop("CrudByproduct", 0.983f), new Drop("Meat", 0.005f), new Drop("RefinedLipid", 0.01f) }),
 
-            new Entry(typeof(MoleDelicacyConfig), nameof(MoleDelicacyConfig.CreatePrefab), startMass: 1f, cal: 20000f, maxMult: 100000f, addLink: true,
+            new Entry(typeof(MoleDelicacyConfig), nameof(MoleDelicacyConfig.CreatePrefab), startMass: 1f, mass: 0.5f, addLink: true,
                       drops: new[] { new Drop("CrudByproduct", 0.9865f), new Drop("Meat", 0.0035f), new Drop("RefinedLipid", 0.01f) }),
-            new Entry(typeof(BabyMoleDelicacyConfig), nameof(BabyMoleDelicacyConfig.CreatePrefab), startMass: 1f, cal: 20000f, maxMult: 100000f,
+            new Entry(typeof(BabyMoleDelicacyConfig), nameof(BabyMoleDelicacyConfig.CreatePrefab), startMass: 1f, mass: 0.5f,
                       drops: new[] { new Drop("CrudByproduct", 0.9865f), new Drop("Meat", 0.0035f), new Drop("RefinedLipid", 0.01f) }),
 
-            // Divergents
-            new Entry(typeof(DivergentBeetleConfig), nameof(DivergentBeetleConfig.CreatePrefab), startMass: 1f, cal: 1400000f, addLink: true),
-            new Entry(typeof(BabyDivergentBeetleConfig), nameof(BabyDivergentBeetleConfig.CreatePrefab), startMass: 1f, cal: 1400000f),
+   // Divergents
+            new Entry(typeof(DivergentBeetleConfig), nameof(DivergentBeetleConfig.CreatePrefab), startMass: 1f, mass: 0.05f, addLink: true),
+            new Entry(typeof(BabyDivergentBeetleConfig), nameof(BabyDivergentBeetleConfig.CreatePrefab), startMass: 1f, mass: 0.05f),
 
-            new Entry(typeof(DivergentWormConfig), nameof(DivergentWormConfig.CreatePrefab), startMass: 1f, cal: 700000f, addLink: true),
-            new Entry(typeof(BabyWormConfig), nameof(BabyWormConfig.CreatePrefab), startMass: 1f, cal: 1400000f),
+            new Entry(typeof(DivergentWormConfig), nameof(DivergentWormConfig.CreatePrefab), startMass: 1f, mass: 0.025f, addLink: true,  perFood: new[] { new FoodRatio("Sucrose", 1f/30f) }),
+            new Entry(typeof(BabyWormConfig), nameof(BabyWormConfig.CreatePrefab), startMass: 1f, mass: 0.025f, perFood: new[] { new FoodRatio("Sucrose", 1f/30f) }),
 
-            // Chameleon (Dartle)
-            new Entry(typeof(ChameleonConfig), nameof(ChameleonConfig.CreatePrefab), startMass: 0.5f, cal: 4000000f,  maxMult: 250f, addLink: true),
-            new Entry(typeof(BabyChameleonConfig), nameof(BabyChameleonConfig.CreatePrefab), startMass: 0.5f, cal: 4000000f, maxMult: 250f),
+   // Chameleon (Dartle)
+            new Entry(typeof(ChameleonConfig), nameof(ChameleonConfig.CreatePrefab), startMass: 0.5f, mass: 0.025f, addLink: true),
+            new Entry(typeof(BabyChameleonConfig), nameof(BabyChameleonConfig.CreatePrefab), startMass: 0.5f, mass: 0.025f),
+   // Light bugs (all colors)
+            new Entry(typeof(LightBugConfig), nameof(LightBugConfig.CreatePrefab), startMass: 0.1f, mass: 1f, addLink: true,    drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugBabyConfig), nameof(LightBugBabyConfig.CreatePrefab), startMass: 1f, mass: 1f,    drops: new[] { new Drop("Glass", 1f) }),
 
-            // Light bugs (all colors)
-            new Entry(typeof(LightBugConfig), nameof(LightBugConfig.CreatePrefab), startMass: 0.1f, cal: 240963f, maxMult: 250f, addLink: true,
-                      drops: new[] { new Drop("Glass", 1f) }),
-            new Entry(typeof(LightBugBabyConfig), nameof(LightBugBabyConfig.CreatePrefab), startMass: 1f, cal: 240963f, maxMult: 250f,
-                      drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugOrangeConfig), nameof(LightBugOrangeConfig.CreatePrefab), startMass: 0.1f, mass: 1f, addLink: true,    drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugOrangeBabyConfig), nameof(LightBugOrangeBabyConfig.CreatePrefab), startMass: 1f, mass: 1f,   drops: new[] { new Drop("Glass", 1f) }),
 
-            new Entry(typeof(LightBugOrangeConfig), nameof(LightBugOrangeConfig.CreatePrefab), startMass: 0.1f, cal: 200000f, maxMult: 250f, addLink: true,
-                      drops: new[] { new Drop("Glass", 1f) }),
-            new Entry(typeof(LightBugOrangeBabyConfig), nameof(LightBugOrangeBabyConfig.CreatePrefab), startMass: 1f, cal: 200000f, maxMult: 250f,
-                      drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugPurpleConfig), nameof(LightBugPurpleConfig.CreatePrefab), startMass: 0.1f, mass: 1f, addLink: true,    drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugPurpleBabyConfig), nameof(LightBugPurpleBabyConfig.CreatePrefab), startMass: 1f, mass: 1f,  drops: new[] { new Drop("Glass", 1f) }),
 
-            new Entry(typeof(LightBugPurpleConfig), nameof(LightBugPurpleConfig.CreatePrefab), startMass: 0.1f, cal: 32000f, maxMult: 250f, addLink: true,
-                      drops: new[] { new Drop("Glass", 1f) }),
-            new Entry(typeof(LightBugPurpleBabyConfig), nameof(LightBugPurpleBabyConfig.CreatePrefab), startMass: 1f, cal: 32000f, maxMult: 250f,
-                      drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugPinkConfig), nameof(LightBugPinkConfig.CreatePrefab), startMass: 0.1f, mass: 1f, addLink: true,   drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugPinkBabyConfig), nameof(LightBugPinkBabyConfig.CreatePrefab), startMass: 1f, mass: 1f,   drops: new[] { new Drop("Glass", 1f) }),
 
-            new Entry(typeof(LightBugPinkConfig), nameof(LightBugPinkConfig.CreatePrefab), startMass: 0.1f, cal: 320000f, maxMult: 250f, addLink: true,
-                      drops: new[] { new Drop("Glass", 1f) }),
-            new Entry(typeof(LightBugPinkBabyConfig), nameof(LightBugPinkBabyConfig.CreatePrefab), startMass: 1f, cal: 32000f, maxMult: 250f,
-                      drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugBlueConfig), nameof(LightBugBlueConfig.CreatePrefab), startMass: 0.1f, mass: 1f, addLink: true, drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugBlueBabyConfig), nameof(LightBugBlueBabyConfig.CreatePrefab), startMass: 1f, mass: 1f,   drops: new[] { new Drop("Glass", 1f) }),
 
-            new Entry(typeof(LightBugBlueConfig), nameof(LightBugBlueConfig.CreatePrefab), startMass: 0.1f, cal: 32000f, maxMult: 250f, addLink: true,
-                      drops: new[] { new Drop("Glass", 1f) }),
-            new Entry(typeof(LightBugBlueBabyConfig), nameof(LightBugBlueBabyConfig.CreatePrefab), startMass: 1f, cal: 32000f, maxMult: 250f,
-                      drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugBlackConfig), nameof(LightBugBlackConfig.CreatePrefab), startMass: 0.1f, mass: 1f, addLink: true,   drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugBlackBabyConfig), nameof(LightBugBlackBabyConfig.CreatePrefab), startMass: 1f, mass: 1f,    drops: new[] { new Drop("Glass", 1f) }),
 
-            new Entry(typeof(LightBugBlackConfig), nameof(LightBugBlackConfig.CreatePrefab), startMass: 0.1f, cal: 32000f, maxMult: 250f, addLink: true,
-                      drops: new[] { new Drop("Glass", 1f) }),
-            new Entry(typeof(LightBugBlackBabyConfig), nameof(LightBugBlackBabyConfig.CreatePrefab), startMass: 1f, cal: 32000f, maxMult: 250f,
-                      drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugCrystalConfig), nameof(LightBugCrystalConfig.CreatePrefab), startMass: 0.1f, mass: 1f, addLink: true, drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(LightBugCrystalBabyConfig), nameof(LightBugCrystalBabyConfig.CreatePrefab), startMass: 1f, mass: 1f, drops: new[] { new Drop("Glass", 1f) }),
+   // Slicksters (Oil Floater)
+            new Entry(typeof(OilFloaterConfig), nameof(OilFloaterConfig.CreatePrefab), startMass: 1f, mass: 0.05f, addLink: true, drops: new[] { new Drop("CrudByproduct", 1f) }),
+            new Entry(typeof(OilFloaterBabyConfig), nameof(OilFloaterBabyConfig.CreatePrefab), startMass: 1f, mass: 0.05f, drops: new[] { new Drop("CrudByproduct", 1f) }),
 
-            new Entry(typeof(LightBugCrystalConfig), nameof(LightBugCrystalConfig.CreatePrefab), startMass: 0.1f, cal: 40000f, maxMult: 250f, addLink: true,
-                      drops: new[] { new Drop("Glass", 1f) }),
-            new Entry(typeof(LightBugCrystalBabyConfig), nameof(LightBugCrystalBabyConfig.CreatePrefab), startMass: 1f, cal: 40000f, maxMult: 250f,
-                      drops: new[] { new Drop("Glass", 1f) }),
+            new Entry(typeof(OilFloaterHighTempConfig), nameof(OilFloaterHighTempConfig.CreatePrefab), startMass: 1f, mass: 0.05f, addLink: true, drops: new[] { new Drop("CrudByproduct", 1f) }),
+            new Entry(typeof(OilFloaterHighTempBabyConfig), nameof(OilFloaterHighTempBabyConfig.CreatePrefab), startMass: 1f, mass: 0.05f, drops: new[] { new Drop("CrudByproduct", 1f) }),
+   // Squirrels
+            new Entry(typeof(SquirrelConfig), nameof(SquirrelConfig.CreatePrefab), mass: 1f/21f, addLink: true),
+            new Entry(typeof(BabySquirrelConfig), nameof(BabySquirrelConfig.CreatePrefab), mass: 1f/21f),
 
-            // Slicksters (Oil Floater)
-            new Entry(typeof(OilFloaterConfig), nameof(OilFloaterConfig.CreatePrefab), startMass: 1f, cal: 120000f, addLink: true, drops: new[] { new Drop("CrudByproduct", 1f) }),
-            new Entry(typeof(OilFloaterBabyConfig), nameof(OilFloaterBabyConfig.CreatePrefab), startMass: 1f, cal: 120000f, drops: new[] { new Drop("CrudByproduct", 1f) }),
+            new Entry(typeof(SquirrelHugConfig), nameof(SquirrelHugConfig.CreatePrefab), mass: 1f/11f, addLink: true),
+            new Entry(typeof(BabySquirrelHugConfig), nameof(BabySquirrelHugConfig.CreatePrefab), mass: 1f/11f),
+  // Drecko Plastic
+            new Entry(typeof(DreckoPlasticConfig), nameof(DreckoPlasticConfig.CreatePrefab), mass: 0.82f, addLink: true),
+            new Entry(typeof(BabyDreckoPlasticConfig), nameof(BabyDreckoPlasticConfig.CreatePrefab), startMass: 1f, mass: 0.7f),
 
-            new Entry(typeof(OilFloaterHighTempConfig), nameof(OilFloaterHighTempConfig.CreatePrefab), startMass: 1f, cal: 120000f, addLink: true, drops: new[] { new Drop("CrudByproduct", 1f) }),
-            new Entry(typeof(OilFloaterHighTempBabyConfig), nameof(OilFloaterHighTempBabyConfig.CreatePrefab), startMass: 1f, cal: 120000f, drops: new[] { new Drop("CrudByproduct", 1f) }),
-        };
+   // Pacu families
+            new Entry(typeof(PacuConfig), nameof(PacuConfig.CreatePrefab), startMass: 0.75f, mass: 1f,  perFood: new[] { new FoodRatio("Algae", 1f / 3f), new FoodRatio("Kelp", 0.5f), new FoodRatio("KelpPlant", 0.5f) , new FoodRatio("FishFood", 0.5f) }, addLink: true),
+            new Entry(typeof(BabyPacuConfig), nameof(BabyPacuConfig.CreatePrefab), startMass: 0.75f,  mass: 1f,  perFood: new[] { new FoodRatio("Algae", 1f / 3f), new FoodRatio("Kelp", 0.5f), new FoodRatio("KelpPlant", 0.5f) , new FoodRatio("FishFood", 0.5f) }),
 
-        // Mass-ratio (Mode=ConsumedMass) species
-        private static readonly Entry[] MassEntries =
-        {
-              // Squirrels (keep simple: tracker + optional link)
-            new Entry(typeof(SquirrelConfig), nameof(SquirrelConfig.CreatePrefab), mass: 0.05f, addLink: true),
-            new Entry(typeof(BabySquirrelConfig), nameof(BabySquirrelConfig.CreatePrefab), mass: 0.05f),
-            new Entry(typeof(SquirrelHugConfig), nameof(SquirrelHugConfig.CreatePrefab), mass: 0.05f, addLink: true),
-            new Entry(typeof(BabySquirrelHugConfig), nameof(BabySquirrelHugConfig.CreatePrefab), mass: 0.05f),
-            // Drecko Plastic
-            new Entry(typeof(DreckoPlasticConfig), nameof(DreckoPlasticConfig.CreatePrefab), mass: 0.82f, maxMult: 1000f, addLink: true),
-            new Entry(typeof(BabyDreckoPlasticConfig), nameof(BabyDreckoPlasticConfig.CreatePrefab), startMass: 1f, mass: 0.7f, maxMult: 1000f),
+            new Entry(typeof(PacuTropicalConfig), nameof(PacuTropicalConfig.CreatePrefab), startMass: 0.75f,  mass: 1f,  perFood: new[] { new FoodRatio("Algae", 1f/3f), new FoodRatio("Kelp", 0.5f), new FoodRatio("KelpPlant", 0.5f) , new FoodRatio("FishFood", 0.5f) }, addLink: true),
+            new Entry(typeof(BabyPacuTropicalConfig), nameof(BabyPacuTropicalConfig.CreatePrefab), startMass: 0.75f,  mass: 1f,  perFood: new[] { new FoodRatio("Algae", 1f / 3f), new FoodRatio("Kelp", 0.5f), new FoodRatio("KelpPlant", 0.5f) , new FoodRatio("FishFood", 0.5f) }),
 
-            // Pacu families
-            new Entry(typeof(PacuConfig), nameof(PacuConfig.CreatePrefab), startMass: 2f, mass: 0.5f, maxMult: 100f, addLink: true),
-            new Entry(typeof(BabyPacuConfig), nameof(BabyPacuConfig.CreatePrefab), startMass: 2f, mass: 0.5f, maxMult: 100f),
+            new Entry(typeof(PacuCleanerConfig), nameof(PacuCleanerConfig.CreatePrefab), startMass: 0.75f, mass : 1f, perFood : new[] { new FoodRatio("Algae", 1f / 3f), new FoodRatio("Kelp", 0.5f), new FoodRatio("KelpPlant", 0.5f), new FoodRatio("FishFood", 0.5f) }, addLink: true),
+            new Entry(typeof(BabyPacuCleanerConfig), nameof(BabyPacuCleanerConfig.CreatePrefab), startMass: 0.75f, mass : 1f, perFood : new[] { new FoodRatio("Algae", 1f / 3f), new FoodRatio("Kelp", 0.5f), new FoodRatio("KelpPlant", 0.5f), new FoodRatio("FishFood", 0.5f) }),
+            // PufferFish: default mass ratio 0.5 but specific foods override
+            new Entry(typeof(PufferFishConfig), nameof(PufferFishConfig.CreatePrefab), startMass: 1f, mass: 0.5f, addLink: true,
+                      perFood: new[] { new FoodRatio("SeaLettuce", 2f/17f), new FoodRatio("Lettuce", 0.5f) }),
+            new Entry(typeof(BabyPufferFishConfig), nameof(BabyPufferFishConfig.CreatePrefab), startMass: 1f, mass: 0.5f,
+                      perFood: new[] { new FoodRatio("SeaLettuce", 2f/17f), new FoodRatio("Lettuce", 0.5f) }),
+//Snails
+            new Entry(typeof(SnailConfig), nameof(SnailConfig.CreatePrefab), startMass: 10.25f, mass: 0.75f, addLink: true, drops: new[] { new Drop("Mucus", 1f) }),
+            new Entry(typeof(BabySnailConfig), nameof(BabySnailConfig.CreatePrefab), startMass: 0.25f, mass: 0.75f, drops: new[] { new Drop("Mucus", 1f) }),
 
-            new Entry(typeof(PacuTropicalConfig), nameof(PacuTropicalConfig.CreatePrefab), startMass: 2f, mass: 0.5f, maxMult: 100f, addLink: true),
-            new Entry(typeof(BabyPacuTropicalConfig), nameof(BabyPacuTropicalConfig.CreatePrefab), startMass: 2f, mass: 0.5f, maxMult: 100f),
+            new Entry(typeof(SnailIronConfig), nameof(SnailIronConfig.CreatePrefab), startMass: 10.25f, mass: 0.75f, addLink: true, drops: new[] { new Drop("Mucus", 1f) }),
+            new Entry(typeof(BabySnailIronConfig), nameof(BabySnailIronConfig.CreatePrefab), startMass: 10.25f, mass: 0.75f, drops: new[] { new Drop("Mucus", 1f) }),
+//Sea Horses
+            new Entry(typeof(SeaHorseConfig), nameof(SeaHorseConfig.CreatePrefab), startMass: 2f, mass: 0.5f, addLink: true, drops: new[] { new Drop("Coquina", 1f) }),
+            new Entry(typeof(BabySeaHorseConfig), nameof(BabySeaHorseConfig.CreatePrefab), startMass: 2f, mass: 0.5f, drops: new[] { new Drop("Coquina", 1f) }),
 
-            new Entry(typeof(PacuCleanerConfig), nameof(PacuCleanerConfig.CreatePrefab), startMass: 2f, mass: 0.5f, maxMult: 100f, addLink: true),
-           
-            new Entry(typeof(BabyPacuCleanerConfig), nameof(BabyPacuCleanerConfig.CreatePrefab), startMass: 2f, mass: 0.5f, maxMult: 100f),
+  //Squids
+            new Entry(typeof(SquidConfig), nameof(SquidConfig.CreatePrefab), startMass: 2f, mass: 0.8f, addLink: true,  drops: new[] { new Drop("Coquina", 0.9f), new Drop("SquidMeat", 0.1f) }),
+            new Entry(typeof(BabySquidConfig), nameof(BabySquidConfig.CreatePrefab), startMass: 2f, mass: 0.8f,  drops: new[] { new Drop("Coquina", 0.9f), new Drop("SquidMeat", 0.1f) }),
+  //Seaturtle
+            new Entry(typeof(SeaTurtleConfig), nameof(SeaTurtleConfig.CreatePrefab), startMass: 2f, mass: 0.025f, addLink: true,  drops: new[] { new Drop("Coquina", 0.85f), new Drop("ShellFishMeat", 0.15f) }),
+            new Entry(typeof(BabySeaTurtleConfig), nameof(BabySeaTurtleConfig.CreatePrefab), startMass: 2f, mass: 0.025f,  drops: new[] { new Drop("Coquina", 0.85f), new Drop("ShellFishMeat", 0.15f) }),
+//Beakons
+            new Entry(typeof(ParrotFishConfig), nameof(ParrotFishConfig.CreatePrefab), startMass: 1f, mass: 0.5f, addLink: true),
+            new Entry(typeof(BabyParrotFishConfig), nameof(BabyParrotFishConfig.CreatePrefab), startMass: 1f, mass: 0.5f),
 
-            // Longhair slickster (decor)
-            new Entry(typeof(OilFloaterDecorConfig), nameof(OilFloaterDecorConfig.CreatePrefab), startMass: 1f, mass: 1f, maxMult: 8000f, addLink: true,
-                      drops: new[] { new Drop("OxyRock", 0.5f), new Drop("CrudByproduct", 0.5f) }),
-            new Entry(typeof(OilFloaterDecorBabyConfig), nameof(OilFloaterDecorBabyConfig.CreatePrefab), startMass: 1f, mass: 1f, maxMult: 8000f,
-                      drops: new[] { new Drop("OxyRock", 0.5f), new Drop("CrudByproduct", 0.5f) }),
-                 // Bee 
-            new Entry(typeof(BeeConfig),  nameof(BeeConfig.CreatePrefab), startMass: 1f, mass: 1f, addLink: true,
-                      drops: new[] { new Drop("SolidNuclearWaste", 1f) }),
-            new Entry(typeof(BabyBeeConfig), nameof(BabyBeeConfig.CreatePrefab), startMass: 1f, mass: 1f,
-                      drops: new[] { new Drop("SolidNuclearWaste", 1f) }),
-
-            // Stego (uses CreateStego)
-            new Entry(typeof(StegoConfig), "CreateStego", startMass: 4f, mass: 1f, addLink: true,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f), new Drop("RotPile", 0.88f)  }),
-            new Entry(typeof(BabyStegoConfig), nameof(BabyStegoConfig.CreatePrefab), startMass: 4f, mass: 1f,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f),  new Drop("RotPile", 0.88f) }),
-                 new Entry(typeof(AlgaeStegoConfig), "CreateStego", startMass: 4f, mass: 1f, addLink: true,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f), new Drop("RotPile", 0.88f)  }),
-            new Entry(typeof(BabyAlgaeStegoConfig), nameof(BabyAlgaeStegoConfig.CreatePrefab), startMass: 4f, mass: 1f,
-                      drops: new[] { new Drop("DinosaurMeat", 0.12f),  new Drop("RotPile", 0.88f) }),
+  // Longhair slickster (decor)
+            new Entry(typeof(OilFloaterDecorConfig), nameof(OilFloaterDecorConfig.CreatePrefab), startMass: 1f, mass: 1f, addLink: true,  drops: new[] { new Drop("OxyRock", 0.5f), new Drop("CrudByproduct", 0.5f) }),
+            new Entry(typeof(OilFloaterDecorBabyConfig), nameof(OilFloaterDecorBabyConfig.CreatePrefab), startMass: 1f, mass: 1f, drops: new[] { new Drop("OxyRock", 0.5f), new Drop("CrudByproduct", 0.5f) }),
+   // Bee 
+            new Entry(typeof(BeeConfig),  nameof(BeeConfig.CreatePrefab), startMass: 1f, mass: 1f, addLink: true,   drops: new[] { new Drop("SolidNuclearWaste", 1f) }),
+            new Entry(typeof(BabyBeeConfig), nameof(BabyBeeConfig.CreatePrefab), startMass: 1f, mass: 1f,  drops: new[] { new Drop("SolidNuclearWaste", 1f) }),
+ // Stego (uses CreateStego)
+            new Entry(typeof(StegoConfig), "CreateStego", startMass: 4f, mass: 1f, addLink: true,  drops: new[] { new Drop("DinosaurMeat", 0.12f), new Drop("RotPile", 0.88f)  }),
+            new Entry(typeof(BabyStegoConfig), nameof(BabyStegoConfig.CreatePrefab), startMass: 4f, mass: 1f,    drops: new[] { new Drop("DinosaurMeat", 0.12f),  new Drop("RotPile", 0.88f) }),
+            new Entry(typeof(AlgaeStegoConfig), "CreateStego", startMass: 4f, mass: 1f, addLink: true,   drops: new[] { new Drop("DinosaurMeat", 0.12f), new Drop("RotPile", 0.88f)  }),
+            new Entry(typeof(BabyAlgaeStegoConfig), nameof(BabyAlgaeStegoConfig.CreatePrefab), startMass: 4f, mass: 1f,  drops: new[] { new Drop("DinosaurMeat", 0.12f),  new Drop("RotPile", 0.88f) }),
  //Morb
-            new Entry(typeof(GlomConfig), nameof(GlomConfig.CreatePrefab), startMass: 1f, mass: 1f, maxMult: 100f,
-                      drops: new[] { new Drop("Slime", 0f) }),
-             //Butterfly
-            new Entry(typeof(ButterflyConfig), nameof(ButterflyConfig.CreatePrefab), startMass: 1f, mass: 1f, maxMult: 100f,
-                      drops: new[] { new Drop("Shale", 1f) }),
-            
-            // Moo
-            new Entry(typeof(MooConfig), nameof(MooConfig.CreatePrefab), startMass: 10f, mass: 0.9f, maxMult: 10f, addLink: true
-                     ),
-                   new Entry(typeof(DieselMooConfig), nameof(DieselMooConfig.CreatePrefab), startMass: 10f, mass: 0.95f, maxMult: 10f, addLink: true
-                 ),
-            new Entry(typeof(BaseBeeHiveConfig), nameof(BaseBeeHiveConfig.CreatePrefab), mass: 0.0f,   drops: new[] { new Drop("SolidNuclearWaste", 1f) }), //Fake parameter cause beehive does not have butcherable
+            new Entry(typeof(GlomConfig), nameof(GlomConfig.CreatePrefab), startMass: 1f, mass: 1f,  drops: new[] { new Drop("Slime", 0f) }),
+   //Butterfly
+            new Entry(typeof(ButterflyConfig), nameof(ButterflyConfig.CreatePrefab), startMass: 1f, mass: 1f,   drops: new[] { new Drop("Shale", 1f) }),
+   // Moo
+            new Entry(typeof(MooConfig), nameof(MooConfig.CreatePrefab), startMass: 10f, mass: 0.9f, addLink: true   ),
+            new Entry(typeof(DieselMooConfig), nameof(DieselMooConfig.CreatePrefab), startMass: 10f, mass: 0.95f, addLink: true   ),
 
-            // WoodDeer and Belly are intentionally left OUT (custom logic remains in separate patches)
+            // Deer: Wood/Glass deer default mass ratio 1f but override some plants
+            new Entry(typeof(WoodDeerConfig), nameof(WoodDeerConfig.CreatePrefab), startMass: 1f, mass: 1f, addLink: true,
+                      perFood: new[] { new FoodRatio("HardSkinBerryPlant", 0.3334f), new FoodRatio("PrickleFlower", 1f/12f), new FoodRatio("Katairite", 0.5f) }),
+            new Entry(typeof(BabyWoodDeerConfig), nameof(BabyWoodDeerConfig.CreatePrefab), startMass: 1f, mass: 1f,
+                      perFood: new[] { new FoodRatio("HardSkinBerryPlant", 0.3334f), new FoodRatio("PrickleFlower", 1f/12f), new FoodRatio("Katairite", 0.5f) }),
+            new Entry(typeof(GlassDeerConfig), nameof(GlassDeerConfig.CreatePrefab), startMass: 1f, mass: 1f, addLink: true,
+                      perFood: new[] { new FoodRatio("HardSkinBerryPlant", 0.3334f), new FoodRatio("PrickleFlower", 1f/12f), new FoodRatio("Katairite", 0.5f) }),
+            new Entry(typeof(BabyGlassDeerConfig), nameof(BabyGlassDeerConfig.CreatePrefab), startMass: 1f, mass: 1f,
+                      perFood: new[] { new FoodRatio("HardSkinBerryPlant", 0.3334f), new FoodRatio("PrickleFlower", 1f/12f), new FoodRatio("Katairite", 0.5f) }),
+
+            // Belly (IceBelly/GoldBelly): mostly massRatio 1f; override carrots/beans
+            new Entry(typeof(IceBellyConfig), nameof(IceBellyConfig.CreatePrefab), startMass: 4f, mass: 1f, addLink: true,
+                      perFood: new[] { new FoodRatio("CarrotPlant", 0.033334f), new FoodRatio("BeanPlant", 0.033334f) },
+                      drops: new[] { new Drop("Meat", 0.66f), new Drop("Rotpile", 0.34f) }),
+            new Entry(typeof(BabyIceBellyConfig), nameof(BabyIceBellyConfig.CreatePrefab), startMass: 4f, mass: 1f,
+                      perFood: new[] { new FoodRatio("CarrotPlant", 0.033334f), new FoodRatio("BeanPlant", 0.033334f) },
+                      drops: new[] { new Drop("Meat", 0.66f), new Drop("Rotpile", 0.34f) }),
+
+            new Entry(typeof(GoldBellyConfig), nameof(GoldBellyConfig.CreatePrefab), startMass: 4f, mass: 1f, addLink: true,
+                      perFood: new[] { new FoodRatio("CarrotPlant", 0.033334f), new FoodRatio("BeanPlant", 0.033334f) },
+                      drops: new[] { new Drop("Meat", 1f) }),
+            new Entry(typeof(BabyGoldBellyConfig), nameof(BabyGoldBellyConfig.CreatePrefab), startMass: 4f, mass: 1f,
+                      perFood: new[] { new FoodRatio("CarrotPlant", 0.033334f), new FoodRatio("BeanPlant", 0.033334f) },
+                      drops: new[] { new Drop("Meat", 1f) }),
+
+            new Entry(typeof(BaseBeeHiveConfig), nameof(BaseBeeHiveConfig.CreatePrefab), mass: 0.0f,   drops: new[] { new Drop("SolidNuclearWaste", 1f) }), //Fake parameter cause beehive does not have butcherable
         };
 
         private static List<MethodBase> _targets;
 
-        // Collect all target methods from both lists
+        // Collect all target methods from the mass entries
         private static IEnumerable<MethodBase> TargetMethods()
         {
-            _targets ??= new List<MethodBase>(CalorieEntries.Length + MassEntries.Length);
+            _targets ??= new List<MethodBase>(MassEntries.Length);
             _targets.Clear();
 
             void AddTargets(Entry[] entries)
@@ -702,25 +274,28 @@ internal static class BaseCreatureDefaultMassPatch
                 {
                     var m = AccessTools.Method(e.configType, e.methodName);
                     if (m != null) _targets.Add(m);
-                    else Debug.LogWarning($"[Rephysicalized] Could not resolve {e.configType?.Name}.{e.methodName} for mass list.");
                 }
             }
 
-            AddTargets(CalorieEntries);
             AddTargets(MassEntries);
             return _targets;
         }
-
-
 
         [HarmonyPostfix]
         private static void Postfix(MethodBase __originalMethod, ref GameObject __result)
         {
             if (__result == null || __originalMethod == null) return;
 
+            try
+            {
+                string methodInfo = __originalMethod.DeclaringType?.FullName + "." + __originalMethod.Name;
+                string goName = __result != null ? __result.name : "<null>";
+            }
+            catch { }
+
             // Find the matching entry and apply
-            var entry = FindEntry(__originalMethod, CalorieEntries) ?? FindEntry(__originalMethod, MassEntries);
-            if (entry == null) return;
+            var entry = FindEntry(__originalMethod, MassEntries);
+
 
             try
             {
@@ -748,21 +323,8 @@ internal static class BaseCreatureDefaultMassPatch
         private static void ApplyEntry(GameObject go, Entry e)
         {
             var tracker = go.AddOrGet<CreatureMassTracker>();
-
             if (e.startMass.HasValue) tracker.STARTING_MASS = e.startMass.Value;
-
-
-            // Calorie vs Mass mode
-            if (e.calorieRatio.HasValue)
-            {
-                tracker.CALORIE_RATIO = e.calorieRatio.Value;
-            }
-            else
-            {
-                // Mass mode (ConsumedMass)
-                tracker.SetAccumulationMode(CreatureMassTracker.AccumulationMode.ConsumedMass, keepCurrentMassAsBaseline: false);
-                if (e.massRatio.HasValue) tracker.MASS_RATIO = e.massRatio.Value;
-            }
+            if (e.massRatio.HasValue) tracker.MASS_RATIO = e.massRatio.Value;
 
             // Extra drops
             if (e.drops != null && e.drops.Length > 0)
@@ -772,7 +334,6 @@ internal static class BaseCreatureDefaultMassPatch
                     list.Add(new CreatureMassTracker.ExtraDropSpec { id = e.drops[i].id, fraction = e.drops[i].fraction });
 
                 tracker.ExtraDrops = list;
-
                 var kpid = go.GetComponent<KPrefabID>();
                 if (kpid != null)
                     CreatureMassTracker.RegisterDefaultDropsForPrefab(kpid.PrefabTag, list);
@@ -782,7 +343,28 @@ internal static class BaseCreatureDefaultMassPatch
             if (e.addLink)
                 go.AddOrGet<CreatureMassTrackerLink>();
 
-         
+            // Per-food overrides: build instance override list, set on tracker, and register at prefab level
+            if (e.perFood != null && e.perFood.Length > 0)
+            {
+                var list = new List<CreatureMassTracker.PerFoodRatioSpec>(e.perFood.Length);
+                for (int i = 0; i < e.perFood.Length; i++)
+                {
+                    var p = e.perFood[i];
+                    if (!string.IsNullOrEmpty(p.consumedTagName))
+                        list.Add(new CreatureMassTracker.PerFoodRatioSpec { consumedTag = p.consumedTagName, ratio = p.ratio });
+                }
+                if (list.Count > 0)
+                {
+                    tracker.SetPerFoodOverrides(list);
+                    try
+                    {
+                        var kpid = go.GetComponent<KPrefabID>();
+                        if (kpid != null)
+                            CreatureMassTracker.RegisterPerFoodOverridesForPrefab(kpid.PrefabTag, list);
+                    }
+                    catch { }
+                }
+            }
         }
     }
 }

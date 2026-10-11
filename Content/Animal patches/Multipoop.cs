@@ -3,7 +3,6 @@ using Klei.AI;
 using Rephysicalized.ModElements;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 namespace Rephysicalized.Content.Animal_patches
@@ -59,10 +58,10 @@ namespace Rephysicalized.Content.Animal_patches
             _defaultsRegistered = true;
 
 
-            // Staterpillars: spawn Sand at 5.3333x of base poop for all variants
+            // Staterpillars: spawn Sand at 18x of base poop for all variants
             // Applies to adult + baby, and Gas/Liquid variants + babies
-            Register(StaterpillarConfig.ID, SimHashes.Sand, 5.3333f);
-            Register(BabyStaterpillarConfig.ID, SimHashes.Sand, 5.3333f);
+            Register(StaterpillarConfig.ID, SimHashes.Sand, 18f);
+            Register(BabyStaterpillarConfig.ID, SimHashes.Sand, 18f);
    
 
             // Hatches:
@@ -81,32 +80,32 @@ namespace Rephysicalized.Content.Animal_patches
             Register(HatchMetalConfig.ID, metalByproduct, 20f / 75f);
             Register(BabyHatchMetalConfig.ID, metalByproduct, 20f / 75f);
 
-     
-          
-            //var goldHatchCfgType = AccessTools.TypeByName("GoldHatch.Creatures.HatchGoldConfig");
-            //if (goldHatchCfgType != null)
-            //{
-             
-            //    var idFi = AccessTools.Field(goldHatchCfgType, "ID");
-            //    var babyIdFi = AccessTools.Field(goldHatchCfgType, "ID_BABY");
-
-            //    if (idFi?.GetValue(null) is string hatchIdStr && babyIdFi?.GetValue(null) is string babyIdStr)
-            //    {
-            //        Register(hatchIdStr, metalByproduct, 25f / 75f);
-            //        Register(babyIdStr, metalByproduct, 25f / 75f);
-            //    }
-            //}
-
-
+            //sweetles and oilfloaters if chemistrier is not enabled
+            if (Config.Instance.ChemistrierSweetles)
+            {
+                Register(DivergentBeetleConfig.ID, SimHashes.Sand, 0.9f);
+                Register(BabyDivergentBeetleConfig.ID, SimHashes.Sand, 0.9f);
+            }
+            if (Config.Instance.ChemistrierSlicksters)
+            {
+                Register(OilFloaterConfig.ID, ModElementRegistration.CrudByproduct, 0.9f);
+                Register(OilFloaterBabyConfig.ID, ModElementRegistration.CrudByproduct, 0.9f);
+                Register(OilFloaterHighTempBabyConfig.ID, ModElementRegistration.CrudByproduct, 0.9f);
+                Register(OilFloaterHighTempConfig.ID, ModElementRegistration.CrudByproduct, 0.9f);
+            }
         }
     }
 
-    // Harmony: one generic hook for CreatureCalorieMonitor.Stomach.Poop
-    [HarmonyPatch(typeof(CreatureCalorieMonitor.Stomach), "Poop")]
+    // Harmony: emit secondary outputs after the vanilla stomach has produced poop.
+    [HarmonyPatch(typeof(CreatureCalorieMonitor.Stomach), nameof(CreatureCalorieMonitor.Stomach.PoopInStorage), new Type[]
+    {
+        typeof(Storage),
+        typeof(bool),
+        typeof(Sprite),
+        typeof(string)
+    })]
     internal static class SecondaryPoop_Patch
     {
-        private static readonly FieldInfo FI_Owner = AccessTools.Field(typeof(CreatureCalorieMonitor.Stomach), "owner");
-
         internal struct State
         {
             public bool valid;
@@ -119,9 +118,10 @@ namespace Rephysicalized.Content.Animal_patches
         {
             __state = default;
 
-            var owner = FI_Owner?.GetValue(__instance) as GameObject;
+            var owner = __instance.owner;
             var kpid = owner ? owner.GetComponent<KPrefabID>() : null;
 
+            if (kpid == null) return;
 
             var pt = kpid.PrefabTag;
             if (!SecondaryPoopRegistry.TryGet(pt, out _))
@@ -137,12 +137,10 @@ namespace Rephysicalized.Content.Animal_patches
         }
 
         // Compute delta and spawn any registered extra outputs
-        static void Postfix(CreatureCalorieMonitor.Stomach __instance, State __state)
+        static void Postfix(CreatureCalorieMonitor.Stomach __instance, bool skipPoopSpawn, State __state)
         {
-
-
-            var owner = FI_Owner?.GetValue(__instance) as GameObject;
-
+            if (!__state.valid || skipPoopSpawn)
+                return;
 
             // Mass produced by this Poop() call
             Game.Instance.savedInfo.creaturePoopAmount.TryGetValue(__state.prefabTag, out float after);
@@ -152,18 +150,19 @@ namespace Rephysicalized.Content.Animal_patches
             if (!SecondaryPoopRegistry.TryGet(__state.prefabTag, out var outputs) || outputs == null || outputs.Count == 0)
                 return;
 
+            var owner = __instance.owner;
+            if (owner == null)
+                return;
             int cell = Grid.PosToCell(owner.transform.GetPosition());
-
 
             float tempK = owner.GetComponent<PrimaryElement>()?.Temperature ?? 293.15f;
 
             foreach (var outp in outputs)
             {
                 float extraKg = baseMassThisPoop * Mathf.Max(0f, outp.ratioPerBase);
-          
-
                 var elem = ElementLoader.FindElementByHash(outp.element);
-       
+                if (elem == null)
+                    continue;
 
                 if (elem.IsSolid)
                 {
@@ -203,9 +202,6 @@ namespace Rephysicalized.Content.Animal_patches
     [HarmonyPatch(typeof(CodexConversionPanel))]
     internal static class CodexConversionPanel_DietSecondaryPoop_Patch
     {
-        private static readonly FieldInfo FI_Outs = AccessTools.Field(typeof(CodexConversionPanel), "outs");
-        private static readonly FieldInfo FI_Ins = AccessTools.Field(typeof(CodexConversionPanel), "ins");
-
         // CodexConversionPanel(string, Tag, float, bool, Tag, float, bool, GameObject)
         [HarmonyPatch(MethodType.Constructor, new Type[]
         {
@@ -260,60 +256,55 @@ namespace Rephysicalized.Content.Animal_patches
 
         private static void TryAppendSecondaryOutputs(CodexConversionPanel panel, GameObject converter)
         {
-       
-                var kpid = converter.GetComponent<KPrefabID>();
-       
-                // Only for creatures that have registered secondary poop outputs
-                if (!SecondaryPoopRegistry.TryGet(kpid.PrefabTag, out var extraOutputs) ||
-                    extraOutputs == null || extraOutputs.Count == 0)
-                    return;
+            if (panel == null || converter == null)
+                return;
 
-                var outs = (ElementUsage[])(FI_Outs.GetValue(panel) ?? Array.Empty<ElementUsage>());
-                var ins = (ElementUsage[])(FI_Ins.GetValue(panel) ?? Array.Empty<ElementUsage>());
-                if (outs.Length == 0)
-                    return;
+            var kpid = converter.GetComponent<KPrefabID>();
+            if (kpid == null || !SecondaryPoopRegistry.TryGet(kpid.PrefabTag, out var extraOutputs) ||
+                extraOutputs == null || extraOutputs.Count == 0)
+                return;
 
-                // Treat panels with inputs as diet panels; skip non-diet panels (ins.Length == 0)
-                if (ins.Length == 0)
-                    return;
+            var outs = panel.outs ?? Array.Empty<ElementUsage>();
+            var ins = panel.ins ?? Array.Empty<ElementUsage>();
+            if (outs.Length == 0 || ins.Length == 0)
+                return;
 
-                var baseOut = outs[0];
-                var list = new List<ElementUsage>(outs);
-                int insertIndex = Math.Min(1, list.Count);
+            var baseOut = outs[0];
+            var list = new List<ElementUsage>(outs);
+            int insertIndex = Math.Min(1, list.Count);
 
-                bool AlreadyHas(Tag tag)
-                {
-                    for (int i = 0; i < list.Count; i++)
-                        if (list[i].tag == tag) return true;
-                    return false;
-                }
-
-                int inserted = 0;
-
-                foreach (var sec in extraOutputs)
-                {
-                    var elem = ElementLoader.FindElementByHash(sec.element);
-                    if (elem == null)
-                        continue;
-
-                    var extraTag = elem.tag;
-                    if (AlreadyHas(extraTag))
-                        continue;
-
-                    float ratio = Mathf.Max(0f, sec.ratioPerBase);
-                    if (ratio <= 0f)
-                        continue;
-
-                    float extraAmount = baseOut.amount * ratio;
-                    var extraUsage = new ElementUsage(extraTag, extraAmount, baseOut.continuous, baseOut.customFormating);
-
-                    list.Insert(insertIndex++, extraUsage);
-                    inserted++;
-                }
-
-                if (inserted > 0)
-                    FI_Outs.SetValue(panel, list.ToArray());
+            bool AlreadyHas(Tag tag)
+            {
+                for (int i = 0; i < list.Count; i++)
+                    if (list[i].tag == tag) return true;
+                return false;
             }
-         
+
+            int inserted = 0;
+
+            foreach (var sec in extraOutputs)
+            {
+                var elem = ElementLoader.FindElementByHash(sec.element);
+                if (elem == null)
+                    continue;
+
+                var extraTag = elem.tag;
+                if (AlreadyHas(extraTag))
+                    continue;
+
+                float ratio = Mathf.Max(0f, sec.ratioPerBase);
+                if (ratio <= 0f)
+                    continue;
+
+                float extraAmount = baseOut.amount * ratio;
+                var extraUsage = new ElementUsage(extraTag, extraAmount, baseOut.continuous, baseOut.customFormating);
+
+                list.Insert(insertIndex++, extraUsage);
+                inserted++;
+            }
+
+            if (inserted > 0)
+                panel.outs = list.ToArray();
         }
     }
+}

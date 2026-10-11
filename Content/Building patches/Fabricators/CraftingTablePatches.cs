@@ -8,9 +8,7 @@ using UnityEngine;
 
 namespace Rephysicalized
 {
-    // Replace the raw metal electrobank recipe:
-    // - Iron Ore input -> Electrobank + 180 kg Rust
-    // - Other metal ores -> Electrobank + 180 kg Sand
+
     [HarmonyPatch(typeof(CraftingTableConfig), "CreateMetalMiniVoltRecipe")]
     public static class CraftingTableConfig_CreateMetalMiniVoltRecipe_Patch
     {
@@ -30,12 +28,12 @@ namespace Rephysicalized
             {
                 var unifiedInput = new ComplexRecipe.RecipeElement[]
                 {
-                    new ComplexRecipe.RecipeElement(allMetalTags, 200f, ComplexRecipe.RecipeElement.TemperatureOperation.Heated, "", inheritElement: false)
+                    new ComplexRecipe.RecipeElement(allMetalTags, 200f*Config.Instance.MetalElectroBankCost, ComplexRecipe.RecipeElement.TemperatureOperation.Heated, "", inheritElement: false)
                 };
 
                 var unifiedOutputs = new List<ComplexRecipe.RecipeElement>(electrobankResult)
                 {
-                    new ComplexRecipe.RecipeElement(ModElementRegistration.CrudByproduct.Tag, 180f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature, storeElement: false)
+                    new ComplexRecipe.RecipeElement(ModElementRegistration.CrudByproduct.Tag, 200f*Config.Instance.MetalElectroBankCost - 20f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature, storeElement: false)
                 };
 
                 var recipeId = ComplexRecipeManager.MakeRecipeID(
@@ -54,7 +52,6 @@ namespace Rephysicalized
                 };
             }
 
-            // Skip the original CreateMetalMiniVoltRecipe implementation
             return false;
         }
     }

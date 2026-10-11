@@ -81,6 +81,18 @@ namespace Rephysicalized.Content.Animal_patches
 
 
     // List of baby configs that use ScaleGrowth (scales)
+
+    [HarmonyPatch(typeof(BabySeaTurtleConfig), nameof(BabySeaTurtleConfig.CreatePrefab))]
+    public static class Patch_BabySeaTurtleConfig_AdultScale
+    {
+        public static void Postfix(GameObject __result)
+        {
+            if (!Config.Instance.StartWithZeroScale) return;
+            var def = __result.AddOrGetDef<BabyMonitor.Def>();
+            def.configureAdultOnMaturation = AdultScaleOverride.CarryCurrent;
+        }
+    }
+
     [HarmonyPatch(typeof(BabyDreckoPlasticConfig), nameof(BabyDreckoPlasticConfig.CreatePrefab))]
     public static class Patch_BabyDreckoPlasticConfig_AdultScale
     {

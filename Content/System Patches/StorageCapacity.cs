@@ -12,61 +12,47 @@ using TUNING;
 namespace Rephysicalized.Content.System_Patches
 {
 
-
-internal static class StorageCapacitySettings
+    internal static class StorageCapacitySettings
     {
-        public static Dictionary<string, float> Multipliers = new();
+        public static Dictionary<string, float> Multipliers = new Dictionary<string, float>();
 
-
-        public static void InitializeBaseMultipliers()
-        {
-            Multipliers = new Dictionary<string, float>
-            {
-              { SimHashes.Cinnabar.CreateTag().ToString(), 0.4f },
-           { SimHashes.SolidMercury.CreateTag().ToString(), 0.4f },
-
-            { SimHashes.Aluminum.CreateTag().ToString(), 0.6f },
-            { SimHashes.AluminumOre.CreateTag().ToString(), 0.6f },
-            { SimHashes.Lead.CreateTag().ToString(), 0.6f },
-
-            { SimHashes.Gold.CreateTag().ToString(), 0.8f },
-            { SimHashes.GoldAmalgam.CreateTag().ToString(), 0.8f },
-
-            { SimHashes.Cobalt.CreateTag().ToString(), 1.2f },
-            { SimHashes.Cobaltite.CreateTag().ToString(), 1.2f },
-          { SimHashes.Niobium.CreateTag().ToString(), 1.2f },
-           { SimHashes.Steel.CreateTag().ToString(), 1.2f },
-
-           { SimHashes.Nickel.CreateTag().ToString(), 1.4f },
-           { SimHashes.NickelOre.CreateTag().ToString(), 1.4f },
-           { SimHashes.Wolframite.CreateTag().ToString(), 1.4f },
-           { SimHashes.Tungsten.CreateTag().ToString(), 1.4f },
-          { SimHashes.TempConductorSolid.CreateTag().ToString(), 1.4f },
-
-       { SimHashes.Iridium.CreateTag().ToString(), 1.6f },
-
-       //Ronivans Elements
-            { "SolidSilver", 1.1f },
+        public static void InitializeBaseMultipliers() => StorageCapacitySettings.Multipliers = new Dictionary<string, float>()
+    {
+      {  SimHashes.Cinnabar.CreateTag().ToString(),  0.4f  },
+      {   SimHashes.SolidMercury.CreateTag().ToString(),    0.4f  },
+      {  SimHashes.Aluminum.CreateTag().ToString(),   0.6f  },
+      {  SimHashes.AluminumOre.CreateTag().ToString(), 0.6f },
+      { SimHashes.Lead.CreateTag().ToString(),   0.6f  },
+      {   SimHashes.Galena.CreateTag().ToString(),  0.6f   },
+      { SimHashes.Gold.CreateTag().ToString(), 0.8f },
+      { SimHashes.GoldAmalgam.CreateTag().ToString(), 0.8f },
+      { SimHashes.Cobalt.CreateTag().ToString(), 1.2f },
+      { SimHashes.Cobaltite.CreateTag().ToString(), 1.2f },
+      { SimHashes.Niobium.CreateTag().ToString(), 1.2f },
+      { SimHashes.Steel.CreateTag().ToString(), 1.2f },
+      { SimHashes.Nickel.CreateTag().ToString(), 1.4f },
+            { SimHashes.NickelOre.CreateTag().ToString(), 1.4f },
+            { SimHashes.Wolframite.CreateTag().ToString(), 1.4f },
+            { SimHashes.Tungsten.CreateTag().ToString(), 1.4f },
+            { SimHashes.TempConductorSolid.CreateTag().ToString(), 1.4f },
+            { SimHashes.Iridium.CreateTag().ToString(), 1.6f },
+            { "SolidSilver", 1.1f }, 
             { "Plasteel", 1.5f },
             { "AIO_Permendur_Solid", 1.2f },
-            { "AIO_Invar_Solid", 1.2f},
-            { "AIO_StainlessSteel_Solid", 1.3f},
-            { "AIO_FerroChrome_Solid", 0.6f},
-            { "AIO_Chromium_Solid", 0.6f},
-            { "SolidFiberGlass", 1.2f},
-            { "CarbonFiber", 2f},
-
-
-            };
-        }
-
+            { "AIO_Invar_Solid", 1.2f },
+            { "AIO_StainlessSteel_Solid", 1.3f },
+            { "AIO_FerroChrome_Solid", 0.6f },
+            { "AIO_Chromium_Solid", 0.6f },
+            { "SolidFiberGlass", 1.2f }, 
+            { "CarbonFiber", 2f }
+    };
 
         public static float GetMultiplier(SimHashes id)
         {
-            var key = id.CreateTag().ToString();
-            return Multipliers.TryGetValue(key, out var mult) ? Mathf.Max(0f, mult) : 1f;
+            string key = id.CreateTag().ToString();
+            float b;
+            return StorageCapacitySettings.Multipliers.TryGetValue(key, out b) ? Mathf.Max(0.0f, b) : 1f;
         }
-
     }
 
     [HarmonyPatch(typeof(Db), "Initialize")]
@@ -98,8 +84,8 @@ internal static class StorageCapacitySettings
         }
     }
 
-        // Helper component to cache base storage capacity per instance
-        public sealed class StorageCapacityCache : KMonoBehaviour
+    // Helper component to cache base storage capacity per instance
+    public sealed class StorageCapacityCache : KMonoBehaviour
     {
         public float BaseCapacityKg;
         public bool Initialized;
@@ -131,7 +117,7 @@ internal static class StorageCapacitySettings
             if (mult <= 0f) mult = 1f;
 
             storage.capacityKg = baseCap * mult;
-          //  Debug.Log($"[StorageCapacity] Storage capacity modified by {mult}x (element: {elementId}), new capacity: {storage.capacityKg}kg");
+            //  Debug.Log($"[StorageCapacity] Storage capacity modified by {mult}x (element: {elementId}), new capacity: {storage.capacityKg}kg");
 
             // Also update ConduitConsumer capacity if it exists
             var conduitConsumer = go.GetComponent<ConduitConsumer>();

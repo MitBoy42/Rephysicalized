@@ -1,4 +1,5 @@
 ﻿using Database;
+using ElementData;
 using ElementUtilNamespace;
 using HarmonyLib;
 using Klei.AI;
@@ -95,16 +96,26 @@ namespace Rephysicalized.ModElements
 			{
 				AddTagsToElementAndEnable(SimHashes.Oxygen, new[] { ModTags.OxidizerGas });
 				AddTagsToElementAndEnable(SimHashes.ContaminatedOxygen, new[] { ModTags.OxidizerGas });
+
+                SetSubstanceEffect(ModElementRegistration.MoltenSilicon, "glows", true);
+                SetSubstanceEffect(ModElementRegistration.MoltenSilicon, "isOpaqueLiquid", true);
+   
 			
                 AddTagsToElementAndEnable(ModElementRegistration.AshByproduct, new Tag[] { GameTags.Farmable });
                 AddTagsToElementAndEnable(ModElementRegistration.CrudByproduct, new Tag[] { GameTags.BuildableRaw });
-                AddTagsToElementAndEnable(SimHashes.Ice, new Tag[] { GameTags.Transparent });
+                AddTagsToElementAndEnable(ModElementRegistration.Silicon, new Tag[] { GameTags.BuildableRaw });
+                AddTagsToElementAndEnable(SimHashes.Ice, new Tag[] { });
                 AddTagsToElementAndEnable(SimHashes.Lime, new Tag[] { GameTags.PreciousRock });
                 AddTagsToElementAndEnable(SimHashes.Lime, new Tag[] { GameTags.BuildableAny });
                 AddTagsToElementAndEnable(SimHashes.Lime, new Tag[] { GameTags.BuildableRaw });
+             
+                AddTagsToElementAndEnable(SimHashes.SugarWater, new Tag[] { GameTags.Creatures.CritterDrinkable });
+                AddTagsToElementAndEnable(SimHashes.Rubber, new Tag[] { GameTags.Plumbable });
+
 
                 AddTagsToElementAndEnable(SimHashes.SuperCoolant, new Tag[] { GameTags.LubricatingOil });
                 AddTagsToElementAndEnable(SimHashes.ViscoGel, new Tag[] { GameTags.LubricatingOil });
+                AddTagsToElementAndEnable(SimHashes.Mucus, new Tag[] { GameTags.LubricatingOil });
 
                 AddTagsToElementAndEnable(SimHashes.Dirt, new[] { ModTags.RichSoil });
             AddTagsToElementAndEnable(ModElementRegistration.AshByproduct.SimHash, new[] { ModTags.RichSoil });
@@ -112,6 +123,22 @@ namespace Rephysicalized.ModElements
                 AddTagsToElementAndEnable(SimHashes.SlimeMold, new[] { ModTags.Distillable });
                 AddTagsToElementAndEnable(SimHashes.ToxicSand, new[] { ModTags.RephysSublimator });
                 AddTagsToElementAndEnable(SimHashes.BleachStone, new[] { ModTags.RephysSublimator });
+
+                AddTagsToElementAndEnable(SimHashes.NaturalResin, new[] { ModTags.Glue });
+                AddTagsToElementAndEnable(SimHashes.Resin, new[] { ModTags.Glue });
+                AddTagsToElementAndEnable(SimHashes.Latex, new[] { ModTags.Glue });
+
+            }
+
+            static void SetSubstanceEffect(SimHashes element, string fieldName, bool value)
+            {
+                var substance = ElementLoader.FindElementByHash(element)?.substance;
+                var field = typeof(Substance).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+
+                if (substance == null || field == null)
+                    return;
+
+                field.SetValue(substance, value);
             }
 		}
 
@@ -192,8 +219,9 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
        
                 SetHighTempSecondary(__result, nameof(SimHashes.WoodLog), ashByproductId, 0.5f);
                 SetHighTempSecondary(__result, nameof(SimHashes.FabricatedWood), ashByproductId, 0.5f);
+                SetHighTempSecondary(__result, nameof(SimHashes.PalmWood), ashByproductId, 0.5f);
 
-   
+
                 SetHighTempSecondary(__result, nameof(SimHashes.MoltenSucrose), ashByproductId, 0.2f);
 
                 SetHighTempPrimary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Oxygen));
@@ -205,6 +233,9 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
                 SetHighTempSecondary(__result, nameof(SimHashes.LiquidGunk), nameof(SimHashes.RefinedCarbon), 0.20f);
 
                 SetHighTempPrimary(__result, nameof(SimHashes.OxyRock), nameof(SimHashes.Iridium));
+                SetHighTempPrimary(__result, nameof(SimHashes.Pearl), nameof(SimHashes.Lime));
+
+                SetHighTempPrimary(__result, nameof(SimHashes.Milk), nameof(SimHashes.SaltWater));
 
                 SetSublimation(__result, nameof(SimHashes.OxyRock), 1f, 0.2f);
                 SetSublimation(__result, nameof(SimHashes.ToxicMud), 1f, 0.02f);
@@ -231,12 +262,13 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
 
                     SetHighTempSecondary(__result, nameof(SimHashes.NickelOre), nameof(SimHashes.Sulfur), 1f - 0.73f);
 
-
                     SetHighTempSecondary(__result, nameof(SimHashes.Cobaltite), nameof(SimHashes.Sulfur), 1f - 0.71f);
 
                     SetHighTempSecondary(__result, nameof(SimHashes.AluminumOre), nameof(SimHashes.SolidOxygen), 1f - 0.6f);
 
                     SetHighTempSecondary(__result, nameof(SimHashes.FoolsGold), nameof(SimHashes.Sulfur), 1f - 0.64f);
+
+                    SetHighTempSecondary(__result, nameof(SimHashes.ZincOre), nameof(SimHashes.Sulfur), 1f - 0.67f);
                 }
 
 

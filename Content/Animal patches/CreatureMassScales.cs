@@ -1,10 +1,167 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using System;
 using UnityEngine;
 
 namespace Rephysicalized.Content.Animal_patches
 {
+    /// <summary>
+    /// Shared mechanic for creatures whose scale/coat/antler growth must be paid for with fuel
+    /// instead of body mass. Each tick the creature's growth is measured; the equivalent kg is
+    /// burned from its fuel storage, and any growth that could not be paid for is rolled back.
+    /// Used by GoldBelly, WoodDeer and SeaTurtle, which only differ in the mass of their grown part.
+    /// </summary>
+    public abstract class ScaleFuelGrowthController : KMonoBehaviour, ISim1000ms
+    {
+        [MyCmpGet] private Effects _effects;
+
+        private WellFedShearable.Instance _shearSMI;
+        private AmountInstance _scaleGrowth;
+
+        // Single storage assumption (first Storage found)
+        private Storage _fuelStorage;
+
+        [SerializeField] private string _wellFedEffectId = "WellFed";
+
+        private float _lastScaleValue;
+        private float _scaleMax;
+
+        protected abstract float FullScaleMassKg { get; }
+
+        public override void OnSpawn()
+        {
+            base.OnSpawn();
+
+            _shearSMI = gameObject.GetSMI<WellFedShearable.Instance>();
+            if (_shearSMI != null && _shearSMI.def != null && !string.IsNullOrEmpty(_shearSMI.def.effectId))
+                _wellFedEffectId = _shearSMI.def.effectId;
+
+            if (_effects == null)
+                _effects = GetComponent<Effects>();
+
+            _scaleGrowth = Db.Get().Amounts.ScaleGrowth.Lookup(gameObject);
+
+            // Assume at least one storage exists and use the first found (self or children)
+            _fuelStorage = GetComponent<Storage>();
+
+            // Initialize growth tracking
+            if (_scaleGrowth != null)
+            {
+                _lastScaleValue = _scaleGrowth.value;
+                _scaleMax = _scaleGrowth.GetMax();
+                if (_scaleMax <= 0f) _scaleMax = 100f; // default safety
+            }
+        }
+
+        public void Sim1000ms(float dt)
+        {
+            if (_scaleMax <= 0f) _scaleMax = _scaleGrowth.GetMax();
+            if (_scaleMax <= 0f) _scaleMax = 100f;
+
+            bool gateEffectActive = !string.IsNullOrEmpty(_wellFedEffectId) && _effects.HasEffect(_wellFedEffectId);
+            bool fullyGrown = IsFullyGrown();
+
+            // If not well-fed or already fully grown: do nothing special
+            if (fullyGrown || !gateEffectActive)
+            {
+                _lastScaleValue = _scaleGrowth.value;
+                return;
+            }
+
+            float current = _scaleGrowth.value;
+            float desiredDelta = Mathf.Max(0f, current - _lastScaleValue);
+
+            // No attempted growth since last tick
+            if (desiredDelta <= 0f)
+            {
+                // If no fuel, clamp to last known value (prevent free growth)
+                if (TotalFuelKg() <= 0.0001f)
+                {
+                    if (Mathf.Abs(_scaleGrowth.value - _lastScaleValue) > 0.0001f)
+                        _scaleGrowth.value = _lastScaleValue;
+                }
+                _lastScaleValue = _scaleGrowth.value;
+                return;
+            }
+
+            // Compute required kg for the desired growth amount
+            float pct01Delta = desiredDelta / _scaleMax;
+            float kgNeeded = Mathf.Max(0f, pct01Delta * FullScaleMassKg);
+
+            if (kgNeeded <= 0f)
+            {
+                _lastScaleValue = current;
+                return;
+            }
+
+            float consumed = ConsumeFuelUpTo(kgNeeded);
+
+            if (consumed + 1e-6f >= kgNeeded)
+            {
+                // Fully paid, accept growth
+                _lastScaleValue = _scaleGrowth.value;
+            }
+            else
+            {
+                // Partial payment: clamp growth to afforded amount
+                float affordedPct01 = (FullScaleMassKg > 1e-6f) ? (consumed / FullScaleMassKg) : 0f;
+                float affordedDelta = affordedPct01 * _scaleMax;
+                float clampedValue = _lastScaleValue + affordedDelta;
+
+                if (clampedValue < _scaleGrowth.value - 1e-5f)
+                    _scaleGrowth.value = clampedValue;
+
+                _lastScaleValue = _scaleGrowth.value;
+            }
+        }
+
+        private bool IsFullyGrown()
+        {
+            float max = _scaleGrowth?.GetMax() ?? 0f;
+            return max > 0f && _scaleGrowth.value >= max - 0.0001f;
+        }
+
+        private float TotalFuelKg()
+        {
+            float total = 0f;
+            var items = _fuelStorage.items;
+            for (int j = items.Count - 1; j >= 0; j--)
+            {
+                var go = items[j];
+                var pe = go.GetComponent<PrimaryElement>();
+                if (pe != null) total += pe.Mass;
+            }
+            return total;
+        }
+
+        // Consume up to target kg; returns how much was actually consumed.
+        private float ConsumeFuelUpTo(float kgNeeded)
+        {
+            float remaining = Mathf.Max(0f, kgNeeded);
+            float consumed = 0f;
+
+            var items = _fuelStorage.items;
+            for (int j = items.Count - 1; j >= 0 && remaining > 0f; j--)
+            {
+                var go = items[j];
+                var pe = go.GetComponent<PrimaryElement>();
+                if (pe == null || pe.Mass <= 0f) continue;
+
+                float take = Mathf.Min(remaining, pe.Mass);
+                pe.Mass -= take;
+                remaining -= take;
+                consumed += take;
+
+                if (pe.Mass <= 0.0001f)
+                {
+                    Util.KDestroyGameObject(go);
+                }
+            }
+
+            return consumed;
+        }
+    }
+
     // Small SM to drive a ToggleStatusItem when mass transfer is paused
     public sealed class ScaleMassPauseSM : GameStateMachine<ScaleMassPauseSM, ScaleMassPauseSM.Instance, IStateMachineTarget>
     {
@@ -27,7 +184,7 @@ namespace Rephysicalized.Content.Animal_patches
             {
                 if (smi.isPaused())
                     smi.GoTo(paused);
-            }, UpdateRate.SIM_4000ms);
+            }, UpdateRate.SIM_1000ms);
 
             paused
                 .ToggleStatusItem(
@@ -38,7 +195,7 @@ namespace Rephysicalized.Content.Animal_patches
                 {
                     if (!smi.isPaused())
                         smi.GoTo(ok);
-                }, UpdateRate.SIM_4000ms);
+                }, UpdateRate.SIM_1000ms);
         }
     }
 
@@ -65,18 +222,18 @@ namespace Rephysicalized.Content.Animal_patches
             {
                 if (smi.isPaused())
                     smi.GoTo(paused);
-            }, UpdateRate.SIM_4000ms);
+            }, UpdateRate.SIM_1000ms);
 
             paused
                 .ToggleStatusItem(
-                    name: STRINGS.STATUSITEMS.NOTENOUGHBODYMASS_MILK.NAME,
-                    tooltip: STRINGS.STATUSITEMS.NOTENOUGHBODYMASS_MILK.TOOLTIP,
+                    name: STRINGS.STATUSITEMS.NOTENOUGHBODYMASSMILK.NAME,
+                    tooltip: STRINGS.STATUSITEMS.NOTENOUGHBODYMASSMILK.TOOLTIP,
                     category: Db.Get().StatusItemCategories.Stored)
                 .Update((smi, dt) =>
                 {
                     if (!smi.isPaused())
                         smi.GoTo(ok);
-                }, UpdateRate.SIM_4000ms);
+                }, UpdateRate.SIM_1000ms);
         }
     }
 
@@ -87,7 +244,8 @@ namespace Rephysicalized.Content.Animal_patches
         internal static readonly Tag BabyWoodDeerTag = new Tag("WoodDeerBaby");
         internal static readonly Tag GoldBellyTag = new Tag("GoldBelly");
         internal static readonly Tag BabyGoldBellyTag = new Tag("GoldBellyBaby");
-
+        internal static readonly Tag SeaTurtleTag = new Tag("SeaTurtle");
+        internal static readonly Tag BabySeaTurtleTag = new Tag("BabySeaTurtle");
 
         [MyCmpReq] private CreatureMassTracker tracker;
         [MyCmpGet] private KPrefabID kpid;
@@ -101,7 +259,7 @@ namespace Rephysicalized.Content.Animal_patches
         private bool pausedMilk;
 
         public override void OnSpawn()
-        { 
+        {
             base.OnSpawn();
 
             // Fully exempt WD/BWD from any init
@@ -109,8 +267,8 @@ namespace Rephysicalized.Content.Animal_patches
                 return;
 
             // Initialize caches to current derived masses so no immediate transfer on load
-            prevScaleKg = ComputeScaleMassKgFromMonitors(gameObject);
-            prevMilkKg = ComputeMilkMassKgFromMonitor(gameObject);
+            prevScaleKg = CreatureMassTracker.ComputeScaleMassKgFromMonitors(gameObject);
+            prevMilkKg = CreatureMassTracker.ComputeMilkMassKgFromMilkMonitor(gameObject);
 
             // Start ToggleStatusItem SMs (one for scales, one for milk)
             if (gameObject.GetSMI<ScaleMassPauseSM.Instance>() == null)
@@ -136,14 +294,12 @@ namespace Rephysicalized.Content.Animal_patches
             }
 
             // 1) Handle scale growth: transfer from body to scales
-            float currentScaleKg = ComputeScaleMassKgFromMonitors(gameObject);
+            float currentScaleKg = CreatureMassTracker.ComputeScaleMassKgFromMonitors(gameObject);
             float deltaScaleKg = currentScaleKg - prevScaleKg;
 
             if (deltaScaleKg > 0f)
             {
-                float body = tracker.GetBodyMass();
-                float minBody = Mathf.Max(0.001f, tracker.STARTING_MASS);
-                float headroom = Mathf.Max(0f, body - minBody);
+                float headroom = BodyHeadroom();
 
                 if (headroom <= 0f)
                 {
@@ -175,14 +331,12 @@ namespace Rephysicalized.Content.Animal_patches
             prevScaleKg = currentScaleKg;
 
             // 2) Handle milk production: transfer from body to milk
-            float currentMilkKg = ComputeMilkMassKgFromMonitor(gameObject);
+            float currentMilkKg = CreatureMassTracker.ComputeMilkMassKgFromMilkMonitor(gameObject);
             float deltaMilkKg = currentMilkKg - prevMilkKg;
 
             if (deltaMilkKg > 0f)
             {
-                float body = tracker.GetBodyMass();
-                float minBody = Mathf.Max(0.001f, tracker.STARTING_MASS);
-                float headroom = Mathf.Max(0f, body - minBody);
+                float headroom = BodyHeadroom();
 
                 if (headroom <= 0f)
                 {
@@ -216,8 +370,15 @@ namespace Rephysicalized.Content.Animal_patches
 
         private bool IsExempt()
         {
-            return kpid != null && (kpid.HasTag(WoodDeerTag) || kpid.HasTag(BabyWoodDeerTag ) || kpid.HasTag(GoldBellyTag) || kpid.HasTag(BabyGoldBellyTag));
+
+            return kpid != null && (kpid.HasTag(WoodDeerTag) || kpid.HasTag(BabyWoodDeerTag) || kpid.HasTag(GoldBellyTag) ||
+                kpid.HasTag(BabyGoldBellyTag) || kpid.HasTag(SeaTurtleTag) || kpid.HasTag(BabySeaTurtleTag));
         }
+
+        // Body mass available above the reserved minimum: how much can still be
+        // converted into scales/milk this tick.
+        private float BodyHeadroom() =>
+            Mathf.Max(0f, tracker.GetBodyMass() - Mathf.Max(0.001f, tracker.STARTING_MASS));
 
         // Pause flags read by SMs
         private void SetScalePaused(bool value) => pausedScales = value;
@@ -227,58 +388,7 @@ namespace Rephysicalized.Content.Animal_patches
         private bool IsMilkPaused() => pausedMilk;
 
         // ===== Scales helpers =====
-        private static float ComputeScaleMassKgFromMonitors(GameObject go)
-        {
-            if (TryGetScaleDefAndPercent01(go, out _, out var dropMass, out var pct01))
-                return pct01 * dropMass;
-            return 0f;
-        }
-
-        private static bool TryGetScaleDefAndPercent01(GameObject go, out Tag dropTag, out float dropMass, out float percent01)
-        {
-            dropTag = Tag.Invalid;
-            dropMass = 0f;
-            percent01 = 0f;
-            if (go == null) return false;
-
-            float pct01 = 0f;
-            var db = Db.Get();
-            var scaleAmt = db?.Amounts?.ScaleGrowth?.Lookup(go);
-            if (scaleAmt != null)
-                pct01 = Mathf.Clamp01(scaleAmt.value / 100f);
-            else
-            {
-                var elemAmt = db?.Amounts?.ElementGrowth?.Lookup(go);
-                if (elemAmt != null)
-                    pct01 = Mathf.Clamp01(elemAmt.value / 100f);
-            }
-            if (pct01 <= 0f) return false;
-
-            Tag tag = Tag.Invalid;
-            float fullMass = 0f;
-
-            var sgm = go.GetSMI<ScaleGrowthMonitor.Instance>();
-            if (sgm?.def != null)
-            {
-                tag = sgm.def.itemDroppedOnShear;
-                fullMass = Mathf.Max(0f, sgm.def.dropMass);
-            }
-            else
-            {
-                var wfs = go.GetSMI<WellFedShearable.Instance>();
-                if (wfs?.def != null)
-                {
-                    tag = wfs.def.itemDroppedOnShear;
-                    fullMass = Mathf.Max(0f, wfs.def.dropMass);
-                }
-            }
-            if (!tag.IsValid || fullMass <= 0f) return false;
-
-            dropTag = tag;
-            dropMass = fullMass;
-            percent01 = pct01;
-            return true;
-        }
+        // Scale/mass lookups live on CreatureMassTracker so this file has a single source of truth.
 
         private void ClampGrowthToScaleKg(float desiredScaleKg)
         {
@@ -286,7 +396,7 @@ namespace Rephysicalized.Content.Animal_patches
             var amt = db?.Amounts?.ScaleGrowth?.Lookup(gameObject);
             if (amt == null) return;
 
-            if (!TryGetScaleDefAndPercent01(gameObject, out _, out var dropMass, out _))
+            if (!CreatureMassTracker.TryGetScaleDefAndPercent01(gameObject, out _, out var dropMass, out _))
                 return;
 
             float pct01 = (dropMass > 0f) ? Mathf.Clamp01(desiredScaleKg / dropMass) : 0f;
@@ -294,14 +404,6 @@ namespace Rephysicalized.Content.Animal_patches
         }
 
         // ===== Milk helpers =====
-        private static float ComputeMilkMassKgFromMonitor(GameObject go)
-        {
-            var milkSmi = go != null ? go.GetSMI<MilkProductionMonitor.Instance>() : null;
-            if (milkSmi == null) return 0f;
-            // MilkAmount is in kg
-            return Mathf.Max(0f, milkSmi.MilkAmount);
-        }
-
         // Clamp milk such that MilkAmount == desiredMilkKg
         private void ClampMilkToKg(float desiredMilkKg)
         {
@@ -331,24 +433,22 @@ namespace Rephysicalized.Content.Animal_patches
     {
         public static void Postfix(KPrefabID __instance)
         {
-            try
-            {
-                var go = __instance.gameObject;
-                var kpid = __instance;
-
+           
                 // Skip attachment on exempt prefabs entirely
-                if (kpid != null && (kpid.HasTag(ScaleMassTransferDriver.WoodDeerTag) || kpid.HasTag(ScaleMassTransferDriver.BabyWoodDeerTag) || kpid.HasTag(ScaleMassTransferDriver.GoldBellyTag) || kpid.HasTag(ScaleMassTransferDriver.BabyGoldBellyTag)))
+                var kpid = __instance;
+                if (kpid != null && (kpid.HasTag(ScaleMassTransferDriver.WoodDeerTag) ||
+                    kpid.HasTag(ScaleMassTransferDriver.BabyWoodDeerTag) || kpid.HasTag(ScaleMassTransferDriver.GoldBellyTag) ||
+                    kpid.HasTag(ScaleMassTransferDriver.BabyGoldBellyTag) || kpid.HasTag(ScaleMassTransferDriver.SeaTurtleTag) ||
+                    kpid.HasTag(ScaleMassTransferDriver.BabySeaTurtleTag)))
                     return;
 
+                var go = __instance.gameObject;
                 if (go.GetComponent<CreatureMassTracker>() != null && go.GetComponent<ScaleMassTransferDriver>() == null)
                 {
                     go.AddOrGet<ScaleMassTransferDriver>();
                 }
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[Rephysicalized] Failed to attach ScaleMassTransferDriver: {e}");
-            }
+            
+          
         }
     }
 }

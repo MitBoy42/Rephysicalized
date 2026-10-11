@@ -4,6 +4,7 @@ using HarmonyLib;
 using Klei.AI;
 using UnityEngine;
 
+
 namespace Rephysicalized.Content.Animal_patches
 {
     // Per-prefab settings: threshold to trigger poop based on fueled mass and whether to append or replace vanilla emission
@@ -67,12 +68,35 @@ namespace Rephysicalized.Content.Animal_patches
     }
 
     // Emit fueled outputs during Poop. We do not modify stomach or calories.
-    [HarmonyPatch(typeof(CreatureCalorieMonitor.Instance), nameof(CreatureCalorieMonitor.Instance.Poop))]
+
+    [HarmonyPatch(typeof(CreatureCalorieMonitor.Instance))]
     internal static class FueledPoopFlush_Postfix
     {
+        [HarmonyTargetMethod]
+        private static System.Reflection.MethodBase TargetMethod()
+        {
+            var methods = typeof(CreatureCalorieMonitor.Instance).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                var m = methods[i];
+                if (m == null) continue;
+                if (m.Name != "Poop") continue;
+
+                // Prefer Poop(PoopData) since GameEvent calls smi.Poop(data == null ? null : data)
+                var ps = m.GetParameters();
+                if (ps.Length == 1 && ps[0].ParameterType == typeof(PoopData))
+                    return m;
+            }
+
+       
+
+            return null;
+        }
+
         [HarmonyPostfix]
         private static void Postfix(CreatureCalorieMonitor.Instance __instance)
         {
+
             if (__instance == null) return;
             var go = __instance.gameObject;
             if (go == null) return;
@@ -80,11 +104,33 @@ namespace Rephysicalized.Content.Animal_patches
             var controller = go.GetComponent<FueledDietController>();
             if (controller == null) return;
 
+            // Debug/guard: if fueled poop was triggered but we dequeue nothing, do not spam vanilla poop loop.
+            // (This can happen if pendingOutputs were cleared elsewhere or emission fails to resolve.)
+            float beforeMass = controller.PeekPendingTotalMass();
+
             var outputs = ListPool<FueledDietController.FueledOutput, FueledDietController>.Allocate();
             try
             {
-                if (controller.DequeuePendingOutputs(outputs) <= 0)
+                int dequeuedCount = controller.DequeuePendingOutputs(outputs);
+                float afterMass = 0f; // dequeued clears internal queue
+
+                if (dequeuedCount <= 0 || outputs == null || outputs.Count == 0)
+                {
+                    Debug.Log($"[FueledPoop] ReadyToPoop triggered but no pending outputs to emit (beforeMass={beforeMass:F3}, dequeuedCount={dequeuedCount}, afterMass={afterMass:F3})");
                     return;
+                }
+
+                if (controller.EnableDebugLogs)
+                {
+                    int validResolvable = 0;
+                    foreach (var it in outputs)
+                    {
+                        if (!it.Tag.IsValid || it.MassKg <= 0f) continue;
+                        if (TryResolveElement(it.Tag, out _))
+                            validResolvable++;
+                    }
+                    Debug.Log($"[FueledPoop]  dequeued {dequeuedCount} outputs, massBefore={beforeMass:F3}; resolvedCount={validResolvable}");
+                }
 
                 EmitFueled(go, outputs);
             }

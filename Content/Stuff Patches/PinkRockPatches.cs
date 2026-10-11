@@ -311,52 +311,6 @@ namespace Rephysicalized
         }
     }
 
-    [HarmonyPatch(typeof(EntityTemplates))]
-    internal static class EntityTemplates_CreatePlacedEntity_PinkRockCarved
-    {
-        // Patch all overloads named "CreatePlacedEntity"
-        public static IEnumerable<MethodBase> TargetMethods()
-        {
-            foreach (var m in AccessTools.GetDeclaredMethods(typeof(EntityTemplates)))
-            {
-                if (m.Name == "CreatePlacedEntity")
-                    yield return m;
-            }
-        }
-
-        // In most overloads, the first string is id and the first float is mass
-        public static void Prefix(string id, ref float mass)
-        {
-            if (string.Equals(id, "PinkRockCarved", StringComparison.Ordinal))
-            {
-                mass = 25f;
-            }
-        }
-    }
-
-    // Ensure mass = 25f when PinkRockCarved is created as a loose entity (safety for alt builds)
-    [HarmonyPatch(typeof(EntityTemplates))]
-    internal static class EntityTemplates_CreateLooseEntity_PinkRockCarved
-    {
-        // Match the commonly used CreateLooseEntity overload
-        public static MethodBase TargetMethod()
-        {
-            var types = new Type[] {
-                typeof(string), typeof(string), typeof(string), typeof(float), typeof(bool),
-                typeof(KAnimFile), typeof(string), typeof(Grid.SceneLayer),
-                typeof(EntityTemplates.CollisionShape), typeof(float), typeof(float),
-                typeof(bool), typeof(int), typeof(SimHashes), typeof(List<Tag>)
-            };
-            return AccessTools.Method(typeof(EntityTemplates), "CreateLooseEntity", types);
-        }
-
-        public static void Prefix(string id, ref float mass /*, ref bool unitMass */)
-        {
-            if (string.Equals(id, "PinkRockCarved", StringComparison.Ordinal))
-            {
-                mass = 25f;
-            }
-        }
-    }
+ 
 
 }

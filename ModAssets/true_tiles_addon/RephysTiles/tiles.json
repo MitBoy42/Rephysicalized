@@ -7,7 +7,12 @@
         "Lime": {
             "MainTex": "carpet_lime_main",
             "TopTex": "carpet_lime_top"
+        },
+        "SiliconRP": {
+            "MainTex": "carpet_siliconrp_main",
+            "TopTex": "carpet_siliconrp_top"
         }
+
 
     },
 
@@ -19,26 +24,34 @@
         "Lime": {
             "MainTex": "tile_lime_main",
             "TopTex": "tile_lime_top"
+        } ,
+        "SiliconRP": {
+            "MainTex": "tile_siliconrp_main",
+            "TopTex": "tile_siliconrp_top"
         }
 
     },
 
     "InsulationTile": {
         "CrudByproduct": {
-            "MainTex": "insulation_crudbyproduct_main"
-
-        },
+            "MainTex": "insulation_crudbyproduct_main" },
         "Lime": {
-            "MainTex": "insulation_lime_main"
-
-        }
+            "MainTex": "insulation_lime_main"  },
+        "SiliconRP": {
+            "MainTex": "insulation_siliconrp_main"  }
     },
   "GlassTile": {
     "Ice": {
       "MainTex": "glasstile_ice_main",
       "TopTex": "glasstile_ice_top",
       "MainSpecular": "glasstile_ice_spec"
-    }
+    },
+
+    "SiliconRP": {
+      "MainTex": "glasstile_siliconrp_main",
+      "TopTex": "glasstile_siliconrp_top",
+      "MainSpecular": "glasstile_siliconrp_spec"
+       }
 }
 
 }

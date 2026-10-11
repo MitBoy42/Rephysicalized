@@ -116,15 +116,7 @@ namespace Rephysicalized.Content.Plants
         private static void SyncTrackerAndPlotStore(GameObject go, float mass)
         {
           
-                // 1) Update the per-plot store so future spawns load the value
-                var plot = go.GetComponentInParent<PlantablePlot>();
-                if (plot != null)
-                {
-                    var store = plot.gameObject.AddOrGet<PlotMassStore>();
-                    store.Set(mass);
-                }
-
-                // 2) Update PlantMassTrackerComponent's trackedMassKg via reflection (private field)
+                // 1) Update PlantMassTrackerComponent's trackedMassKg via reflection (private field)
                 var tracker = go.GetComponent<Rephysicalized.PlantMassTrackerComponent>();
                 if (tracker != null)
                 {
@@ -143,14 +135,7 @@ namespace Rephysicalized.Content.Plants
                     var fSuppress = t.GetField("_suppressInitialExternalDelta", BF);
                     if (fSuppress != null) fSuppress.SetValue(tracker, false);
 
-                    // If it bound a PlotMassStore, force a write (best-effort)
-                    var fPlotStore = t.GetField("_plotStore", BF);
-                    var plotStore = fPlotStore?.GetValue(tracker);
-                    if (plotStore != null)
-                    {
-                        var mSet = plotStore.GetType().GetMethod("Set", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        mSet?.Invoke(plotStore, new object[] { mass });
-                    }
+                    // PlotMassStore removed; nothing to persist
                 }
          
         }

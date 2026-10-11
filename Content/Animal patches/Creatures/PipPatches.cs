@@ -7,6 +7,17 @@ using Klei.AI;
 
 namespace Rephysicalized
 {
+
+    [HarmonyPatch(typeof(EntityConfigManager), "LoadGeneratedEntities")]
+    public static class Pips_AddToDescription
+    {
+        public static void Prefix()
+        {
+            const string key = "STRINGS.CODEX.PIP.BODY.CONTAINER3";
+            // Append gas input functionality to the description
+            Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Note that Pips, as any other creatures, require consuming real mass, so they can't feed off of wild trees.</b>");
+        }
+    }
     // Squirrel diet rebalance:
     // - Normal (adult/baby): consumes 21 kg/day, poops 20 kg/day
     // - Hug (adult/baby): consumes 11 kg/day, poops 10 kg/day
@@ -34,7 +45,8 @@ namespace Rephysicalized
             {
                 ForestTreeBranch,
                 SpaceTreeBranch,
-                BasicFabricPlant
+                BasicFabricPlant,
+                DewPalmConfig.ID.ToTag(),
             };
 
             var info = new Diet.Info(
@@ -89,14 +101,9 @@ namespace Rephysicalized
     {
         public static void Postfix(GameObject prefab)
         {
-            try
-            {
+
                 SquirrelDietRebalance.ApplyCreatureDiet(prefab);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[Rephysicalized] SetupDiet patch failed for {prefab?.name}: {e}");
-            }
+       
         }
     }
 
@@ -108,11 +115,9 @@ namespace Rephysicalized
     {
         public static void Postfix()
         {
-            try
-            {
+          
                 SquirrelTuning.PEN_SIZE_PER_CREATURE_HUG = CREATURES.SPACE_REQUIREMENTS.TIER2;
-            }
-            catch { /* best-effort */ }
+      
         }
     }
 }

@@ -7,55 +7,6 @@ using UnityEngine;
 
 namespace Rephysicalized.Content.AnimalPatches
 {
-    // Molt-only handling:
-    // - Hooks MoltDropperMonitor.Instance drop methods (not predicate checks).
-    // - Dynamically targets any instance method whose name starts with "Drop" EXCEPT "ShouldDropElement".
-    // - After vanilla executes, subtract body mass equal to the molted mass, clamped to keep at least 1 kg.
-    [HarmonyPatch]
-    internal static class MoltDropper_SubtractBodyMass_OnActualDrop
-    {
-        private static IEnumerable<MethodBase> TargetMethods()
-        {
-            var instType = typeof(MoltDropperMonitor.Instance);
-            var methods = AccessTools.GetDeclaredMethods(instType);
-            foreach (var m in methods)
-            {
-                if (m == null || m.IsStatic || m.IsAbstract || m.IsConstructor)
-                    continue;
-
-                string name = m.Name ?? string.Empty;
-                if (name.StartsWith("Drop", StringComparison.OrdinalIgnoreCase)
-                    && !name.Equals("ShouldDropElement", StringComparison.OrdinalIgnoreCase))
-                {
-                    yield return m;
-                }
-            }
-        }
-
-        // Postfix subtracts mass based on def.massToDrop (clamped so mass never goes below 1 kg)
-        private static void Postfix(MoltDropperMonitor.Instance __instance)
-        {
-            if (__instance == null)
-                return;
-
-            var go = __instance.gameObject; // monitor sits on the creature root
-            var pe = go != null ? go.GetComponent<PrimaryElement>() : null;
-            var def = __instance.def;
-
-            if (go == null || pe == null || def == null)
-                return;
-
-            float vanillaDrop = Mathf.Max(0f, def.massToDrop);
-            float before = Mathf.Max(0f, pe.Mass);
-            float available = Mathf.Max(0f, before - 1f);
-            float subtractKg = Mathf.Min(vanillaDrop, available);
-
-            if (subtractKg > 0f)
-            {
-                pe.Mass = Mathf.Max(1f, before - subtractKg);
-            }
-        }
-    }
 
 
     // Patch CrabConfig.CreateCrab to replace TUNING.CREATURES.CONVERSION_EFFICIENCY.NORMAL with 0.857142f
@@ -102,11 +53,7 @@ namespace Rephysicalized.Content.AnimalPatches
                     {
                         replacements++;
                         var replacement = new CodeInstruction(OpCodes.Ldc_R4, 0.857142f);
-#if HARMONYX
-                        // Preserve labels/blocks if HarmonyX block support is used
-                        replacement.labels.AddRange(ins.labels);
-                        replacement.blocks.AddRange(ins.blocks);
-#endif
+
                         yield return replacement;
                         continue;
                     }
@@ -127,8 +74,7 @@ namespace Rephysicalized.Content.AnimalPatches
         [HarmonyPrefix]
         public static void Prefix()
         {
-            try
-            {
+         
                 if (f_KgPerCycle != null)
                 {
                     f_KgPerCycle.SetValue(null, 140f);
@@ -145,15 +91,11 @@ namespace Rephysicalized.Content.AnimalPatches
                 }
                 else
                 {
-                    //   Debug.LogWarning("[Rephysicalized] CrabWoodConfig: Could not find field CALORIES_PER_KG_OF_ORE");
                 }
             }
-            catch (Exception e)
-            {
-                // Debug.LogWarning($"[Rephysicalized] CrabWoodConfig: Failed to adjust ore/cycle and calories/kg: {e.Message}");
-            }
-        }
-    }
+           
+      }
+    
 
 
 

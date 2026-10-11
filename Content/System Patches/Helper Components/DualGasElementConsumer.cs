@@ -25,9 +25,7 @@ namespace Rephysicalized
         public override void OnSpawn()
         {
             base.OnSpawn();
-            // this.storage = GetComponent<Storage>();
             operational = GetComponent<Operational>();
-            // Debug.Log($"[DualGasElementConsumer] OnSpawn: storage={(storage != null)}, operational={(operational != null)}");
         }
 
 

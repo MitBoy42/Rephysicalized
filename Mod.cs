@@ -44,4 +44,8 @@ namespace Rephysicalized
     {
         internal static readonly bool Enabled = DlcManager.IsContentSubscribed(DlcManager.DLC4_ID);
     }
+    internal static class Dlc5Gate
+    {
+        internal static readonly bool Enabled = DlcManager.IsContentSubscribed(DlcManager.DLC5_ID);
+    }
 }

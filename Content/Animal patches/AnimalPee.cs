@@ -2,7 +2,7 @@
 using Klei.AI;
 using Klei.CustomSettings;
 using System;
-using System;
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -28,8 +28,8 @@ namespace Rephysicalized
 { "HatchMetal", SimHashes.Mercury }, { "HatchMetalBaby", SimHashes.Mercury },
 { "DivergentBeetle", SimHashes.SugarWater }, { "DivergentBeetleBaby", SimHashes.SugarWater },
 { "DivergentWorm", SimHashes.Mud }, { "DivergentWormBaby", SimHashes.Mud },
-{ "DieselMoo", SimHashes.RefinedLipid },
-{ "Moo", SimHashes.Brine },
+{ "DieselMoo", SimHashes.CarbonDioxide },
+{ "Moo", SimHashes.Methane },
 { "LightBugOrange", SimHashes.NaturalResin }, { "LightBugOrangeBaby", SimHashes.NaturalResin },
 { "LightBugPurple", SimHashes.CrudeOil }, { "LightBugPurpleBaby", SimHashes.CrudeOil },
 { "LightBugPink", SimHashes.SugarWater }, { "LightBugPinkBaby", SimHashes.SugarWater },
@@ -41,7 +41,31 @@ namespace Rephysicalized
 { "CrabWood", SimHashes.Ethanol }, { "BabyCrabWood", SimHashes.Ethanol },
 { "Crab", SimHashes.SaltWater }, { "BabyCrab", SimHashes.SaltWater },
 { "CrabFreshWater", SimHashes.Water }, { "BabyCrabFreshWater", SimHashes.Water },
-{ "HatchGold", SimHashes.MoltenGold }, { "BabyHatchGold", SimHashes.MoltenGold },
+
+{ "SeaHorse", SimHashes.SlimeMold }, { "BabySeaHorse", SimHashes.SlimeMold },
+{ "Squid", SimHashes.MurkyBrine }, { "BabySquid", SimHashes.MurkyBrine },
+{ "PufferFish", SimHashes.Oxygen }, { "BabyPufferFish", SimHashes.Oxygen },
+{ "SeaTurtle", SimHashes.ToxicMud }, { "BabySeaTurtle", SimHashes.ToxicMud },
+{ "Snail", SimHashes.Mucus }, { "BabySnail", SimHashes.Mucus },
+{ "SnailIron", SimHashes.Mucus }, { "BabySnailIron", SimHashes.Mucus },
+{ "ParrotFish", SimHashes.Lime }, { "BabyParrotFish", SimHashes.Lime },
+
+{ "Pacu", SimHashes.ToxicSand }, { "BabyPacu", SimHashes.ToxicSand },
+{ "PacuCleaner", SimHashes.Dirt }, { "BabyPacuCleaner", SimHashes.Dirt },
+{ "PacuTropical", SimHashes.ToxicSand }, { "BabyPacuTropical", SimHashes.ToxicSand },
+{ "PrehistoricPacu", SimHashes.Rust }, { "BabyPrehistoricPacu", SimHashes.Rust },
+
+///Modded
+{ "HatchGold", SimHashes.MoltenGold }, { "HatchGoldBaby", SimHashes.MoltenGold },
+{ "LeafyOilfloater", SimHashes.PhytoOil }, { "LeafyOilfloaterBaby", SimHashes.PhytoOil },
+{ "EthanolOilfloater", SimHashes.Ethanol }, { "EthanolOilfloaterBaby", SimHashes.Ethanol },
+{ "OwOOilfloater", SimHashes.Hydrogen }, { "OwOOilfloaterBaby", SimHashes.Hydrogen },
+{ "RobotOilfloater", SimHashes.MoltenSteel }, { "RobotOilfloaterBaby", SimHashes.MoltenSteel },
+{ "FrozenOilfloater", SimHashes.OxyRock }, { "FrozenOilfloaterBaby", SimHashes.OxyRock },
+{ "AquaOilfloater", SimHashes.Methane }, { "AquaOilfloaterBaby", SimHashes.Methane },
+
+
+
 };
 
         private const float PeeMassKg = 4f;
@@ -138,8 +162,20 @@ tracker?.AddExternalMass(MassGainKg);
                 return;
             }
 
-            // Liquids and gases: particle or cell substance
-            if ((el.IsLiquid || el.IsGas) && FallingWater.instance != null)
+            // Liquids and gases: use bubble spawn for gases, particle/cell substance for liquids
+            if (el.IsGas && BubbleManager.instance != null)
+            {
+                // SpawnBubble requires a Vec2 position; use ore-layer conversion that matches other usages
+                Vector2 bubblePos = (Vector2)Grid.CellToPosCCC(cell, Grid.SceneLayer.Creatures);
+                BubbleManager.instance.SpawnBubble(
+                    element,
+                    bubblePos,
+                    massKg,
+                    temp,
+                    BubbleManager.Disease.None
+                );
+            }
+            else if (el.IsLiquid && FallingWater.instance != null)
             {
                 FallingWater.instance.AddParticle(
                     cell,

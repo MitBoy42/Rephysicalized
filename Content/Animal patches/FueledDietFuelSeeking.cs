@@ -81,7 +81,7 @@ namespace Rephysicalized.Chores
                 if (fuelSm != null)
                 {
                     fuelSm.TargetGO = edible;
-                    fuelSm.standCell = ComputeStandCell(edible, offset);
+                    fuelSm.standCell = GetTargetCell();
                 }
             }
 
@@ -117,6 +117,22 @@ namespace Rephysicalized.Chores
                 if (eatOffset.y > 0f) pos += new Vector3(0f, def.navigatorSize.y / 2f, 0f);
                 else if (eatOffset.y < 0f) pos -= new Vector3(0f, def.navigatorSize.y / 2f, 0f);
                 return Grid.PosToCell(pos);
+            }
+
+            public int GetTargetCell()
+            {
+                if (targetGO == null)
+                    return Grid.InvalidCell;
+
+                var pickup = targetGO.GetComponent<Pickupable>();
+                var feeder = pickup?.storage?.GetComponent<CreatureFeeder>();
+                if (feeder != null)
+                {
+                    Vector2I targetFeederXY = feeder.GetTargetFeederCell();
+                    return Grid.XYToCell(targetFeederXY.x, targetFeederXY.y);
+                }
+
+                return ComputeStandCell(targetGO, targetOffset);
             }
 
             public bool AllowedByFuelOrDiet(Pickupable pickup)

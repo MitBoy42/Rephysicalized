@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using Rephysicalized;
 using Rephysicalized.Chores;
@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using TUNING;
 using UnityEngine;
+using Rephysicalized.Content.Animal_patches;
 
 namespace Rephysicalized
 {
@@ -16,7 +17,6 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(BaseDeerConfig), nameof(BaseDeerConfig.SetupDiet))]
     public static class WoodDeer_Diet_Tuning_Patch
     {
-
 
         private const float CaloriesPerCycle = 100_000f;
 
@@ -82,7 +82,6 @@ namespace Rephysicalized
     }
 
     
-    // Diet tuning
     [HarmonyPatch(typeof(BaseDeerConfig), nameof(BaseDeerConfig.BaseDeer))]
     internal static class WoodDeerConfig_CreateWoodDeer_SolidFuelChoreInjection
     {
@@ -113,7 +112,6 @@ namespace Rephysicalized
 
             if (lastPopIdx >= 0)
             {
-
                 list.Insert(lastPopIdx, new CodeInstruction(OpCodes.Call, inject));
             }
 
@@ -129,8 +127,6 @@ namespace Rephysicalized
         {
 
             __result.AddOrGet<KSelectable>();
-
-
 
             var diet = BuildDeerFueledDiet();
             var controller = __result.AddOrGet<FueledDietController>();
@@ -148,15 +144,11 @@ namespace Rephysicalized
             };
 
         __result.AddOrGet<WoodDeerAntlerFuelController>();
-         
-
 
             var kpid = __result.GetComponent<KPrefabID>();
            
          FueledDietRegistry.Register(kpid.PrefabTag, diet); }
            
-        
-
         private static FueledDiet BuildDeerFueledDiet()
         {
             var inputs = new List<FuelInput>
@@ -165,6 +157,7 @@ namespace Rephysicalized
                 new FuelInput(SimHashes.DirtyIce.CreateTag()),
                 new FuelInput(SimHashes.BrineIce.CreateTag()),
                 new FuelInput(SimHashes.CrushedIce.CreateTag()),
+                new FuelInput(SimHashes.MurkyBrineIce.CreateTag()),
             };
 
 
@@ -181,160 +174,9 @@ namespace Rephysicalized
            controller.Configure(diet); 
         }
     }
-    public sealed class WoodDeerAntlerFuelController : KMonoBehaviour, ISim1000ms
+    // WoodDeer: antler growth is paid for with fuel; antler mass at 100% is 360kg.
+    public sealed class WoodDeerAntlerFuelController : ScaleFuelGrowthController
     {
-        [MyCmpGet] private Effects _effects;
-
-        // WellFedShearable SMI and its ScaleGrowth amount (0..max)
-        private WellFedShearable.Instance _shearSMI;
-        private AmountInstance _scaleGrowth;
-
-        // Single storage assumption (first Storage found)
-        private Storage _fuelStorage;
-
-        // Effect id used by WellFedShearable to permit growth
-        [SerializeField] private string _wellFedEffectId = "WellFed";
-
-        private float _lastScaleValue;
-        private float _scaleMax;
-
-        // Antler mass at 100% growth (kg)
-        private const float FULL_ANTLER_MASS_KG = 360f;
-
-        public override void OnSpawn()
-        {
-            base.OnSpawn();
-
-            _shearSMI = gameObject.GetSMI<WellFedShearable.Instance>();
-            if (_shearSMI != null && _shearSMI.def != null && !string.IsNullOrEmpty(_shearSMI.def.effectId))
-                _wellFedEffectId = _shearSMI.def.effectId;
-
-            if (_effects == null)
-                _effects = GetComponent<Effects>();
-
-            _scaleGrowth = Db.Get().Amounts.ScaleGrowth.Lookup(gameObject);
-
-            // Assume at least one storage exists and use the first found (self or children)
-            _fuelStorage = GetComponent<Storage>();
-          
-
-            // Initialize growth tracking
-            if (_scaleGrowth != null)
-            {
-                _lastScaleValue = _scaleGrowth.value;
-                _scaleMax = _scaleGrowth.GetMax();
-                if (_scaleMax <= 0f) _scaleMax = 100f; // default safety
-            }
-        }
-
-        public void Sim1000ms(float dt)
-        {
-           
-
-            if (_scaleMax <= 0f) _scaleMax = _scaleGrowth.GetMax();
-            if (_scaleMax <= 0f) _scaleMax = 100f;
-
-            bool gateEffectActive = !string.IsNullOrEmpty(_wellFedEffectId) && _effects.HasEffect(_wellFedEffectId);
-            bool fullyGrown = IsFullyGrown();
-
-            // If not well-fed or already fully grown: do nothing special
-            if (fullyGrown || !gateEffectActive)
-            {
-                _lastScaleValue = _scaleGrowth.value;
-                return;
-            }
-
-            float current = _scaleGrowth.value;
-            float desiredDelta = Mathf.Max(0f, current - _lastScaleValue);
-
-            // No attempted growth since last tick
-            if (desiredDelta <= 0f)
-            {
-                // If no fuel, clamp to last known value (prevent free growth)
-                if (TotalFuelKg() <= 0.0001f)
-                {
-                    if (Mathf.Abs(_scaleGrowth.value - _lastScaleValue) > 0.0001f)
-                        _scaleGrowth.value = _lastScaleValue;
-                }
-                _lastScaleValue = _scaleGrowth.value;
-                return;
-            }
-
-            // Compute required kg for the desired growth amount
-            float pct01Delta = desiredDelta / _scaleMax;
-            float kgNeeded = Mathf.Max(0f, pct01Delta * FULL_ANTLER_MASS_KG);
-
-            if (kgNeeded <= 0f)
-            {
-                _lastScaleValue = current;
-                return;
-            }
-
-            float consumed = ConsumeFuelUpTo(kgNeeded);
-
-            if (consumed + 1e-6f >= kgNeeded)
-            {
-                // Fully paid, accept growth
-                _lastScaleValue = _scaleGrowth.value;
-            }
-            else
-            {
-                // Partial payment: clamp growth to afforded amount
-                float affordedPct01 = (FULL_ANTLER_MASS_KG > 1e-6f) ? (consumed / FULL_ANTLER_MASS_KG) : 0f;
-                float affordedDelta = affordedPct01 * _scaleMax;
-                float clampedValue = _lastScaleValue + affordedDelta;
-
-                if (clampedValue < _scaleGrowth.value - 1e-5f)
-                    _scaleGrowth.value = clampedValue;
-
-                _lastScaleValue = _scaleGrowth.value;
-            }
-        }
-
-        private bool IsFullyGrown()
-        {
-            float max = _scaleGrowth?.GetMax() ?? 0f;
-            return max > 0f && _scaleGrowth.value >= max - 0.0001f;
-        }
-
-        private float TotalFuelKg()
-        {
-            float total = 0f;
-            var items = _fuelStorage.items;
-            for (int j = items.Count - 1; j >= 0; j--)
-            {
-                var go = items[j];
-                var pe = go.GetComponent<PrimaryElement>();
-                if (pe != null) total += pe.Mass;
-            }
-            return total;
-        }
-
-        // Consume up to target kg; returns how much was actually consumed.
-        private float ConsumeFuelUpTo(float kgNeeded)
-        {
-            float remaining = Mathf.Max(0f, kgNeeded);
-            float consumed = 0f;
-
-            var items = _fuelStorage.items;
-            for (int j = items.Count - 1; j >= 0 && remaining > 0f; j--)
-            {
-                var go = items[j];
-                var pe = go.GetComponent<PrimaryElement>();
-                if (pe == null || pe.Mass <= 0f) continue;
-
-                float take = Mathf.Min(remaining, pe.Mass);
-                pe.Mass -= take;
-                remaining -= take;
-                consumed += take;
-
-                if (pe.Mass <= 0.0001f)
-                {
-                    Util.KDestroyGameObject(go);
-                }
-            }
-
-            return consumed;
-        }
+        protected override float FullScaleMassKg => 360f;
     }
 }

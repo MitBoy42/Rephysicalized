@@ -99,16 +99,9 @@ namespace Rephysicalized.Content.AnimalPatches
                     return;
 
                 var tracker = root.GetComponent<CreatureMassTracker>();
-                if (tracker != null && tracker.Mode == CreatureMassTracker.AccumulationMode.ConsumedMass)
-                {
+              
                     tracker.ReportConsumedMass(mass);
-                }
-                else
-                {
-                    var pe = root.GetComponent<PrimaryElement>();
-                    if (pe != null && !pe.Equals(null))
-                        pe.Mass = Mathf.Max(0.001f, pe.Mass + mass);
-                }
+           
         
         }
     }

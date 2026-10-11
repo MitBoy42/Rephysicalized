@@ -3,6 +3,37 @@ using HarmonyLib;
 
 namespace Rephysicalized
 {
+
+    //[HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
+    //internal static class Registration
+    //{
+    //    private static void Postfix()
+    //    {
+    //        PlantMassTrackerRegistry.ApplyToCrop(
+    //            plantPrefabId: "ForestTreeBranch",
+    //            yields: new List<MaterialYield> { new MaterialYield("WoodLog", 1f) },
+    //            realHarvestSubtractKg: 30f);
+    //    }
+    //}
+
+    //// Register PMT for SpaceTreeBranch (drops WoodLog via PMT)
+    //[HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
+    //internal static class SpaceTreeBranch_PMT_Registration
+    //{
+    //    private static void Postfix()
+    //    {
+    //        PlantMassTrackerRegistry.ApplyToCrop(
+    //            plantPrefabId: "SpaceTreeBranch",
+    //            yields: new List<MaterialYield>
+    //            {
+    //                new MaterialYield("WoodLog", 1f)
+    //            },
+    //            realHarvestSubtractKg: 0f
+    //        );
+    //    }
+    //}
+
+
     // Compact registration of all PMT crop configs in one place
     [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
     internal static class PlantMassTracker_RegistrationList
@@ -27,8 +58,9 @@ namespace Rephysicalized
                 new MaterialYield("RotPile", 0.9f),
                 new MaterialYield("CarbonDioxide", 0.1f)
             ),
+   
             new Entry("SeaLettuce", 12f,
-                new MaterialYield("Water", 1f)
+                new MaterialYield("Mud", 1f)
             ),
             new Entry("PrickleFlower", 1f * Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()],
                 new MaterialYield("Mud", 0.96f),
@@ -67,7 +99,7 @@ namespace Rephysicalized
             ),
                 new Entry("CarrotPlant", 1f *  Rephysicalized.FoodDensityRebalance.IngredientMultiplier[CarrotConfig.ID.ToTag()],
                 new MaterialYield("Ice", 0.99f),
-                new MaterialYield("CarbonDioxide", 0.01f)
+                new MaterialYield("CarbonDioxide", 0.01f) 
             ),
             new Entry("HardSkinBerryPlant", 1f,
                 new MaterialYield("RotPile", 0.8f),
@@ -79,7 +111,7 @@ namespace Rephysicalized
             ),
             new Entry("BasicFabricPlant", 1f,
                 new MaterialYield("ToxicMud", 0.98f),
-                new MaterialYield("ContaminatedOxygen", 0.02f)
+                new MaterialYield("ContaminatedOxygen", 0.02f) 
             ),
                 new Entry("GardenFoodPlant", 1f, new MaterialYield("DirtyWater", 0.5f), new MaterialYield("Shale", 0.5f)),
                 new Entry("KelpPlant", 10f, new MaterialYield("Kelp", 1f)),
@@ -107,6 +139,43 @@ namespace Rephysicalized
              new MaterialYield("WoodLog", 0.4f)
             ),
 
+                       new Entry("ForestTreeBranch", 30f,
+             new MaterialYield("WoodLog", 1f)
+            ),
+                new Entry("SpaceTreeBranch", 0f,
+             new MaterialYield("WoodLog", 1f)
+            ),
+//Aqua plants
+              new Entry("SaltySticksPlant", 1f,
+              new MaterialYield("Sand", 1f)
+            ),
+
+              new Entry("Clam", 50f,
+              new MaterialYield("CrudByproduct", 1f)
+            ),
+
+              new Entry("DewPalm", 50f,
+              new MaterialYield("PalmWood", 1f)
+            ),
+              new Entry("TubeWorm", 200f,
+              new MaterialYield("ToxicMud", 1f)
+            ),
+              new Entry("UrchinPlant", 1f,
+              new MaterialYield("Urchin", 1f)
+            ),
+              new Entry("PlanktonCoral", 40f,
+              new MaterialYield("Phosphorite", 1f)
+            ),
+              new Entry("SeaTree", 0f,
+              new MaterialYield("ToxicSand", 1f)
+            ),
+              new Entry("OxyCoral", 0f,
+              new MaterialYield("Corallium", 1f)
+            ),
+
+
+
+
         };
 
         private static void Postfix()
@@ -123,5 +192,5 @@ namespace Rephysicalized
         }
     }
 
-
+ 
 }

@@ -18,7 +18,7 @@ namespace Rephysicalized
         [SerializeField] public Tag[] acceptedTags = Array.Empty<Tag>();
         [SerializeField] public SimHashes[] acceptedElements = Array.Empty<SimHashes>();
 
-        [SerializeField] public float capacityKG = float.PositiveInfinity;
+        [SerializeField] public float capacityKG = 1.666667f;
         [SerializeField] public bool forceAlwaysSatisfied;
         [SerializeField] public bool alwaysConsume;
         [SerializeField] public bool keepZeroMassObject = true;
@@ -40,7 +40,26 @@ namespace Rephysicalized
         private int utilityCell = -1;
 
         // Same default as vanilla; ConfigureBuildingTemplate should set a finite value
-        public float consumptionRate = float.PositiveInfinity;
+        public float consumptionRate = 1.666667f;
+
+        // Vanilla Polymerizer uses 1.666667f for both capacityKG and consumptionRate.
+        // Some patches end up with float.PositiveInfinity on these fields; clamp defensively.
+        private const float PolymerizerDefaultCapacityKg = 1.666667f;
+
+        private void ClampFiniteness()
+        {
+            if (float.IsNaN(capacityKG) || float.IsInfinity(capacityKG))
+                capacityKG = PolymerizerDefaultCapacityKg;
+            if (float.IsNaN(consumptionRate) || float.IsInfinity(consumptionRate))
+                consumptionRate = PolymerizerDefaultCapacityKg;
+
+            // Prevent negative/zero from breaking UI math and delta computation.
+            if (capacityKG <= 0f)
+                capacityKG = PolymerizerDefaultCapacityKg;
+            if (consumptionRate <= 0f)
+                consumptionRate = PolymerizerDefaultCapacityKg;
+        }
+
 
         public SimHashes lastConsumedElement = SimHashes.Vacuum;
         private HandleVector<int>.Handle partitionerEntry;
@@ -179,6 +198,8 @@ namespace Rephysicalized
         public override void OnSpawn()
         {
             base.OnSpawn();
+            ClampFiniteness();
+
             GameScheduler.Instance.Schedule("PlumbingTutorial", 2f, obj => Tutorial.Instance.TutorialMessage(Tutorial.TutorialMessages.TM_Plumbing), null, null);
             utilityCell = GetInputCell(GetConduitManager().conduitType);
             partitionerEntry = GameScenePartitioner.Instance.Add(
@@ -215,8 +236,11 @@ namespace Rephysicalized
 
         private void Consume(float dt, ConduitFlow conduit_mgr)
         {
+            ClampFiniteness();
+
             IsSatisfied = false;
             consumedLastTick = false;
+
 
             if (building.Def.CanMove)
                 utilityCell = GetInputCell(conduit_mgr.conduitType);

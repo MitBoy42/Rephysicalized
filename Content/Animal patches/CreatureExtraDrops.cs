@@ -29,7 +29,6 @@ namespace Rephysicalized.Content.Animal_patches
             }
             if (pct01 <= 0f) return false;
 
-            // Definition: prefer ScaleGrowthMonitor, else WellFedShearable
             Tag tag = Tag.Invalid;
             float fullMass = 0f;
 
@@ -130,16 +129,14 @@ namespace Rephysicalized.Content.Animal_patches
             {
                 if (Grid.IsValidCell(gasCell) && !Grid.Solid[gasCell])
                 {
-                    SimMessages.AddRemoveSubstance(
-                        gasCell,
+        
+                    Vector2 bubblePos = (Vector2)Grid.CellToPosCCC(gasCell, Grid.SceneLayer.Creatures);
+                    BubbleManager.instance.SpawnBubble(
                         element.id,
-                        default(CellAddRemoveSubstanceEvent),
+                        bubblePos,
                         mass,
                         temp,
-                        byte.MaxValue,
-                        0,
-                        do_vertical_solid_displacement: true,
-                        callbackIdx: -1
+                        BubbleManager.Disease.None
                     );
                     return true;
                 }
@@ -188,12 +185,24 @@ namespace Rephysicalized.Content.Animal_patches
                 else
                     __result = Array.Empty<GameObject>();
 
+                // Suppress EXTRA drops when this Butcherable is being consumed as prey.
+                // Do NOT suppress just because the creature is hungry; that breaks ordinary living-drop logic.
+                // The EatPrey path typically involves cavity reservation rather than Hunger tag.
+                if (__instance.gameObject != null &&
+                    __instance.gameObject.HasTag(GameTags.Creatures.ReservedByCreature))
+                {
+                    __result = dropsOut.ToArray();
+                    return;
+                }
+
+
                 var pe = __instance.GetComponent<PrimaryElement>();
                 if (pe == null)
                 {
                     __result = dropsOut.ToArray();
                     return;
                 }
+
 
                 // Start mass bank from body+derived mass at death time (PE mass)
                 float massBank = pe.Mass;

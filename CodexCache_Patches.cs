@@ -20,9 +20,9 @@ namespace Rephysicalized
 		{
 			public static void Postfix(string folder, List<CodexEntry> __result)
 			{
-Debug.Log("[Rephysicalized/Codex] CollectEntries called for folder: " + folder);
+				Debug.Log("[Rephysicalized/Codex] CollectEntries called for folder: " + folder);
 
-				CodexUtils.CollectModdedCodexEntries(folder,__result, true);				
+				CodexUtils.CollectModdedCodexEntries(folder, __result, true);
 			}
 		}
 	}

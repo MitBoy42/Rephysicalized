@@ -47,7 +47,7 @@ namespace Rephysicalized.Content.Animal_patches
             [HarmonyPostfix]
             public static void Postfix()
             { 
-                        StaterpillarTuning.POOP_CONVERSTION_RATE = 0.15f;
+                        StaterpillarTuning.POOP_CONVERSTION_RATE = 0.05f;
                 
             }
 

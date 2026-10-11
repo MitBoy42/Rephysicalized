@@ -11,7 +11,6 @@ namespace Rephysicalized
 {
     // Patch 1: After the SwampLily prefab is created:
     // - add salt fertilizer requirement
-    // - set Crop amount to 10 (Codex)
     [HarmonyPatch(typeof(SwampLilyConfig), nameof(SwampLilyConfig.CreatePrefab))]
     public static class SwampLily_CreatePrefab_Patch
     {
@@ -36,29 +35,6 @@ namespace Rephysicalized
                       
         }
 
-        private static bool TrySetCropComponentAmount(Crop crop, int desired)
-        {
-           
-            var cropValField = AccessTools.Field(typeof(Crop), "cropVal");
-            var boxed = cropValField.GetValue(crop);
-            var cvt = boxed.GetType();
-
-            var countField =
-                AccessTools.Field(cvt, "numProduced") ??
-                AccessTools.Field(cvt, "amount") ??
-                AccessTools.Field(cvt, "count") ??
-                AccessTools.Field(cvt, "quantity");
-
-            object valueToSet =
-                countField.FieldType == typeof(int) ? desired
-                : (countField.FieldType == typeof(float) || countField.FieldType == typeof(double))
-                    ? Convert.ChangeType((double)desired, countField.FieldType)
-                    : null;
-
-            countField.SetValue(boxed, valueToSet);
-            cropValField.SetValue(crop, boxed); // write back boxed struct
-            return true;
-        }
     }
 
     

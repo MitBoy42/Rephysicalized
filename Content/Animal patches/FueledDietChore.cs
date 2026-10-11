@@ -108,7 +108,7 @@ namespace Rephysicalized.Chores
                         return;
                     }
 
-                    int targetCell = Grid.PosToCell(smi.TargetGO);
+                    int targetCell = GetTargetCell(smi);
                     smi.standCell = Grid.IsValidCell(targetCell)
                         ? targetCell
                         : Grid.PosToCell(smi.transform.position);
@@ -137,7 +137,7 @@ namespace Rephysicalized.Chores
                     }
 
                     // Bind the current target cell at entry
-                    int tc = Grid.PosToCell(smi.TargetGO);
+                    int tc = GetTargetCell(smi);
                     if (!Grid.IsValidCell(tc)) { smi.GoTo(abort); return; }
 
                     smi.standCell = tc;
@@ -164,7 +164,7 @@ namespace Rephysicalized.Chores
                     if (smi.TargetGO == null) { smi.GoTo(abort); return; }
 
                     // If target moved, try to re-path if the new cell is reachable; else abort
-                    int tcNow = Grid.PosToCell(smi.TargetGO);
+                    int tcNow = GetTargetCell(smi);
                     if (!Grid.IsValidCell(tcNow))
                     {
                         smi.GoTo(abort);
@@ -290,7 +290,7 @@ namespace Rephysicalized.Chores
                         return;
                     }
 
-                    int tcNow = Grid.PosToCell(smi.TargetGO);
+                    int tcNow = GetTargetCell(smi);
                     if (!Grid.IsValidCell(tcNow))
                     {
                         smi.GoTo(gulping.pst);
@@ -425,6 +425,17 @@ namespace Rephysicalized.Chores
             return remain > 0.01f;
         }
 
+        private static int GetTargetCell(SolidFuelStates.Instance smi)
+        {
+            var monitor = smi?.gameObject.GetSMI<SolidFuelMonitor.Instance>();
+            if (monitor != null && monitor.targetGO == smi.TargetGO)
+                return monitor.GetTargetCell();
+
+            return smi?.TargetGO != null
+                ? Grid.PosToCell(smi.TargetGO)
+                : Grid.InvalidCell;
+        }
+
         internal enum ConsumeResult { Pending, Success, Done }
 
         // Hard gate: target must exist and refilling is meaningful now
@@ -488,7 +499,7 @@ namespace Rephysicalized.Chores
        
                 PrioritizeUpdateBrain(smi);
          
-                    GameScheduler.Instance.Schedule("FueledDiet.Recheck", 1f, _ => PrioritizeUpdateBrain(smi));
+                    GameScheduler.Instance.Schedule("FueledDiet.Recheck", 0.25f, _ => PrioritizeUpdateBrain(smi));
           
         }
     }

@@ -104,11 +104,11 @@ namespace Rephysicalized
 
 
 
+
     //Oil Refinery        
     [HarmonyPatch(typeof(OilRefineryConfig), "ConfigureBuildingTemplate")]
     public static class OilRefineryConfig_NaphaOutputPatch
     {
-
 
 
         public static void Postfix(GameObject go, Tag prefab_tag)
@@ -119,9 +119,9 @@ namespace Rephysicalized
 
             // Always add/overwrite
             outputs.Add(new ElementConverter.OutputElement(
-                4.91f,      // massGenerationRate
-                SimHashes.Naphtha,  // output element
-                348.15f,            // temperatureOperation
+                4.91f,     
+                SimHashes.Naphtha, 
+                348.15f,      
                 storeOutput: false,
                 outputElementOffsety: 1f
             ));
@@ -130,124 +130,6 @@ namespace Rephysicalized
 
         }
     }
-
-    //Plant Pulverizer
-
-    [HarmonyPatch(typeof(MilkPressConfig), "AddRecipes")]
-
-    public static class MilkPressConfig_AddRecipes_Transpiler
-    {
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var code = new List<CodeInstruction>(instructions);
-
-            // Markers for matching
-            var dewIdField = AccessTools.Field(AccessTools.TypeByName("DewDripConfig"), "ID");
-            var tagCtor = AccessTools.Constructor(typeof(Tag), new[] { typeof(string) });
-            var tagCreate = AccessTools.Method(typeof(TagManager), nameof(TagManager.Create), new[] { typeof(string) });
-            var tagOpImplicit = AccessTools.Method(typeof(Tag), "op_Implicit", new[] { typeof(string) });
-            var recipeElemCtor2 = AccessTools.Constructor(typeof(ComplexRecipe.RecipeElement), new[] { typeof(Tag), typeof(float) });
-
-            const int SeekingDewId = 0;
-            const int SeekingTagFromDew = 1;
-            const int SeekingAmountThenCtor = 2;
-
-            int state = SeekingDewId;
-            for (int i = 0; i < code.Count; i++)
-            {
-                var instr = code[i];
-
-                if (state == SeekingDewId)
-                {
-                    if (instr.opcode == OpCodes.Ldsfld && Equals(instr.operand as FieldInfo, dewIdField))
-                    {
-                        state = SeekingTagFromDew;
-                    }
-                }
-                else if (state == SeekingTagFromDew)
-                {
-                    bool tagBuiltFromDew =
-                        (instr.opcode == OpCodes.Newobj && Equals(instr.operand as ConstructorInfo, tagCtor)) ||
-                        (instr.opcode == OpCodes.Call && (Equals(instr.operand as MethodInfo, tagCreate) || Equals(instr.operand as MethodInfo, tagOpImplicit)));
-
-                    if (tagBuiltFromDew)
-                    {
-                        state = SeekingAmountThenCtor;
-                    }
-                    else
-                    {
-                        // If something unexpected, reset to seek next DewDrip ID
-                        state = SeekingDewId;
-                    }
-                }
-                else if (state == SeekingAmountThenCtor)
-                {
-                    // Expect: ldc.r4 2 -> newobj ComplexRecipe.RecipeElement(Tag,float)
-                    if (i + 1 < code.Count &&
-                        code[i].opcode == OpCodes.Ldc_R4 &&
-                        code[i].operand is float f &&
-                        f == 2f &&
-                        code[i + 1].opcode == OpCodes.Newobj &&
-                        Equals(code[i + 1].operand as ConstructorInfo, recipeElemCtor2))
-                    {
-                        code[i].operand = 20f;
-                        break;
-                    }
-                    state = SeekingDewId;
-                }
-            }
-
-            return code;
-        }
-    }
-
-
-
-
-    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    public static class MilkPress_AddBalmLilyPhytoOilRecipe_Patch
-    {
-        [HarmonyPostfix]
-        public static void Postfix()
-        {
-            var fabricatorTag = TagManager.Create("MilkPress");
-
-            var input = new ComplexRecipe.RecipeElement[]
-            {
-            new ComplexRecipe.RecipeElement((Tag)"SwampLilyFlower", 20f),
-            new ComplexRecipe.RecipeElement(SimHashes.Mud.CreateTag(), 80f),
-            };
-
-            var output = new ComplexRecipe.RecipeElement[]
-            {
-
-            new ComplexRecipe.RecipeElement(
-                SimHashes.PhytoOil.CreateTag(),
-                60f,
-                ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature,
-                true ),
-               new ComplexRecipe.RecipeElement(
-                SimHashes.Dirt.CreateTag(),
-                40f,
-                ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature
-            )
-            };
-
-            string recipeId = ComplexRecipeManager.MakeRecipeID("MilkPress", input, output);
-
-            var recipe = new ComplexRecipe(recipeId, input, output)
-            {
-                time = 40f,
-                description = STRINGS.BUILDINGS.MILKPRESS.BALMLILY_PHYTOOIL,
-                nameDisplay = ComplexRecipe.RecipeNameDisplay.IngredientToResult,
-                fabricators = new List<Tag> { fabricatorTag },
-                sortOrder = 21,
-       
-            };
-        }
-    }
-
-
 
     // OxyliteRefineryConfig: Patch to add additional output of GoldAmalgam
     [HarmonyPatch(typeof(OxyliteRefineryConfig), "ConfigureBuildingTemplate")]
@@ -267,10 +149,10 @@ public static class OxyliteRefineryConfig_GoldAmalgamOutputPatch
 
         // Add GoldAmalgam output
         outputs.Add(new ElementConverter.OutputElement(
-            0.003f,      // massGenerationRate
-           SimHashes.GoldAmalgam,  // output element
-            1.0f,            // temperatureOperation
-            storeOutput: true, // store the output
+            0.003f,    
+           SimHashes.GoldAmalgam, 
+            1.0f,       
+            storeOutput: true, 
             outputElementOffsety: 1f
         ));
 
@@ -299,11 +181,11 @@ public class ChlorinatorConfig_ConfigureRecipes_Patch
         new ComplexRecipe.RecipeElement(SimHashes.Salt.CreateTag(), 30f),
         new ComplexRecipe.RecipeElement(SimHashes.Gold.CreateTag(), 0.5f)
     };
-    ComplexRecipe.RecipeElement[] recipeElementArray2 = new ComplexRecipe.RecipeElement[3]  // <-- now size 3
+    ComplexRecipe.RecipeElement[] recipeElementArray2 = new ComplexRecipe.RecipeElement[3]  
     {
         new ComplexRecipe.RecipeElement(ChlorinatorConfig.BLEACH_STONE_TAG, 10f),
         new ComplexRecipe.RecipeElement(ChlorinatorConfig.SAND_TAG, 20f),
-        new ComplexRecipe.RecipeElement(SimHashes.GoldAmalgam.CreateTag(), 0.5f) // <-- ADD HERE
+        new ComplexRecipe.RecipeElement(SimHashes.GoldAmalgam.CreateTag(), 0.5f) 
     };
 
 }
@@ -334,72 +216,4 @@ public static class Chlorinator_TryEmit_GoldAmalgamPatch
         // No velocity/position config required, just drop at position
         goldAmalgamSub.SpawnResource(pos, mass, temperature, diseaseIdx, diseaseCount);
     }
-}
-
-
- 
-    // MilkPress: switch Water to Brine for specified recipes and adjust ColdWheatSeed amount
-    [HarmonyPatch(typeof(MilkPressConfig), nameof(MilkPressConfig.AddRecipes))]
-    public static class MilkPressConfig_AddRecipes_Postfix
-    {
-        [HarmonyPostfix]
-        public static void Postfix(GameObject go)
-        {
-            // Helper to swap water -> brine and optionally adjust amount
-            void SwapWaterToBrine(ComplexRecipe recipe, float? overrideBrineAmount = null)
-            {
-                if (recipe == null || recipe.ingredients == null)
-                    return;
-
-                var ingredients = recipe.ingredients.ToArray();
-                for (int i = 0; i < ingredients.Length; i++)
-                {
-                    var ing = ingredients[i];
-                    if (ing.material == SimHashes.Water.CreateTag())
-                    {
-                        float amount = overrideBrineAmount.HasValue ? overrideBrineAmount.Value : ing.amount;
-                        ingredients[i] = new ComplexRecipe.RecipeElement(SimHashes.Brine.CreateTag(), amount);
-                    }
-                }
-                recipe.ingredients = ingredients;
-            }
-
-            // Reuse common output definition used by MilkPress
-            var outputMilk = new ComplexRecipe.RecipeElement[]
-            {
-                new ComplexRecipe.RecipeElement(SimHashes.Milk.CreateTag(), 20f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature, true)
-            };
-
-            // 1) ColdWheatSeed(10) + Water(15) -> Milk(20)
-            var input1 = new ComplexRecipe.RecipeElement[]
-            {
-                new ComplexRecipe.RecipeElement((Tag)"ColdWheatSeed", 10f),
-                new ComplexRecipe.RecipeElement(SimHashes.Water.CreateTag(), 15f)
-            };
-            string id1 = ComplexRecipeManager.MakeRecipeID("MilkPress", input1, outputMilk);
-            var r1 = ComplexRecipeManager.Get().GetRecipe(id1);
-            SwapWaterToBrine(r1, 10f); // set Brine to 10
-
-            // 2) SpiceNut(3) + Water(17) -> Milk(20)
-            var input2 = new ComplexRecipe.RecipeElement[]
-            {
-                new ComplexRecipe.RecipeElement((Tag)SpiceNutConfig.ID, 3f),
-                new ComplexRecipe.RecipeElement(SimHashes.Water.CreateTag(), 17f)
-            };
-            string id2 = ComplexRecipeManager.MakeRecipeID("MilkPress", input2, outputMilk);
-            var r2 = ComplexRecipeManager.Get().GetRecipe(id2);
-            SwapWaterToBrine(r2); // keep amount 17
-
-            // 3) BeanPlantSeed(2) + Water(18) -> Milk(20)
-            var input3 = new ComplexRecipe.RecipeElement[]
-            {
-                new ComplexRecipe.RecipeElement((Tag)"BeanPlantSeed", 2f),
-                new ComplexRecipe.RecipeElement(SimHashes.Water.CreateTag(), 18f)
-            };
-            string id3 = ComplexRecipeManager.MakeRecipeID("MilkPress", input3, outputMilk);
-            var r3 = ComplexRecipeManager.Get().GetRecipe(id3);
-            SwapWaterToBrine(r3); // keep amount 18
-        }
-    }
-
-}
+}}

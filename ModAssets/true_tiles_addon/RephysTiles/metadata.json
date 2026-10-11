@@ -2,7 +2,7 @@
   "Id": "RephysTiles",
   "Name": "Rephysicalized Tiles",
   "Author": "MitBoy",
-  "Description": "Tile textures For Rephysicalized.",
+  "Description": "Tile textures For Rephysicalized. Includes Crud, Lime and Silicon.",
   "Order": 4,
   "Enabled": true
 }

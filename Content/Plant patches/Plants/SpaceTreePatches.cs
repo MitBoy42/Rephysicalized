@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using Rephysicalized.Content.Plant_patches;
 
 namespace Rephysicalized
 {
@@ -19,37 +20,36 @@ namespace Rephysicalized
         [HarmonyPostfix]
         public static void Postfix(ref GameObject __result)
         {
-    
+
             __result.AddOrGet<SpaceTreeTrunkDrainController>();
 
-          
-                var storage = __result.GetComponent<Storage>();
-                if (storage != null)
-                    storage.capacityKg = NewStorageCapacity;
+            var storage = __result.GetComponent<Storage>();
+            if (storage != null)
+                storage.capacityKg = NewStorageCapacity;
 
-                var edible = __result.GetComponent<DirectlyEdiblePlant_StorageElement>();
-                if (edible != null)
-                    edible.storageCapacity = NewStorageCapacity;
-            
-          
-        }
-
-
-        // Register PMT for SpaceTreeBranch (drops WoodLog via PMT)
-        [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-        internal static class SpaceTreeBranch_PMT_Registration
-        {
-            private static void Postfix()
+            var edible = __result.GetComponent<DirectlyEdiblePlant_StorageElement>();
+            if (edible != null)
+                edible.storageCapacity = NewStorageCapacity;
+        
+            if(Config.Instance.ChemistrierBonBonTrees)
             {
-                PlantMassTrackerRegistry.ApplyToCrop(
-                    plantPrefabId: "SpaceTreeBranch",
-                    yields: new List<MaterialYield>
+                // Replace the vanilla single-snow fertilization monitor and delivery.
+                var vanillaDef = __result.GetDef<FertilizationMonitor.Def>();
+                if (vanillaDef != null)
+                    vanillaDef.consumedElements = new[]
                     {
-                    new MaterialYield("WoodLog", 1f)
-                    },
-                    realHarvestSubtractKg: 0f
-                );
+                        new PlantElementAbsorber.ConsumeInfo(SimHashes.Snow.CreateTag(), 0.12f),
+                        new PlantElementAbsorber.ConsumeInfo(ModTags.RichSoil, 0.04f)
+                    };
+
+                foreach (var delivery in __result.GetComponents<ManualDeliveryKG>())
+                    UnityEngine.Object.DestroyImmediate(delivery);
+
+                ExtendPlantToMultiFertilizable.Extend(__result,
+                    new MultiFertilizerInfo(SimHashes.Snow.CreateTag(), 0.12f),
+                    new MultiFertilizerInfo(ModTags.RichSoil, 0.04f));
             }
+   
         }
 
 
@@ -95,7 +95,6 @@ namespace Rephysicalized
 
             private static void Postfix(SpaceTreePlant.Instance __instance, ref float __result)
             {
-                // Intentionally left as a no-op to preserve existing domesticated tuning and vanilla wild behavior.
                 __result *= BaseFactor;
             }
         }
@@ -106,8 +105,7 @@ namespace Rephysicalized
         {
             private static void Postfix(SpaceTreePlant.Instance __instance, ref float __result)
             {
-                // No-op: we do not change speed here. Domesticated output is determined by the custom ProduceUpdate.
-                // Wild stays vanilla and will be scaled post-production by WildScale (below).
+       
                 return;
             }
         }
@@ -310,7 +308,6 @@ namespace Rephysicalized
                 // Use Storage.AddLiquid to add sugarwater
                 storage.AddLiquid(SimHashes.SugarWater, produced, tempK, byte.MaxValue, 0);
 
-                // Subtract identical mass from trunk PrimaryElement
                 pe.Mass = Mathf.Max(1f, pe.Mass - produced);
 
                 // PMT sync
@@ -318,7 +315,6 @@ namespace Rephysicalized
                 if (pmt != null)
                     pmt.AddExternalMass(-produced);
 
-                // Domesticated handled here
                 return false;
       
         }

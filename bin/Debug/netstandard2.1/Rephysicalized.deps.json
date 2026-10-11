@@ -9,7 +9,7 @@
     ".NETStandard,Version=v2.1/": {
       "Rephysicalized/1.0.0": {
         "dependencies": {
-          "ILRepack.Lib.MSBuild.Task": "2.0.45",
+          "ILRepack.Lib.MSBuild.Task": "2.0.48",
           "Lib.Harmony.Ref": "2.4.2",
           "UtilLibs": "1.0.0"
         },
@@ -17,27 +17,27 @@
           "Rephysicalized.dll": {}
         }
       },
-      "ILRepack.Lib.MSBuild.Task/2.0.45": {},
+      "ILRepack.Lib.MSBuild.Task/2.0.48": {},
       "Lib.Harmony.Ref/2.4.2": {
         "dependencies": {
           "System.Reflection.Emit": "4.7.0"
         }
       },
-      "PLib/4.24.0": {
+      "PLib/4.25.0": {
         "dependencies": {
           "Lib.Harmony.Ref": "2.4.2"
         },
         "runtime": {
           "lib/netstandard2.1/PLib.dll": {
-            "assemblyVersion": "4.24.0.0",
-            "fileVersion": "4.24.0.0"
+            "assemblyVersion": "4.25.0.0",
+            "fileVersion": "4.25.0.0"
           }
         }
       },
       "System.Reflection.Emit/4.7.0": {},
       "UtilLibs/1.0.0": {
         "dependencies": {
-          "PLib": "4.24.0"
+          "PLib": "4.25.0"
         },
         "runtime": {
           "UtilLibs.dll": {
@@ -54,12 +54,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "ILRepack.Lib.MSBuild.Task/2.0.45": {
+    "ILRepack.Lib.MSBuild.Task/2.0.48": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-SWGkzp5rT48gGK1ZR0GenOHh9CWaFwxI+NsHl3Cp/+N9G1NtVjpfk3Bxl5D8Uy+ciR7Q8P//CUvFZX1tsJQnQA==",
-      "path": "ilrepack.lib.msbuild.task/2.0.45",
-      "hashPath": "ilrepack.lib.msbuild.task.2.0.45.nupkg.sha512"
+      "sha512": "sha512-vI+Jivcy1/eIFAXC5Kxa9K4OTQIiD69eqOuCh6ulWX7/kGlACKFB/csrSVqt7b08XxoAIMn96tJxLXe3TkDEqg==",
+      "path": "ilrepack.lib.msbuild.task/2.0.48",
+      "hashPath": "ilrepack.lib.msbuild.task.2.0.48.nupkg.sha512"
     },
     "Lib.Harmony.Ref/2.4.2": {
       "type": "package",
@@ -68,12 +68,12 @@
       "path": "lib.harmony.ref/2.4.2",
       "hashPath": "lib.harmony.ref.2.4.2.nupkg.sha512"
     },
-    "PLib/4.24.0": {
+    "PLib/4.25.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-AhaVieP0WdaNe++VOytuzbTLldkxp7AiCaAe5IpeCqyvnNZ8VW3eRviCjbYomJn15aXDHHyY8xRdRRZNqzcezA==",
-      "path": "plib/4.24.0",
-      "hashPath": "plib.4.24.0.nupkg.sha512"
+      "sha512": "sha512-Vu8DyNlKIHS41oYgZENAAyxo8PXLqU/jyc7MbEvoaQY/1yZkIUrrLvA9TwQONaJvj8T7EvBNpvMt8uN4NVrehg==",
+      "path": "plib/4.25.0",
+      "hashPath": "plib.4.25.0.nupkg.sha512"
     },
     "System.Reflection.Emit/4.7.0": {
       "type": "package",

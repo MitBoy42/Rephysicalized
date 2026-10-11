@@ -22,18 +22,20 @@ namespace Rephysicalized
         public static void PatchPrefab(GameObject go, Tag prefab_tag)
         {
             var fabricator = go.GetComponent<ComplexFabricator>();
+            if (fabricator == null)
+                return;
+
             fabricator.storeProduced = true;
 
-
-            var dropper = go.AddComponent<WorldElementDropper>();
-
+            var dropper = go.GetComponent<WorldElementDropper>() ?? go.AddComponent<WorldElementDropper>();
             dropper.DropSolids = true;
             dropper.DropLiquids = true;
             dropper.DropGases = false;
             dropper.TargetStorage = fabricator.outStorage;
 
             var cmp = go.GetComponent<DropAllWorkable>();
-            cmp.storages = [fabricator.outStorage];
+            if (cmp != null)
+                cmp.storages = new Storage[] { fabricator.outStorage };
 
 
         }
@@ -55,9 +57,6 @@ namespace Rephysicalized
 
     }
 
-
-
-
     [HarmonyPatch(typeof(MicrobeMusherConfig), "ConfigureRecipes")]
     public static class MicrobeMusherConfig_ConfigureRecipes_Patch
     {
@@ -70,11 +69,14 @@ namespace Rephysicalized
             {
                 var newIngredients = new List<ComplexRecipe.RecipeElement>
                 {   new ComplexRecipe.RecipeElement("Dirt".ToTag(), 60f),
-      new ComplexRecipe.RecipeElement("Water".ToTag(), 90f) };
+      new ComplexRecipe.RecipeElement(new Tag[2]
+      {
+        SimHashes.Water.CreateTag(),
+        SimHashes.Mucus.CreateTag()
+      }, 90f) };
 
-                var newResults = new List<ComplexRecipe.RecipeElement>
+                var newResults = new List<ComplexRecipe.RecipeElement>(recipe.results)
             {
-                new ComplexRecipe.RecipeElement("MushBar".ToTag(), 1f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
                 new ComplexRecipe.RecipeElement("Mud".ToTag(), 145f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature),
 
             };
@@ -89,7 +91,7 @@ namespace Rephysicalized
                 // Copy the results and add 50f of liquid Water
                 var newResults = new List<ComplexRecipe.RecipeElement>(recipe2.results)
             {
-                new ComplexRecipe.RecipeElement(SimHashes.Water.CreateTag(), 49f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature)
+                new ComplexRecipe.RecipeElement(SimHashes.DirtyWater.CreateTag(), 45f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature)
             };
                 Traverse.Create(recipe2).Field("results").SetValue(newResults.ToArray());
             }
@@ -100,12 +102,55 @@ namespace Rephysicalized
             {
                 var newResults = new List<ComplexRecipe.RecipeElement>(recipe3.results)
             {
-                new ComplexRecipe.RecipeElement(SimHashes.Water.CreateTag(), 49f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature)
+                new ComplexRecipe.RecipeElement(SimHashes.Water.CreateTag(), 45f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature)
             };
                 Traverse.Create(recipe3).Field("results").SetValue(newResults.ToArray());
 
-               
+
             }
         }
     }
+
+
+
+
+
+    [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
+    public static class MicrobeMusherNutrientBar
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            var fabricatorTag = TagManager.Create("CookingStation");
+
+            var inputNutrient = new ComplexRecipe.RecipeElement[2]
+            {
+
+            new ComplexRecipe.RecipeElement(SimHashes.Sucrose.CreateTag(), 4f),
+            new ComplexRecipe.RecipeElement(SimHashes.Tallow.CreateTag(), 1f),
+            };
+
+            var outputNutrient = new ComplexRecipe.RecipeElement[1]
+            {
+            new ComplexRecipe.RecipeElement( "FieldRation".ToTag(),
+                2f,
+                ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature
+            ),
+         
+            };
+
+            string recipeIdNutrient = ComplexRecipeManager.MakeRecipeID("CookingStation", inputNutrient, outputNutrient);
+
+            var recipeNutrient = new ComplexRecipe(recipeIdNutrient, inputNutrient, outputNutrient)
+            {
+                time = 40f,
+                description = STRINGS.BUILDINGS.MICROBEMUSHER.NUTRIENTBAR,
+                nameDisplay = ComplexRecipe.RecipeNameDisplay.Result,
+                fabricators = new List<Tag> { fabricatorTag },
+                sortOrder = 6,
+
+            }; 
+        } 
+    }
+      
 }

@@ -61,6 +61,25 @@ namespace Rephysicalized.Content.Stuff_Patches
             effectVG.Add(new AttributeModifier(Db.Get().Amounts.Stress.deltaAttribute.Id, -0.01666667f, DUPLICANTS.MODIFIERS.FRESHOIL.NAME));
             effectVG.Add(new AttributeModifier(Db.Get().Attributes.RadiationResistance.Id, 0.25f, DUPLICANTS.MODIFIERS.FRESHOIL.NAME));
             dict[SimHashes.ViscoGel] = effectVG;
+
+
+            // Create ViscoGel effect
+            var effectMucus = new Effect(
+                "FreshOil_Mucus",
+                DUPLICANTS.MODIFIERS.FRESHOIL.NAME,
+                DUPLICANTS.MODIFIERS.FRESHOIL.TOOLTIP,
+                4800f,
+                true,
+                true,
+                false,
+                null,
+                0f,
+                null,
+                false);
+            effectMucus.Add(new AttributeModifier(Db.Get().Attributes.QualityOfLife.Id, 0f, DUPLICANTS.MODIFIERS.FRESHOIL.NAME));
+            effectMucus.Add(new AttributeModifier(Db.Get().Amounts.Stress.deltaAttribute.Id, -0.004388888f, DUPLICANTS.MODIFIERS.FRESHOIL.NAME));
+            effectMucus.Add(new AttributeModifier(Db.Get().Attributes.Athletics.Id, -1f, DUPLICANTS.MODIFIERS.FRESHOIL.NAME));
+            dict[SimHashes.Mucus] = effectMucus;
         }
     }
 

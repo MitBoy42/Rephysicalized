@@ -1,0 +1,882 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Pholith\n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Application: Oxygen Not IncludedPOT Version: 2.0\n"
+"X-Generator: Poedit 3.9\n"
+
+#. Rephysicalized.CorrosiveWasteStrings.CORROSIVE_ELEMENT
+msgctxt "Rephysicalized.CorrosiveWasteStrings.CORROSIVE_ELEMENT"
+msgid "corrosive element"
+msgstr "élément corrosif"
+
+#. Rephysicalized.STRINGS.BATTERYDAMAGE.NOTIFICATION.NAME
+msgctxt "Rephysicalized.STRINGS.BATTERYDAMAGE.NOTIFICATION.NAME"
+msgid "Water Damage Risk"
+msgstr "Risque de dégâts des eaux"
+
+#. Rephysicalized.STRINGS.BATTERYDAMAGE.NOTIFICATION.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.BATTERYDAMAGE.NOTIFICATION.TOOLTIP"
+msgid "This building's battery is exposed to water and will take damage."
+msgstr "La batterie de ce bâtiment est exposée à l'eau et subira des dommages."
+
+#. Rephysicalized.STRINGS.BATTERYDAMAGE.STATUS.NAME
+msgctxt "Rephysicalized.STRINGS.BATTERYDAMAGE.STATUS.NAME"
+msgid "Water Damage Risk"
+msgstr "Risque de dégâts des eaux"
+
+#. Rephysicalized.STRINGS.BATTERYDAMAGE.STATUS.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.BATTERYDAMAGE.STATUS.TOOLTIP"
+msgid "If it continues to be exposed to water, it will short circuit and explode! "
+msgstr "Si elle reste exposée à l'eau, elle finira par provoquer un court-circuit et explosera! "
+
+#. Rephysicalized.STRINGS.BUILDINGS.ALGAEDISTILLERY.KELP
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.ALGAEDISTILLERY.KELP"
+msgid "Deliver Seakomb Leafs"
+msgstr "Apporter des feuilles de Seakomb"
+
+#. Rephysicalized.STRINGS.BUILDINGS.ALGAEDISTILLERY.NORI
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.ALGAEDISTILLERY.NORI"
+msgid "Deliver Nori"
+msgstr "Approvisionner en nori"
+
+#. Rephysicalized.STRINGS.BUILDINGS.ALGAEDISTILLERY.SLIME
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.ALGAEDISTILLERY.SLIME"
+msgid "Deliver Slime"
+msgstr "Approvisionner en vase"
+
+#. Rephysicalized.STRINGS.BUILDINGS.CHEMICALREFINERY.ISOSAP_TO_SAP
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.CHEMICALREFINERY.ISOSAP_TO_SAP"
+msgid "Sap is a unique type of Resin. It can be used for production of Plastic."
+msgstr "La sève est un type particulier de résine. Elle peut être utilisée pour produire du plastique."
+
+#. Rephysicalized.STRINGS.BUILDINGS.CHEMICALREFINERY.SALT_TO_BRINE
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.CHEMICALREFINERY.SALT_TO_BRINE"
+msgid "Brine is a highly concentrated salt solution in Water."
+msgstr "La saumure est une solution d'eau fortement concentrée en sel."
+
+#. Rephysicalized.STRINGS.BUILDINGS.ClOTHING_FABRICATOR.FIBER
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.ClOTHING_FABRICATOR.FIBER"
+msgid "Mixing in cheap plant husk allows to multiply the amount of fiber. Surely no one will notice."
+msgstr "Mélanger des fibres avec des enveloppes végétales bon marché permet d'en augmenter la quantité. Personne ne remarquera la différence."
+
+#. Rephysicalized.STRINGS.BUILDINGS.CRAFTINGTABLE.BOOSTERDECRAFTADVANCED
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.CRAFTINGTABLE.BOOSTERDECRAFTADVANCED"
+msgid "Disassemble any advanced booster into Microchips"
+msgstr "Démonte n'importe quel booster avancé en purces électroniques"
+
+#. Rephysicalized.STRINGS.BUILDINGS.CRAFTINGTABLE.BOOSTERDECRAFTBASIC
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.CRAFTINGTABLE.BOOSTERDECRAFTBASIC"
+msgid "Disassemble any basic booster into Microchips"
+msgstr "Démonte n'importe quel booster de base en purces électroniques"
+
+#. Rephysicalized.STRINGS.BUILDINGS.DIAMONDPRESS.DEPLETEDURANIUM_ENRICHEDURANIUM
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.DIAMONDPRESS.DEPLETEDURANIUM_ENRICHEDURANIUM"
+msgid "Bombarding Depleted Uranium with high energy particles to enrich it"
+msgstr "Bombarde de l'uranium appauvri avec des particules à haute énergie afin de l'enrichir"
+
+#. Rephysicalized.STRINGS.BUILDINGS.DIAMONDPRESS.LUMENQUARTZ
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.DIAMONDPRESS.LUMENQUARTZ"
+msgid "Grows a Quartz Crystal by Hydrothermal Synthesis"
+msgstr "Fait croître un cristal de quartz par synthèse hydrothermale"
+
+#. Rephysicalized.STRINGS.BUILDINGS.DIAMONDPRESS.PEARL
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.DIAMONDPRESS.PEARL"
+msgid "Molds an artificial Pearl from shell powder and binding agent."
+msgstr "Façonne une perle artificielle à partir de poudre de coquille et d'un liant."
+
+#. Rephysicalized.STRINGS.BUILDINGS.MICROBEMUSHER.NUTRIENTBAR
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.MICROBEMUSHER.NUTRIENTBAR"
+msgid "All the essential nutrients for survival and nothing else."
+msgstr "Tous les nutriments essentiels à la survie, et rien de plus."
+
+#. Rephysicalized.STRINGS.BUILDINGS.MILKPRESS.BALMLILY_PHYTOOIL
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.MILKPRESS.BALMLILY_PHYTOOIL"
+msgid "Converts Balm Lily to Phyto Oil"
+msgstr "Transforme le Lys apaisant en huile végétale"
+
+#. Rephysicalized.STRINGS.BUILDINGS.MILKPRESS.TABLESALT
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.MILKPRESS.TABLESALT"
+msgid "Extracts Table Salt from Salty Sticks"
+msgstr "Extrait du sel de table à partir de bâtonnets salés"
+
+#. Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.MILKMODE
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.MILKMODE"
+msgid "Brackene Separation"
+msgstr "Séparation du Brackene"
+
+#. Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.MILKMODE_TOOLTIP
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.MILKMODE_TOOLTIP"
+msgid "Extracts Brackwax from Brackene"
+msgstr "Extrait de la Brackwax à partir du Brackene"
+
+#. Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.NAPHTHAMODE
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.NAPHTHAMODE"
+msgid "Naphtha Dehydrogenation"
+msgstr "Déshydrogénation du naphta"
+
+#. Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.NAPHTHAMODE_TOOLTIP
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.MILKSEPARATOR.NAPHTHAMODE_TOOLTIP"
+msgid "Extracts Hydrogen from Naphtha"
+msgstr "Extrait l'hydrogène du naphta"
+
+#. Rephysicalized.STRINGS.BUILDINGS.PINKROCK_PLANTED.DESC
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.PINKROCK_PLANTED.DESC"
+msgid "A carved Quartz displayed in a pot"
+msgstr "Un quartz sculpté exposé dans un pot"
+
+#. Rephysicalized.STRINGS.BUILDINGS.PINKROCK_PLANTED.NAME
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.PINKROCK_PLANTED.NAME"
+msgid "Lumen Quartz"
+msgstr "Quartz lumineux"
+
+#. Rephysicalized.STRINGS.BUILDINGS.PREFABS.WATERCOOLER.OPTION_TOOLTIPS.SUGARWATER
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.PREFABS.WATERCOOLER.OPTION_TOOLTIPS.SUGARWATER"
+msgid "Extremely sweet juice"
+msgstr "Boisson extrêmement sucrée"
+
+#. Rephysicalized.STRINGS.BUILDINGS.SLUDGEPRESS.FISHMILK
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.SLUDGEPRESS.FISHMILK"
+msgid "Separates BrackWax from Ovolene. Has a high chance of clogging the press."
+msgstr "Sépare la BrackWax de l'Ovolene. Risque élevé d'obstruer la presse."
+
+#. Rephysicalized.STRINGS.BUILDINGS.SLUDGEPRESS.MUCUS
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.SLUDGEPRESS.MUCUS"
+msgid "Separates Water and Slime in Mucin. If Mucin is too cold, the Ice will clog the press."
+msgstr "Sépare l'eau et la vase contenues dans la mucine. Si la mucine est trop froide, la glace obstruera la presse."
+
+#. Rephysicalized.STRINGS.BUILDINGS.SLUDGEPRESS.SQUIDINK
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.SLUDGEPRESS.SQUIDINK"
+msgid "Separates Carbon from Squid Ink. Has a high chance of clogging the press."
+msgstr "Sépare le carbone de l'encre de calmar. Risque élevé d'obstruer la presse."
+
+#. Rephysicalized.STRINGS.BUILDINGS.SUBLIMATIONSTATION.BLEACHSTONE
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.SUBLIMATIONSTATION.BLEACHSTONE"
+msgid "Deliver Bleach Stone"
+msgstr "Approvisionner en roche chlorée"
+
+#. Rephysicalized.STRINGS.BUILDINGS.SUBLIMATIONSTATION.TOXICSAND
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.SUBLIMATIONSTATION.TOXICSAND"
+msgid "Deliver Polluted Dirt"
+msgstr "Approvisionner en boue contaminée"
+
+#. Rephysicalized.STRINGS.BUILDINGS.SUPERMATERIALREFINERY.DU_TO_LEAD
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.SUPERMATERIALREFINERY.DU_TO_LEAD"
+msgid "Speeds up Uranium Decay into Lead. Highly Radioactive!"
+msgstr "Accélère la désintégration de l'uranium en plomb. Hautement radioactif !"
+
+#. Rephysicalized.STRINGS.BUILDINGS.WOODMAKER.LATEX
+msgctxt "Rephysicalized.STRINGS.BUILDINGS.WOODMAKER.LATEX"
+msgid "Extracts Latex from Gum Wood while keeping it intact. For the most part."
+msgstr "Extrait le latex du bois à gomme tout en le laissant intact. Enfin, presque."
+
+#. Rephysicalized.STRINGS.CODEX.CATEGORYNAMES.REPHYSICALIZED
+msgctxt "Rephysicalized.STRINGS.CODEX.CATEGORYNAMES.REPHYSICALIZED"
+msgid "Rephysicalized"
+msgstr "Rephysicalized"
+
+#. Rephysicalized.STRINGS.CODEX.PANELS.ANIMALPEE
+msgctxt "Rephysicalized.STRINGS.CODEX.PANELS.ANIMALPEE"
+msgid "Rephysicalized Pee"
+msgstr "Urine des créatures"
+
+#. Rephysicalized.STRINGS.CODEX.PANELS.COOLANTCONTAMINATION
+msgctxt "Rephysicalized.STRINGS.CODEX.PANELS.COOLANTCONTAMINATION"
+msgid "Coolant Contamination"
+msgstr "Contamination des fluides caloporteurs"
+
+#. Rephysicalized.STRINGS.CODEX.PANELS.DISSOLVING
+msgctxt "Rephysicalized.STRINGS.CODEX.PANELS.DISSOLVING"
+msgid "Organic Overhaul Dissolution"
+msgstr "Dissolution des matières organiques"
+
+#. Rephysicalized.STRINGS.CODEX.PANELS.ENVIROMENTCOOKING
+msgctxt "Rephysicalized.STRINGS.CODEX.PANELS.ENVIROMENTCOOKING"
+msgid "Rephysicalized Preparation"
+msgstr "Préparation environnementale"
+
+#. Rephysicalized.STRINGS.CODEX.PANELS.EXTRADROPS
+msgctxt "Rephysicalized.STRINGS.CODEX.PANELS.EXTRADROPS"
+msgid "Rephysicalized Drops"
+msgstr "Ressources supplémentaires"
+
+#. Rephysicalized.STRINGS.CODEX.PANELS.FUELEDDIET
+msgctxt "Rephysicalized.STRINGS.CODEX.PANELS.FUELEDDIET"
+msgid "Rephysicalized Metabolism"
+msgstr "Métabolisme"
+
+#. Rephysicalized.STRINGS.CODEX.PANELS.RADBOLT
+msgctxt "Rephysicalized.STRINGS.CODEX.PANELS.RADBOLT"
+msgid "Rephysicalized Radbolts"
+msgstr "Radbolts"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.BUILDINGS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.BUILDINGS"
+msgid ""
+"Combustion engines now require Oxidizer gas (a new gas tag including Oxygen and Polluted Oxygen) to operate.  Most can draw it from the surrounding environment, but some require piped input.\n"
+"\n"
+"Algae terrarium is completely reworked and probably is the meta oxygen building now. Its production scales with the amount of light it gets, while polluted water waste decreases. It will also require much larger quantity of CO2 to operate. Maximum output is at 50000 Lux.\n"
+"\n"
+"Buildings also respect the mass conservation, with the exception of research stations, at least at the moment. \n"
+"\n"
+"Thermo Regulator and Thermo Aquatuner have dynaming power consumption dependant on the SHC of the element throughput. Effectively, Thermoregulator drains less energ overall while Aquatuner drains less energy with water throughput but more with Super Coolant.\n"
+"\n"
+"Food Rehydrator stores used plastic of the dehydrated food inside. The food from rehydrator comes out mushier and much easier (faster) to consume.\n"
+"\n"
+"Critter Drop-Off and Critter Pick-Up have critter mass configuration. \n"
+"\n"
+"Carbon Scrubber does not delete CO2 anymore, and instead stores it, so you may move it out later somewhere. MAKE SURE TO CONNECT A GAS PIPE TO IT, OTHERWISE IT WONT WORK!\n"
+"\n"
+"Batteries will take damage in Water and explode!\n"
+"\n"
+"Producing items from Uranium will emit radiation during fabriaction.\n"
+"\n"
+"Mercury Lamp is nerfed a bit, since it is too strong in Rephysicalized, while Sun lamp's energy consumption is halved.\n"
+"\n"
+" Nori and Seakomb can be distilled into algae."
+msgstr ""
+"Les moteurs à combustion nécessitent désormais un gaz comburant (une nouvelle catégorie de gaz comprenant l'oxygène et l'oxygène pollué) pour fonctionner. La plupart le prélèvent directement dans l'environnement, mais certains exigent une alimentation par conduite.\n"
+"\n"
+"Le terrarium d'algues a été entièrement repensé et devient probablement le meilleur bâtiment de production d'oxygène. Sa production augmente avec l'intensité lumineuse reçue, tandis que sa consommation d'eau polluée diminue. Il nécessite cependant une quantité bien plus importante "
+"de CO₂ pour fonctionner. Sa production maximale est atteinte à 50 000 lux.\n"
+"\n"
+"Les bâtiments respectent désormais la conservation de la masse, à l'exception des stations de recherche, du moins pour le moment.\n"
+"\n"
+"Le thermorégulateur et le thermo-aquatuner consomment désormais une quantité d'énergie variable selon la capacité thermique massique (SHC) du fluide traité. En pratique, le thermorégulateur consomme moins d'énergie de manière générale, tandis que l'aquatuner consomme moins avec de "
+"l'eau mais davantage avec du super liquide de refroidissement.\n"
+"\n"
+"Le réhydratateur alimentaire conserve le plastique utilisé par les aliments déshydratés. Les aliments réhydratés deviennent plus mous et sont consommés plus rapidement.\n"
+"\n"
+"Le point de dépôt et le point de récupération des créatures permettent désormais de configurer une masse cible.\n"
+"\n"
+"L'épurateur de carbone ne détruit plus le CO₂. Il le stocke afin que vous puissiez l'évacuer ultérieurement. ASSUREZ-VOUS DE LE RACCORDER À UNE CONDUITE DE GAZ, SINON IL NE FONCTIONNERA PAS !\n"
+"\n"
+"Les batteries subissent des dégâts lorsqu'elles sont immergées dans l'eau et peuvent exploser !\n"
+"\n"
+"La fabrication d'objets à base d'uranium émet désormais des radiations.\n"
+"\n"
+"La lampe au mercure a été légèrement affaiblie, car elle était trop puissante dans Rephysicalized, tandis que la consommation électrique de la lampe solaire est réduite de moitié.\n"
+"\n"
+"Le nori et le Seakomb peuvent être distillés pour produire des algues."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.COOKING
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.COOKING"
+msgid ""
+"Enviromental preparation is a process that allows food and some other items to be refined, crushed or cooked using the enviroment. Conditions may include specific pressure, temperature and medium, and can also consume the medium element. \n"
+"\n"
+"For instance, cooking deep fryer recipies require biodiesel and will consume proportional amount of biodiesel from the environment.  \n"
+"\n"
+"Some recipes may be overheated and result in ash, such Meat, Frost buns or Cooked Fish. \n"
+"\n"
+"The food now has Dirt instead of Genetic Ooze as its primaty element, so any food will turn into Sand at a temperature higher than 300c.\n"
+"\n"
+msgstr ""
+"La préparation environnementale est un procédé permettant de raffiner, broyer ou cuire des aliments ainsi que certains autres objets en utilisant directement leur environnement. Les conditions peuvent imposer une pression, une température ou un milieu spécifique, et le procédé "
+"peut également consommer une partie du milieu utilisé.\n"
+"\n"
+"Par exemple, les recettes de friture profonde nécessitent du biodiesel et consomment une quantité proportionnelle de biodiesel présent dans l'environnement.\n"
+"\n"
+"Certaines recettes peuvent être surchauffées et finir en cendres, notamment la viande, les petits pains gélée et les produits de la mer cuisinés.\n"
+"\n"
+"Les aliments sont désormais principalement composés de terre au lieu de Limon Génétique. Ainsi, tout aliment se transformera en sable lorsqu'il dépassera 300 °C.\n"
+"\n"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.CREATURES
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.CREATURES"
+msgid ""
+"Creature Mass is now a dynamic parameter.\n"
+"\n"
+"Critter's initial mass on spawn/birth will be equal to the half the egg mass.\n"
+"\n"
+" Critters increase their mass by eating, and the amount  of the growth will be equal to the mass consumed minus the poop. Critters are rebalanced with this in mind, and many have their consumption/output adjusted or have completely new mechanics added to them. \n"
+"\n"
+"The mass then is recalled when a creature dies - the normal meat drop gets subtracted and the residual loot drops as rephysicalized drops (usually rot unless it is something important).\n"
+"\n"
+" Critters visually increase in size as they grow in mass (cosmetic only).  \n"
+"\n"
+" Critters can be separated into 2 categories based on mass: normal and gluttons. Normal critters typically gain just about 1kg of mass per cycle and their drops on death are not very important. Gluttons like Shove Voles or Spigot Seals give important maraterials or food on death "
+"and their mass tends to grow much larger in mass.  \n"
+"\n"
+"  Critter Pick-Up and Dro-Off gained a specialised critter mass range scalers to help dealing with critter relocation.  \n"
+"\n"
+"  Some animals were hard to rephysicalize and got a diet extension. It's called \"Fueled Diet\" or \"Gastrolith diet\", and has critters consume secondary materials that do not provide them calories, but will help initiate resource conversion. These critters have Rephysicalized "
+"Metaboslim in their codex. \n"
+"\n"
+"Critters affected by Rephysicalized Metabolism: Stegos, Slicksters, Sweetles, Floxes and Morbs.\n"
+"\n"
+"Carnivore critters would poop the amount of materials based on the prey mass.\n"
+"\n"
+"Morbs can spawn from unflipped Composts as well as Outhouses. They can slowly convert some materials into slime, but beware of the release method.\n"
+"\n"
+"Shine Bug family increases their light output as you morph them into more royal breeds.\n"
+"\n"
+"Critters' mass also takes into accont scale growth and milk production - this allows you to extract their scales or milk preemptively by selecting them and clicking attack button (one time use).\n"
+"\n"
+"Critter Fountain Brackene consumption is also tracked with Rephysicalized Pee. Some of the Brackene is absorbed by the critter and the rest is excreted. Critters may excrete unique liquids depending on the species!\n"
+"\n"
+"Nectar is added as a Critter drinkable liquid."
+msgstr ""
+"La masse des créatures est désormais un paramètre dynamique.\n"
+"\n"
+"La masse initiale d'une créature à l'éclosion ou à la naissance est égale à la moitié de la masse de son œuf.\n"
+"\n"
+"Les créatures prennent de la masse en mangeant. Leur gain de masse correspond à la masse ingérée moins celle des excréments produits. Toutes les créatures ont été rééquilibrées en conséquence : leur consommation, leur production ou même leurs mécaniques ont été ajustées.\n"
+"\n"
+"À la mort d'une créature, sa masse est prise en compte. La viande obtenue est soustraite de cette masse et le reste est restitué sous forme de ressources Rephysicalized (généralement de la matière en décomposition, sauf pour les ressources importantes).\n"
+"\n"
+"Les créatures grandissent visuellement à mesure que leur masse augmente (effet purement cosmétique).\n"
+"\n"
+"Les créatures sont réparties en deux catégories selon leur masse : normales et gloutonnes. Les créatures normales gagnent environ 1 kg par cycle et offrent peu de ressources à leur mort. Les gloutonnes, comme les Shove Voles ou les Spigot Seals, atteignent des masses beaucoup plus "
+"importantes et fournissent des matériaux ou de la nourriture de grande valeur.\n"
+"\n"
+"Les points de dépôt et de récupération des créatures disposent désormais de filtres permettant de sélectionner une plage de masse afin de faciliter leur déplacement.\n"
+"\n"
+"Certaines créatures ont reçu une alimentation supplémentaire afin d'être compatibles avec Rephysicalized. Appelée « alimentation assistée » ou « régime gastrolithique », elle leur permet de consommer des matériaux secondaires qui n'apportent aucune calorie mais déclenchent "
+"certaines conversions de ressources. Ces créatures possèdent l'entrée « Métabolisme Rephysicalized » dans leur codex.\n"
+"\n"
+"Créatures concernées : Lumbs, Slicksters, Scaradoux, Floxes et Morbs.\n"
+"\n"
+"Les créatures carnivores produisent désormais des excréments en fonction de la masse de leurs proies.\n"
+"\n"
+"Les Morbs peuvent apparaître à partir de composts non retournés ainsi que des latrines. Ils peuvent lentement transformer certains matériaux en vase, mais faites attention à la manière dont celle-ci est libérée.\n"
+"\n"
+"Les différentes espèces de Lucioles augmentent leur intensité lumineuse lorsqu'elles évoluent vers des variétés plus nobles.\n"
+"\n"
+"La masse des créatures tient également compte de la croissance des écailles et de la production de lait. Vous pouvez ainsi récolter leurs écailles ou leur lait de manière anticipée en les sélectionnant puis en utilisant le bouton Attaquer (une seule fois).\n"
+"\n"
+"La consommation de Brackène par les fontaines pour créatures est également suivie grâce au système d'urine Rephysicalized. Une partie du Brackène est absorbée par la créature, le reste est excrété. Selon l'espèce, les créatures peuvent produire des liquides différents !\n"
+"\n"
+"Le nectar est désormais un liquide que les créatures peuvent boire."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.DISSOLVING
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.DISSOLVING"
+msgid "Dissolving debris is a mechanic appropriated from Powerfull's Organic Overhaul mod. It allows elements such as Salt dissolve in water or other liquids."
+msgstr "La dissolution des débris est une mécanique reprise du mod Organic Overhaul de Powerfull. Elle permet à certains éléments, comme le sel, de se dissoudre dans l'eau ou dans d'autres liquides."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.DUPLICANTS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.DUPLICANTS"
+msgid ""
+"Duplicants consume half as much O2, this is done to balance out building oxygen consumption and the nerf to SPOM. \n"
+"\n"
+"Duplicants have 6000kcal stomachs now (can go without food for 6 days). \n"
+"\n"
+"Duplicants and Bionics consume more calories and power while healing. \n"
+"\n"
+" Duplicants won't get \"chilly surrondings\" debuff when stepping in liquids of less 5kg. \n"
+"\n"
+"Dupes pee the same amount on floor vs. the toilet.\n"
+"\n"
+" Bionic Duplicants have Metal capacity which is used up when they are creating microchips or healing. They automatically eat Iron when it gets too low."
+msgstr ""
+"Les duplicants consomment désormais deux fois moins d'oxygène afin de compenser les changements apportés aux bâtiments producteurs d'oxygène et l'affaiblissement des système d’oxygène autonome (SPOM).\n"
+"\n"
+"Leur estomac contient désormais 6 000 kcal, ce qui leur permet de survivre jusqu'à six cycles sans manger.\n"
+"\n"
+"Les duplicants et les duplicants bioniques consomment davantage de calories ou d'énergie pendant leur guérison.\n"
+"\n"
+"Les duplicants ne subissent plus le malus « Environnement froid » lorsqu'ils traversent des flaques de moins de 5 kg.\n"
+"\n"
+"Les duplicants urinent la même quantité au sol que dans des toilettes.\n"
+"\n"
+"Les duplicants bioniques disposent d'une réserve de métal consommée lors de la fabrication de puces électroniques ou de leur réparation. Ils mangent automatiquement du fer lorsque cette réserve devient trop faible."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.ITEMS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.ITEMS"
+msgid ""
+"Many items now have proper primary elements instead of Genetic Ooze. \n"
+"\n"
+"Lumen Quartz is made of Granite and can be created at a Diamond Press. To prevent infinite lux, combined light from Quartz can't exceed 1000 lux. You can plant them in a pot!\n"
+"\n"
+"Dew Drips can be frozen or heated into Brackene directly.\n"
+"\n"
+" Boosters can be deconstructed into Microchips at the Crafting Station. \n"
+"\n"
+" Atmosuits and Jetsuits have their Scalding temperature equal to 60% of their metal melting temperature. It makes some materials worse but Jesuits may be just good enough to swim in Lava! LeadSuits also have a nerf to their Scalding temperature, but not as serious.\n"
+"\n"
+"Pills are swallowed faster.\n"
+"\n"
+msgstr ""
+"De nombreux objets possèdent désormais un véritable élément principal au lieu du Limon Génétique.\n"
+"\n"
+"Le Quartz lumineux est composé de granite et peut être fabriqué dans une presse à diamants. Afin d'éviter une production infinie de lumière, l'éclairage combiné des Quartz lumineux est limité à 1 000 lux. Ils peuvent également être placés dans des pots.\n"
+"\n"
+"Les gouttes de rosée peuvent être congelées ou chauffées pour produire directement du Brackène.\n"
+"\n"
+"Les boosters peuvent être démontés en puces électroniques à l'établi.\n"
+"\n"
+"Les combinaisons-atmo et les combinaisons à propulsion voient leur température de surchauffe fixée à 60 % de la température de fusion du métal utilisé. Certains matériaux deviennent ainsi moins intéressants, tandis que d'autres permettent presque de nager dans la lave. Les "
+"combinaisons en plomb voient également leur température de surchauffe réduite, mais de façon moins importante.\n"
+"\n"
+"Les pilules sont avalées plus rapidement.\n"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.MATERIALS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.MATERIALS"
+msgid ""
+"Ash is a new material created by burning organic matter. It can be used as a fertilizer or filtration medium, or consumed by sage Hatches to recycle some of the coal back. It was added to prevent mass loss from combustion.\n"
+"\n"
+" Crud is new a material suitable only for building, though it can be melted into Magma. It represent a highly processed wasteproduct which can't recyled.\n"
+"\n"
+" Some elements have their state changes reworked. Rust creates Iron and Oxygen on melting, Optional configuration for Metal Ores turns them into actual compounds.If you are playing with Rephysicalized Metal Ores enabled, the amount of Metal needed to make Conductive Wires is "
+"reduced, to balance out smaller metal yeild from ores.Uranium now has a realistic melting temperature.\n"
+"\n"
+" Battery capacity is affected by metal you are using - metals with better irl electric conductivity will give better capacity.Many metals also received Storage Capacity modifier. Storage Capacity is loosely based on the metal's fatigue resistance, Metals with better resistance can "
+"handle higher loads, which allows for higher storage capacity."
+msgstr ""
+"Les cendres sont un nouveau matériau obtenu par combustion de matières organiques. Elles peuvent servir d'engrais, de matériau filtrant ou être consommées par les Écoutilles sages afin de récupérer une partie du charbon. Elles ont été ajoutées afin d'éviter les pertes de masse "
+"dues à la combustion.\n"
+"\n"
+"Les résidus sont un nouveau matériau uniquement destiné à la construction, bien qu'ils puissent être fondus en magma. Ils représentent un déchet fortement transformé qui ne peut plus être recyclé.\n"
+"\n"
+"Les changements d'état de plusieurs éléments ont été revus. La rouille produit désormais du fer et de l'oxygène lorsqu'elle fond. Une option permet également de transformer les minerais métalliques en véritables composés chimiques. Si cette option est activée, les fils conducteurs "
+"nécessitent moins de métal afin de compenser le rendement réduit des minerais. L'uranium possède désormais une température de fusion réaliste.\n"
+"\n"
+"La capacité des batteries dépend désormais du métal utilisé : les métaux ayant une meilleure conductivité électrique offrent une capacité supérieure. De nombreux métaux bénéficient également d'un modificateur de capacité de stockage, basé sur leur résistance à la fatigue. Les "
+"métaux les plus résistants peuvent supporter des charges plus élevées et permettent donc un stockage plus important."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.OVERVIEW
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.OVERVIEW"
+msgid ""
+"Rephysicalized is a global mod that tries to add a bit more physics into ONI, especially in conservation of Mass.  \n"
+"\n"
+" This mod removes most instances of Mass creation and deletion from most game systems, primarily Buildings, Plants and Critters, as well as does rebalancing to account for that. \n"
+"\n"
+"Some warnings: This mod, although tested, is made with AI by a Non-Programmer. It may be not the most optimized. Also, Due to Mass Conservation, it does significantly change balance of some systems.  \n"
+"\n"
+" Some 'meta' systems such as SPOM would not work in Rephysicalized. I've tried my best to update UI and the Codex to list relevant changes.\n"
+"\n"
+" There are still a few places where mass is not conserved: Duplicant input and outputs; Usage of Microchips; Rocket Exaust; Consumption of Dirt and Water by research stations. Some of these may be rephysicalized in the Future."
+msgstr ""
+"Rephysicalized est un mod global qui cherche à introduire davantage de physique dans ONI, en particulier la conservation de la masse.\n"
+"\n"
+"Ce mod supprime la plupart des cas de création et de destruction de masse dans les systèmes du jeu, principalement les bâtiments, les plantes et les créatures, et rééquilibre le jeu en conséquence.\n"
+"\n"
+"Avertissements : bien que testé, ce mod est créé avec l'aide de l'IA par un non-programmeur. Il peut ne pas être parfaitement optimisé. De plus, en raison de la conservation de la masse, il modifie de manière significative l'équilibrage de certains systèmes.\n"
+"\n"
+"Certains systèmes « méta » comme les système d’oxygène autonome (SPOM) ne fonctionnent plus dans Rephysicalized. J'ai fait de mon mieux pour mettre à jour l'interface et le codex afin de refléter les changements importants.\n"
+"\n"
+"Il reste encore quelques endroits où la masse n'est pas conservée : entrées et sorties des duplicants, utilisation des puces électroniques, échappement des fusées, consommation de terre et d'eau par les stations de recherche. Certains de ces éléments pourront être rephysicalisés à "
+"l'avenir."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.RADIATION
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.RADIATION"
+msgid ""
+"Radbolts deal damage proportional to radbolt load. \n"
+"\n"
+"Radbolts have a special effect on collission with Uranium tiles - instead of making Nuclear Waste, they will produce a small amount of Enriched Uranium, removing mass from the tile.\n"
+"\n"
+"You may Enrich Uranium in a Diamond Press. \n"
+"\n"
+"Research reactor does not create massive amount of Nuclear Waste anymore, however, using polluted or salty coolant will create some nuclear waste as a byproduct.  \n"
+"\n"
+"Nuclear waste emits more radiation, corrosive to tiles with hardness less than 50 (Some materials are also immunie, such as Lead, Nickel and Plastium). It will deal damage only if its mass exceeds 100kg.\n"
+"\n"
+"It also deals damage to duplicants and most critters on contact, but only if it has more than 10kg of mass on the tile.\n"
+"\n"
+"Radbolts have special collission effects with some natural tiles besides Uranium. The mass amount in the table is the amount emitted per single radbolt 'load'.This is loosely based on real life fission from high energy neurtron collissions."
+msgstr ""
+"Les Radbolts infligent désormais des dégâts proportionnels à leur charge.\n"
+"\n"
+"Les Radbolts ont également un effet particulier lorsqu'ils frappent des tuiles d'uranium : au lieu de produire des déchets nucléaires, ils génèrent une petite quantité d'uranium enrichi en retirant de la masse à la tuile.\n"
+"\n"
+"L'uranium peut également être enrichi dans une presse à diamants.\n"
+"\n"
+"Le réacteur de recherche ne produit plus d'énormes quantités de déchets nucléaires. En revanche, l'utilisation d'un liquide de refroidissement pollué ou salé génère une petite quantité de déchets nucléaires comme sous-produit.\n"
+"\n"
+"Les déchets nucléaires émettent davantage de radiations et sont corrosifs pour les tuiles dont la dureté est inférieure à 50 (certains matériaux comme le plomb, le nickel ou le plastium y sont toutefois immunisés). Ils n'endommagent les tuiles que si leur masse dépasse 100 kg.\n"
+"\n"
+"Ils infligent également des dégâts aux duplicants et à la plupart des créatures au contact, mais uniquement si la case contient plus de 10 kg de déchets nucléaires.\n"
+"\n"
+"Les Radbolts possèdent également des interactions particulières avec certaines tuiles naturelles autres que l'uranium. Les quantités indiquées dans le tableau correspondent à la masse produite par unité de charge d'un Radbolt. Ce système s'inspire librement de la fission provoquée "
+"par les collisions de neutrons de haute énergie."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.WORLD
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.WORLD"
+msgid ""
+"Digging up natural solid tiles now yeilds 100% of mass! Not need for melting the ice to conserve water and you can build any melters without worrying about natural tile mass formation. \n"
+"\n"
+"To rebalance this and also the fact that you can recycle much more in Rephysicalized, solid mass in the world is decreased by 75% (effectively by 50%), with the exception of some setpices and metals. While metal mass is also decreased, it's not as drastic, since metals are "
+"primarily used for construction. You may adjust it in mod config.\n"
+"\n"
+"You still get enough additional mass from geysers, meteor showers and asteroid mining. Water-based geysers (steam, slush, brine) have their output decreased by 75% since you are able to recycle more of the water. You may adjust it in mod config."
+msgstr ""
+"L'excavation des tuiles naturelles restitue désormais 100 % de leur masse. Il n'est donc plus nécessaire de faire fondre la glace pour conserver toute son eau, et vous pouvez construire des installations de fusion sans vous soucier des pertes de masse des tuiles naturelles.\n"
+"\n"
+"Afin de compenser ce changement ainsi que les possibilités de recyclage accrues offertes par Rephysicalized, la quantité de matériaux solides présente dans le monde est réduite de 75 % (soit environ 50 % en pratique), à l'exception de certaines structures prédéfinies et des "
+"métaux. La quantité de métaux est également réduite, mais dans une moindre mesure, car ils servent principalement à la construction. Ce paramètre est configurable dans les options du mod.\n"
+"\n"
+"Les geysers, les pluies de météorites et l'exploitation des astéroïdes continuent de fournir suffisamment de nouvelles ressources. Les geysers produisant de l'eau (vapeur, neige fondue et saumure) voient cependant leur débit réduit de 75 %, puisque davantage d'eau peut désormais "
+"être recyclée. Ce paramètre peut également être modifié dans la configuration du mod."
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.BUILDINGS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.BUILDINGS"
+msgid "Buildings"
+msgstr "Bâtiments"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.COOKING
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.COOKING"
+msgid "Environmental Preparation"
+msgstr "Préparation environnementale"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.CREATURES
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.CREATURES"
+msgid "Creatures"
+msgstr "Créatures"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.DISSOLVING
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.DISSOLVING"
+msgid "Debris Dissolving"
+msgstr "Dissolution des débris"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.DUPLICANTS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.DUPLICANTS"
+msgid "Duplicants"
+msgstr "Duplicants"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.ITEMS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.ITEMS"
+msgid "Items"
+msgstr "Objets"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.MATERIALS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.MATERIALS"
+msgid "Materials"
+msgstr "Matériaux"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.OVERVIEW
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.OVERVIEW"
+msgid "Overview"
+msgstr "Présentation"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.PLANTS
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.PLANTS"
+msgid "Plants"
+msgstr "Plantes"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.RADIATION
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.RADIATION"
+msgid "Radiation"
+msgstr "Radiations"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.WORLD
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.PAGES.WORLD"
+msgid "World"
+msgstr "Monde"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.SUBTITLE
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.SUBTITLE"
+msgid "Basic rundown"
+msgstr "Résumé des changements"
+
+#. Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.TITLE
+msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.TITLE"
+msgid "Rephysicalized"
+msgstr "Rephysicalized"
+
+#. Rephysicalized.STRINGS.CREATURES.ATTRIBUTES.AGEDELTA.DESC
+msgctxt "Rephysicalized.STRINGS.CREATURES.ATTRIBUTES.AGEDELTA.DESC"
+msgid "Time seems to move faster or slower for them."
+msgstr "Le temps semble s'écouler plus vite ou plus lentement pour cette créature."
+
+#. Rephysicalized.STRINGS.CREATURES.ATTRIBUTES.AGEDELTA.NAME
+msgctxt "Rephysicalized.STRINGS.CREATURES.ATTRIBUTES.AGEDELTA.NAME"
+msgid "Aging Speed"
+msgstr "Vitesse de vieillissement"
+
+#. Rephysicalized.STRINGS.CREATURES.MODIFIERS.HADSUGARWATER.NAME
+msgctxt "Rephysicalized.STRINGS.CREATURES.MODIFIERS.HADSUGARWATER.NAME"
+msgid "Hydrated: Nectar"
+msgstr "Hydraté : Nectar"
+
+#. Rephysicalized.STRINGS.ELEMENTS.ASHBYPRODUCT.DESC
+msgctxt "Rephysicalized.STRINGS.ELEMENTS.ASHBYPRODUCT.DESC"
+msgid "Ash is a byproduct of organic matter combustion. It can be used as a fertilizer or filtration medium."
+msgstr "Les cendres sont un sous-produit de la combustion des matières organiques. Elles peuvent être utilisées comme engrais ou comme matériau filtrant."
+
+#. Rephysicalized.STRINGS.ELEMENTS.ASHBYPRODUCT.NAME
+msgctxt "Rephysicalized.STRINGS.ELEMENTS.ASHBYPRODUCT.NAME"
+msgid "<link=\"ASHBYPRODUCT\">Ash</link>"
+msgstr "<link=\"ASHBYPRODUCT\">Cendres</link>"
+
+#. Rephysicalized.STRINGS.ELEMENTS.CRUDBYPRODUCT.DESC
+msgctxt "Rephysicalized.STRINGS.ELEMENTS.CRUDBYPRODUCT.DESC"
+msgid "Crud is a byproduct of various industrial or metabolic processes. It's a thick, unpleasant-looking mixture of Silicate and Carbon, suitable only for construction."
+msgstr "Les résidus sont un sous-produit de divers procédés industriels ou métaboliques. Il s'agit d'un mélange épais et peu engageant de silicates et de carbone, utilisable uniquement comme matériau de construction."
+
+#. Rephysicalized.STRINGS.ELEMENTS.CRUDBYPRODUCT.NAME
+msgctxt "Rephysicalized.STRINGS.ELEMENTS.CRUDBYPRODUCT.NAME"
+msgid "<link=\"CRUDBYPRODUCT\">Crud</link>"
+msgstr "<link=\"CRUDBYPRODUCT\">Résidus</link>"
+
+#. Rephysicalized.STRINGS.MATERIAL_MODIFIERS.CAPACITY
+msgctxt "Rephysicalized.STRINGS.MATERIAL_MODIFIERS.CAPACITY"
+msgid "<link=\"POWER\">Storage Capacity</link>: {0}"
+msgstr "<link=\"POWER\">Capacité de stockage</link> : {0}"
+
+#. Rephysicalized.STRINGS.MATERIAL_MODIFIERS.TOOLTIP.CAPACITY
+msgctxt "Rephysicalized.STRINGS.MATERIAL_MODIFIERS.TOOLTIP.CAPACITY"
+msgid "Making some buildings with this material will modify their <style=\"KKeyword\">Storage Capacity</style> by {0}."
+msgstr "Construire certains bâtiments avec ce matériau modifiera leur <style=\"KKeyword\">capacité de stockage</style> de {0}."
+
+#. Rephysicalized.STRINGS.MATERIAL_MODIFIERS.TOOLTIP.WATTAGE
+msgctxt "Rephysicalized.STRINGS.MATERIAL_MODIFIERS.TOOLTIP.WATTAGE"
+msgid "Making batteries with this material will modify their <style=\"KKeyword\">Max Wattage</style> by {0}."
+msgstr "Construire des batteries avec ce matériau modifiera leur <style=\"KKeyword\">puissance maximale</style> de {0}."
+
+#. Rephysicalized.STRINGS.MATERIAL_MODIFIERS.WATTAGE
+msgctxt "Rephysicalized.STRINGS.MATERIAL_MODIFIERS.WATTAGE"
+msgid "<link=\"POWER\">Battery Capacity</link>: {0}"
+msgstr "<link=\"POWER\">Capacité de la batterie</link> : {0}"
+
+#. Rephysicalized.STRINGS.MISC.TAGS.ALGAE
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.ALGAE"
+msgid "<link=\"ALGAE\">Algae</link>"
+msgstr "<link=\"ALGAE\">Algues</link>"
+
+#. Rephysicalized.STRINGS.MISC.TAGS.DISTILLABLE
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.DISTILLABLE"
+msgid "<link=\"DISTILLABLE\">Distillable</link>"
+msgstr "<link=\"DISTILLABLE\">Distillable</link>"
+
+#. Rephysicalized.STRINGS.MISC.TAGS.DISTILLABLE_DESC
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.DISTILLABLE_DESC"
+msgid "Organic matter suitable for distillation into Algae or Phyto Oil."
+msgstr "Matière organique pouvant être distillée en algues ou en huile végétale."
+
+#. Rephysicalized.STRINGS.MISC.TAGS.GLUE
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.GLUE"
+msgid "<link=\"GLUE\">Glue</link>"
+msgstr "<link=\"GLUE\">Colle</link>"
+
+#. Rephysicalized.STRINGS.MISC.TAGS.GLUE_DESC
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.GLUE_DESC"
+msgid "A sticky substance used for bonding materials together."
+msgstr "Substance adhésive utilisée pour assembler différents matériaux."
+
+#. Rephysicalized.STRINGS.MISC.TAGS.OXIDIZERGAS
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.OXIDIZERGAS"
+msgid "<link=\"OXIDIZERGAS\">Oxidizer Gas</link>"
+msgstr "<link=\"OXIDIZERGAS\">Gaz comburant</link>"
+
+#. Rephysicalized.STRINGS.MISC.TAGS.OXIDIZERGAS_DESC
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.OXIDIZERGAS_DESC"
+msgid "Oxidant gas agent for combustion reactions. Most combustion engines may draw air from surrounding enviroment but some require piped input."
+msgstr "Gaz comburant utilisé pour les réactions de combustion. La plupart des moteurs à combustion prélèvent l'air directement dans leur environnement, mais certains nécessitent une alimentation par conduite."
+
+#. Rephysicalized.STRINGS.MISC.TAGS.REPHYSSUBLIMATOR
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.REPHYSSUBLIMATOR"
+msgid "<link=\"REPHYSSUBLIMATOR\">Sublimator</link>"
+msgstr "<link=\"REPHYSSUBLIMATOR\">Sublimateur</link>"
+
+#. Rephysicalized.STRINGS.MISC.TAGS.REPHYSSUBLIMATOR_DESC
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.REPHYSSUBLIMATOR_DESC"
+msgid "Materials suitable for sublmation at Sublimation Station."
+msgstr "Matériaux pouvant être sublimés dans une station de sublimation."
+
+#. Rephysicalized.STRINGS.MISC.TAGS.RichSoil
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.RichSoil"
+msgid "<link=\"RichSoil\">Rich Soil</link>"
+msgstr "<link=\"RichSoil\">Terre riche</link>"
+
+#. Rephysicalized.STRINGS.MISC.TAGS.RichSoil_DESC
+msgctxt "Rephysicalized.STRINGS.MISC.TAGS.RichSoil_DESC"
+msgid "A type of soil with large amount of plant nutrients. It can be used as fertilizer component."
+msgstr "Un type de terre riche en nutriments pour les plantes. Peut être utilisé comme composant d'engrais."
+
+#. Rephysicalized.STRINGS.MODCONFIG.BATTERYWATERDAMAGE.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.BATTERYWATERDAMAGE.NAME"
+msgid "Battery Water Damage"
+msgstr "Dégâts des batteries dans l'eau"
+
+#. Rephysicalized.STRINGS.MODCONFIG.BATTERYWATERDAMAGE.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.BATTERYWATERDAMAGE.TOOLTIP"
+msgid "Batteries and Transformers take damage in water and explode like Power Banks."
+msgstr "Les batteries et transformateurs subissent des dégâts dans l'eau et explosent comme les batteries portables."
+
+#. Rephysicalized.STRINGS.MODCONFIG.BIONICMETALMETER.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.BIONICMETALMETER.NAME"
+msgid "Bionics require metal"
+msgstr "Les bioniques nécessitent du métal"
+
+#. Rephysicalized.STRINGS.MODCONFIG.BIONICMETALMETER.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.BIONICMETALMETER.TOOLTIP"
+msgid "Bionic Duplicants require metal to produce microchips and heal (1HP = 0.2kg of metal). They will automatically fetch and eat Iron when the capacity runs low."
+msgstr "Les duplicants bioniques ont besoin de métal pour fabriquer des puces électroniques et se réparer (1 PV = 0,2 kg de métal). Ils iront automatiquement chercher et consommer du fer lorsque leur réserve deviendra faible."
+
+#. Rephysicalized.STRINGS.MODCONFIG.BUILDINGHEATEXCHANGE.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.BUILDINGHEATEXCHANGE.NAME"
+msgid "Buildings exchange heat with foundation tiles"
+msgstr "Les bâtiments échangent leur chaleur avec les dalles de fondation"
+
+#. Rephysicalized.STRINGS.MODCONFIG.BUILDINGHEATEXCHANGE.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.BUILDINGHEATEXCHANGE.TOOLTIP"
+msgid "IMPORTANT: Unfortunately, due to how sim works, buildings will exchange heat very rapidly with foundation tiles, on par with tempshiftplates."
+msgstr "IMPORTANT : En raison du fonctionnement de la simulation, les bâtiments échangent leur chaleur très rapidement avec les dalles de fondation, à un rythme comparable à celui des plaques de transfert thermique."
+
+#. Rephysicalized.STRINGS.MODCONFIG.CLOGGEDBUILDINGS.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.CLOGGEDBUILDINGS.NAME"
+msgid "Clogging Buildings"
+msgstr "Obstruction des bâtiments"
+
+#. Rephysicalized.STRINGS.MODCONFIG.CLOGGEDBUILDINGS.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.CLOGGEDBUILDINGS.TOOLTIP"
+msgid ""
+"Large combustion engines get entombed in tiles of Ash and Mercury Lamp gets encrusted in Cinnabar periodically, digging command is automatically placed on the tiles. \n"
+"\n"
+"When disabled, materials will drop as normal debris instead."
+msgstr ""
+"Les grands moteurs à combustion s'ensevelissent progressivement sous des tuiles de cendres et les lampes au mercure se recouvrent régulièrement de cinabre. Un ordre de creusement est automatiquement placé sur ces tuiles.\n"
+"\n"
+"Si cette option est désactivée, les matériaux tombent simplement sous forme de débris."
+
+#. Rephysicalized.STRINGS.MODCONFIG.COMETMASSMULT.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.COMETMASSMULT.NAME"
+msgid "Comet Mass Multiplier"
+msgstr "Multiplicateur de masse des comètes"
+
+#. Rephysicalized.STRINGS.MODCONFIG.COMETMASSMULT.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.COMETMASSMULT.TOOLTIP"
+msgid "Increase or decrease the mass in comets. 0.5 is effectively equal to vanilla."
+msgstr "Augmente ou diminue la masse des comètes. Une valeur de 0,5 correspond approximativement au jeu de base."
+
+#. Rephysicalized.STRINGS.MODCONFIG.DEBRISDISSOLVING.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.DEBRISDISSOLVING.NAME"
+msgid "Debris Dissolving"
+msgstr "Dissolution des débris"
+
+#. Rephysicalized.STRINGS.MODCONFIG.DEBRISDISSOLVING.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.DEBRISDISSOLVING.TOOLTIP"
+msgid "Enables the dissolution is various element chunks in specific liquids. The full list of interactions is in the Database."
+msgstr "Active la dissolution de certains matériaux dans des liquides spécifiques. La liste complète des interactions est disponible dans la base de données."
+
+#. Rephysicalized.STRINGS.MODCONFIG.DUPLICANTOXYGENUSE.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.DUPLICANTOXYGENUSE.NAME"
+msgid "Duplicant Oxygen Use"
+msgstr "Consommation d'oxygène des duplicants"
+
+#. Rephysicalized.STRINGS.MODCONFIG.DUPLICANTOXYGENUSE.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.DUPLICANTOXYGENUSE.TOOLTIP"
+msgid ""
+"Adjusts the amount of Oxygen a Duplicant breathes.  \n"
+"\n"
+" Adjusted due to SPOM not being viable anymore and required Oxygen for combustion."
+msgstr ""
+"Ajuste la quantité d’oxygène respirée par un duplicant.\n"
+"\n"
+"Ajusté car les système d’oxygène autonome (SPOM) ne sont plus viables et l’oxygène est désormais nécessaire pour la combustion."
+
+#. Rephysicalized.STRINGS.MODCONFIG.LIGHTSINUTILITY.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.LIGHTSINUTILITY.NAME"
+msgid "Light Furniture in Utilities"
+msgstr "Éclairage dans la catégorie Utilitaires"
+
+#. Rephysicalized.STRINGS.MODCONFIG.LIGHTSINUTILITY.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.LIGHTSINUTILITY.TOOLTIP"
+msgid "Moves Lamp buildings into Utilities category."
+msgstr "Déplace les bâtiments d'éclairage dans la catégorie Utilitaires."
+
+#. Rephysicalized.STRINGS.MODCONFIG.METALVOCANOOUTPUT.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.METALVOCANOOUTPUT.NAME"
+msgid "Metal Volcano Output"
+msgstr "Production des volcans métalliques"
+
+#. Rephysicalized.STRINGS.MODCONFIG.METALVOCANOOUTPUT.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.METALVOCANOOUTPUT.TOOLTIP"
+msgid ""
+"Adjusts output of all Metal Volcanoes. \n"
+"\n"
+" Decreased value in tandem with Rephysicalized Metal Ores. "
+msgstr ""
+"Ajuste la production de tous les volcans métalliques.\n"
+"\n"
+"Valeur réduite en cohérence avec l’option « Minerais de métal Rephysicalized ». "
+
+#. Rephysicalized.STRINGS.MODCONFIG.REPHYSICALIZEDMETALORE.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.REPHYSICALIZEDMETALORE.NAME"
+msgid "Rephysicalized Metal Ore"
+msgstr "Minerais de métal Rephysicalized"
+
+#. Rephysicalized.STRINGS.MODCONFIG.REPHYSICALIZEDMETALORE.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.REPHYSICALIZEDMETALORE.TOOLTIP"
+msgid ""
+"Metal Ores become real-life compounds and contain impurities. To rebalance lower amounts of Metal, Conductive Wires consume less material.  \n"
+"\n"
+" Cinnabar will remain a compound of Sulfur and Mercury even while this is turned off."
+msgstr ""
+"Les minerais métalliques deviennent des composés réalistes contenant des impuretés. Pour compenser la réduction de la quantité de métal obtenue, les fils conducteurs consomment moins de matériau.\n"
+"\n"
+"Le cinabre reste un composé de soufre et de mercure même si cette option est désactivée."
+
+#. Rephysicalized.STRINGS.MODCONFIG.SOlLIDMASSMULT.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.SOlLIDMASSMULT.NAME"
+msgid "Solid Mass WorldGen Multiplier"
+msgstr "Multiplicateur de masse des solides (génération du monde)"
+
+#. Rephysicalized.STRINGS.MODCONFIG.SOlLIDMASSMULT.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.SOlLIDMASSMULT.TOOLTIP"
+msgid ""
+"Adjusts Mass of all Solid Tiles on the world generation.  \n"
+"\n"
+" Doesn't affect story traits and some setpieces. \n"
+"\n"
+"  Metals Mass Multiplier does not scale lower than 0.25 as it primarily a construction material rather than a recyclable.  \n"
+"\n"
+" 0.5 effectively is equal to vanilla value because vanilla mechanic of halving the Mass on Digging a Tile is removed."
+msgstr ""
+"Ajuste la masse de toutes les tuiles solides lors de la génération du monde.\n"
+"\n"
+"N’affecte pas les traits scénarisés ni certaines structures prédéfinies.\n"
+"\n"
+"Le multiplicateur de masse des métaux ne descend pas sous 0,25, car ils servent principalement de matériaux de construction plutôt que de ressources recyclables.\n"
+"\n"
+"Une valeur de 0,5 correspond en pratique à l’équivalent du jeu de base, car le mécanisme de réduction de moitié de la masse lors du creusement d’une tuile a été supprimé."
+
+#. Rephysicalized.STRINGS.MODCONFIG.STARTWITHZEROSCALES.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.STARTWITHZEROSCALES.NAME"
+msgid "Critters don't have starting scale growth"
+msgstr "Les créatures ne commencent pas avec une croissance d’écailles"
+
+#. Rephysicalized.STRINGS.MODCONFIG.STARTWITHZEROSCALES.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.STARTWITHZEROSCALES.TOOLTIP"
+msgid "Makes it so when the critter is turned into adult, it does not automatically gain 50-90% of scale/antler/fur growth."
+msgstr "Fait en sorte que lorsqu’une créature devient adulte, elle ne gagne plus automatiquement 50 à 90 % de croissance d’écailles, de bois ou de fourrure."
+
+#. Rephysicalized.STRINGS.MODCONFIG.TUNEDUPCRUDCREATION.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.TUNEDUPCRUDCREATION.NAME"
+msgid "Crud Creation from Tuned-up generators"
+msgstr "Production de résidus par les générateurs optimisés"
+
+#. Rephysicalized.STRINGS.MODCONFIG.TUNEDUPCRUDCREATION.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.TUNEDUPCRUDCREATION.TOOLTIP"
+msgid "Converts Microchips into Crud on use. You can disable it if you don't want small amount of debris around your generators."
+msgstr "Transforme les puces électroniques en résidus lors de leur utilisation. Vous pouvez désactiver cette option si vous ne souhaitez pas voir de petits débris autour de vos générateurs."
+
+#. Rephysicalized.STRINGS.MODCONFIG.WATERGEYSEROUTPUT.NAME
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.WATERGEYSEROUTPUT.NAME"
+msgid "Water Geyser Output"
+msgstr "Production des geysers d'eau"
+
+#. Rephysicalized.STRINGS.MODCONFIG.WATERGEYSEROUTPUT.TOOLTIP
+msgctxt "Rephysicalized.STRINGS.MODCONFIG.WATERGEYSEROUTPUT.TOOLTIP"
+msgid ""
+"Adjusts output of all Water-based Geysers. \n"
+"\n"
+" You can now recycle most of the Water so you do not need to rely on them as much. "
+msgstr ""
+"Ajuste la production de tous les geysers d'eau.\n"
+"\n"
+"Vous pouvez désormais recycler la majeure partie de l'eau, il n'est donc plus nécessaire de compter autant sur eux. "
+
+#~ msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.OVERVIEW"
+#~ msgid "Rephysicalized is a global mod..."
+#~ msgstr "Rephysicalized est un mod global..."
+
+#~ msgctxt "Rephysicalized.STRINGS.CODEX.REPHYSICALIZEDCHANGES.BODY.PLANTS"
+#~ msgid "Plants now track..."
+#~ msgstr "Les plantes suivent désormais..."

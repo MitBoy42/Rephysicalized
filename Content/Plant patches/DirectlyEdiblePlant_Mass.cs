@@ -27,32 +27,28 @@ namespace Rephysicalized
                 GrowthRemovalPercentPerKg = growthPerKg;
                 MinRemainingMassKg = minRemain;
             }
-
-            public SwapConfig(string[] ids, float scale, float growthPerKg, float minRemain = 1f)
-            {
-                CandidateIds = ids ?? Array.Empty<string>();
-                MassConsumptionScale = scale;
-                GrowthRemovalPercentPerKg = growthPerKg;
-                MinRemainingMassKg = minRemain;
-            }
         }
 
         public static void Postfix()
         {
             var configs = new[]
             {
-                new SwapConfig("HardSkinBerryPlant", 1f, 0.06667f, 1f),
-                new SwapConfig(new[] { "PrickleFlower", "PrickleFLower" }, 1f, 0.008333f, 1f),
-                new SwapConfig("BasicFabricPlant", 1f, 1f / 180f, 1f), // Thimble Reed
-                new SwapConfig("BasicSingleHarvestPlant", 1f, 1f / 30f, 1f), // Mealwood
-                new SwapConfig("SpiceVine", 1f, 1f / 288f, 1f), // Pincha Pepper
-                new SwapConfig("SwampLily", 1f, 1f / 100f, 1f),
-                new SwapConfig("ForestTreeBranch", 1f, 1f / 100f, 1f),
-                new SwapConfig("SpaceTreeBranch", 1f, 1f / 40f, 1f),
-                new SwapConfig("CarrotPlant", 1f, 1f / 135f, 1f),
-                new SwapConfig("BeanPlant", 1f, 1f / 525f, 1f),
-                new SwapConfig("KelpPlant", 1f, 1f / 100f, 1f),
-               new SwapConfig("GasGrass", 1f, 1f / 200f, 1f),
+                new SwapConfig("HardSkinBerryPlant", 1f, 0.06667f),
+                new SwapConfig("PrickleFLower", 1f, 0.008333f),
+                new SwapConfig("BasicFabricPlant", 1f, 1f / 180f), // Thimble Reed
+                new SwapConfig("BasicSingleHarvestPlant", 1f, 1f / 30f), // Mealwood
+                new SwapConfig("SpiceVine", 1f, 1f / 288f), // Pincha Pepper
+                new SwapConfig("SwampLily", 1f, 1f / 100f),
+                new SwapConfig("ForestTreeBranch", 1f, 1f / 100f),
+                new SwapConfig("SpaceTreeBranch", 1f, 1f / 40f),
+                new SwapConfig("CarrotPlant", 1f, 1f / 135f),
+                new SwapConfig("BeanPlant", 1f, 1f / 525f),
+                new SwapConfig("KelpPlant", 1f, 1f / 100f),
+               new SwapConfig("GasGrass", 1f, 1f / 200f),
+               new SwapConfig("PlanktonCoral", 1f, 1f / 80f),
+               new SwapConfig("SeaLettuce", 1f, 1f / 120f),
+              new SwapConfig("TubeWorm", 1f, 1f /400f),
+                      new SwapConfig("DewPalm", 1f, 1f /500f),
             };
 
             foreach (var cfg in configs)

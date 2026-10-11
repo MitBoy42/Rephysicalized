@@ -1,92 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
-using HarmonyLib;
 
 namespace Rephysicalized.Content.ModDb
 {
-    // Basic MB kept for completeness; not directly used by the CodexConversionPanel path
-    public sealed class EnvCookableWidget : MonoBehaviour
+
+    internal static class EnvCookablePanelTags
     {
-        [Header("Prefabs/References")][SerializeField] private RectTransform rootContainer; [SerializeField] private LocText headerText;
-        [SerializeField] private RectTransform middleRow;
-        [SerializeField] private Image temperatureIcon;
-        [SerializeField] private LocText temperatureText;
-        [SerializeField] private Image pressureIcon;
-        [SerializeField] private LocText pressureText;
+        public static readonly Tag TemperatureFreezing = new Tag("crew_state_temp_down");
+        public static readonly Tag TemperatureNormal = new Tag("crew_state_temp_up");
 
-        [SerializeField] private RectTransform bottomRow;
-        [SerializeField] private Image inputItemIcon;
-        [SerializeField] private LocText inputItemText;
-
-        [Header("Style")]
-        [SerializeField] private TextStyleSetting headerStyle;
-        [SerializeField] private TextStyleSetting bodyStyle;
-
-        public void ConfigureSprites(Sprite tempSprite, Sprite pressureSprite, Sprite inputSprite)
-        {
-            if (temperatureIcon != null) temperatureIcon.sprite = tempSprite;
-            if (pressureIcon != null) pressureIcon.sprite = pressureSprite;
-            if (inputItemIcon != null) inputItemIcon.sprite = inputSprite;
-        }
-
-        public void Configure(string title, string inputItemDisplay, bool showTemperature = true, bool showPressure = true)
-        {
-            EnsureLayout();
-
-            if (headerText != null)
-            {
-                if (headerStyle != null) SetTextStyleSetting.ApplyStyle(headerText, headerStyle);
-                headerText.AllowLinks = true;
-                headerText.text = title ?? string.Empty;
-            }
-
-            if (middleRow != null)
-            {
-                middleRow.gameObject.SetActive(showTemperature || showPressure);
-
-                if (temperatureIcon != null) temperatureIcon.gameObject.SetActive(showTemperature);
-                if (pressureIcon != null) pressureIcon.gameObject.SetActive(showPressure);
-                if (pressureText != null) pressureText.gameObject.SetActive(showPressure);
-            }
-        }
-
-        private void EnsureLayout()
-        {
-            if (rootContainer == null)
-                rootContainer = gameObject.GetComponent<RectTransform>();
-
-            var vlg = gameObject.GetComponent<VerticalLayoutGroup>();
-            if (vlg == null)
-            {
-                vlg = gameObject.AddComponent<VerticalLayoutGroup>();
-                vlg.childAlignment = TextAnchor.UpperLeft;
-                vlg.childForceExpandHeight = false;
-                vlg.childForceExpandWidth = true;
-                vlg.spacing = 8f;
-                vlg.padding = new RectOffset(0, 0, 0, 0);
-            }
-
-            SetupRowLayout(middleRow);
-            SetupRowLayout(bottomRow);
-        }
-
-        private static void SetupRowLayout(RectTransform row)
-        {
-            if (row == null) return;
-            var hlg = row.GetComponent<HorizontalLayoutGroup>();
-            if (hlg == null)
-            {
-                hlg = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-                hlg.childAlignment = TextAnchor.MiddleLeft;
-                hlg.childForceExpandHeight = false;
-                hlg.childForceExpandWidth = false;
-                hlg.spacing = 6f;
-                hlg.padding = new RectOffset(0, 0, 0, 0);
-            }
-        }
+        // Registered by ModAssets as "ui_icon_pressure", so Assets.GetSprite resolves it.
+        public static readonly Tag Pressure = new Tag("ui_icon_pressure");
     }
 
     internal static class CodexEntriesRegistry
@@ -138,7 +67,6 @@ namespace Rephysicalized.Content.ModDb
     [HarmonyPatch]
     internal static class EnvCookableCodexIntegration
     {
-        // Anchor headers for placement – keep exact strings as provided by the game
         private const string HeaderApplications = "Applications";
         private const string HeaderProducedBy = "Produced By";
 
@@ -146,11 +74,9 @@ namespace Rephysicalized.Content.ModDb
         private static readonly Dictionary<string, List<(GameObject sourcePrefab, EnviromenmentalPreparation patch)>> OutputBuckets
             = new Dictionary<string, List<(GameObject, EnviromenmentalPreparation)>>(256, StringComparer.OrdinalIgnoreCase);
 
-        // Per-entry duplicate guard for panels; key is unique per patch+source
         private static readonly ConditionalWeakTable<CodexEntry, HashSet<string>> EntryPanelKeys
             = new ConditionalWeakTable<CodexEntry, HashSet<string>>();
 
-        // Central hook: every codex entry added
         [HarmonyPatch(typeof(CodexCache), "AddEntry")]
         [HarmonyPostfix]
         private static void CodexCache_AddEntry_Postfix(CodexEntry entry)
@@ -162,7 +88,7 @@ namespace Rephysicalized.Content.ModDb
 
             if (entry.contentContainers != null)
             {
-                GameObject prefab = TryResolvePrefabByEntryId(entry.id);
+                GameObject prefab = TryResolvePrefab(entry?.id);
                 if (prefab != null)
                     TryAppendSourcePanels(entry, prefab);
             }
@@ -206,7 +132,7 @@ namespace Rephysicalized.Content.ModDb
                 var entry = kv.Value;
                 if (entry == null) continue;
 
-                GameObject plantPrefab = TryResolvePrefabFromEntry(entry);
+                GameObject plantPrefab = TryResolvePrefab(entry?.id);
                 TryAppendSourcePanels(entry, plantPrefab);
 
                 if (entry.subEntries != null)
@@ -215,7 +141,7 @@ namespace Rephysicalized.Content.ModDb
                     {
                         if (se == null || se.contentContainers == null) continue;
 
-                        GameObject seedPrefab = TryResolvePrefabFromSubEntry(se);
+                        GameObject seedPrefab = TryResolvePrefab(se?.id);
                         if (seedPrefab == null && plantPrefab != null)
                             seedPrefab = TryResolveSeedFromPlant(plantPrefab);
 
@@ -237,7 +163,7 @@ namespace Rephysicalized.Content.ModDb
                 var entry = kv.Value;
                 if (entry == null) continue;
 
-                GameObject prefab = TryResolvePrefabFromEntry(entry);
+                GameObject prefab = TryResolvePrefab(entry?.id);
                 TryAppendSourcePanels(entry, prefab);
             }
         }
@@ -254,7 +180,7 @@ namespace Rephysicalized.Content.ModDb
                 var entry = kv.Value;
                 if (entry == null) continue;
 
-                GameObject prefab = TryResolvePrefabFromEntry(entry);
+                GameObject prefab = TryResolvePrefab(entry?.id);
                 TryAppendSourcePanels(entry, prefab);
             }
         }
@@ -273,30 +199,13 @@ namespace Rephysicalized.Content.ModDb
             if (entry?.contentContainers == null || prefab == null) return;
 
             var patches = prefab.GetComponents<EnviromenmentalPreparation>();
-            if (patches == null || patches.Length == 0) return;
+            if (patches.Length == 0) return;
 
             var seen = EntryPanelKeys.GetOrCreateValue(entry);
 
             foreach (var cookable in patches)
             {
-                var panel = BuildEnvironmentalCookingPanel(prefab, cookable);
-                if (panel == null) continue;
-
-                var key = BuildPanelKey(prefab, cookable);
-                if (seen.Contains(key))
-                    continue;
-
-                int insertIdx = FindInsertIndexAfterHeader(entry.contentContainers, HeaderApplications);
-                if (insertIdx < 0)
-                    insertIdx = FindInsertIndexFallback(entry.contentContainers);
-
-                var cc = new ContentContainer(new List<ICodexWidget> { panel }, ContentContainer.ContentLayout.Vertical);
-                if (insertIdx >= 0 && insertIdx <= entry.contentContainers.Count)
-                    entry.contentContainers.Insert(insertIdx, cc);
-                else
-                    entry.contentContainers.Add(cc);
-
-                seen.Add(key);
+                InsertCookingPanel(entry.contentContainers, HeaderApplications, prefab, cookable, seen);
 
                 // Bucket for target pages and try immediate append
                 BucketCookableOutputs(cookable, prefab);
@@ -304,28 +213,41 @@ namespace Rephysicalized.Content.ModDb
             }
         }
 
+ 
+        private static void InsertCookingPanel(
+            List<ContentContainer> containers,
+            string header,
+            GameObject sourcePrefab,
+            EnviromenmentalPreparation cookable,
+            HashSet<string> seen)
+        {
+            if (containers == null || cookable == null) return;
+
+            var panel = BuildEnvironmentalCookingPanel(sourcePrefab, cookable);
+            if (panel == null) return;
+
+            string key = BuildPanelKey(sourcePrefab, cookable);
+            if (seen != null && !seen.Add(key)) return;
+
+            int index = FindInsertIndexAfterHeader(containers, header);
+            if (index < 0)
+                index = FindInsertIndexFallback(containers);
+
+            // FindInsertIndexFallback always yields a valid index, so no bounds re-check is needed.
+            containers.Insert(index, new ContentContainer(
+                new List<ICodexWidget> { panel }, ContentContainer.ContentLayout.Vertical));
+        }
+
         private static void TryAppendSourcePanelsToSubEntry(SubEntry se, GameObject prefab)
         {
             if (se?.contentContainers == null || prefab == null) return;
 
             var patches = prefab.GetComponents<EnviromenmentalPreparation>();
-            if (patches == null || patches.Length == 0) return;
+            if (patches.Length == 0) return;
 
             foreach (var cookable in patches)
             {
-                var panel = BuildEnvironmentalCookingPanel(prefab, cookable);
-                if (panel == null) continue;
-
-                int insertIdx = FindInsertIndexAfterHeader(se.contentContainers, HeaderApplications);
-                if (insertIdx < 0)
-                    insertIdx = FindInsertIndexFallback(se.contentContainers);
-
-                var cc = new ContentContainer(new List<ICodexWidget> { panel }, ContentContainer.ContentLayout.Vertical);
-                if (insertIdx >= 0 && insertIdx <= se.contentContainers.Count)
-                    se.contentContainers.Insert(insertIdx, cc);
-                else
-                    se.contentContainers.Add(cc);
-
+                InsertCookingPanel(se.contentContainers, HeaderApplications, prefab, cookable, null);
                 BucketCookableOutputs(cookable, prefab);
                 TryAppendAllForOutputId(cookable.ID);
             }
@@ -356,7 +278,6 @@ namespace Rephysicalized.Content.ModDb
             list.Add((prefab, cookable));
         }
 
-        // Target insertion
 
         private static void TryAppendAllForOutputId(string outputId)
         {
@@ -385,31 +306,11 @@ namespace Rephysicalized.Content.ModDb
             var seen = EntryPanelKeys.GetOrCreateValue(outEntry);
 
             foreach (var (sourcePrefab, cookable) in list)
-            {
-                var key = BuildPanelKey(sourcePrefab, cookable);
-                if (seen.Contains(key))
-                    continue;
-
-                var panel = BuildEnvironmentalCookingPanel(sourcePrefab, cookable);
-                if (panel == null) continue;
-
-                int insertIdx = FindInsertIndexAfterHeader(outEntry.contentContainers, HeaderProducedBy);
-                if (insertIdx < 0)
-                    insertIdx = FindInsertIndexFallback(outEntry.contentContainers);
-
-                var cc = new ContentContainer(new List<ICodexWidget> { panel }, ContentContainer.ContentLayout.Vertical);
-                if (insertIdx >= 0 && insertIdx <= outEntry.contentContainers.Count)
-                    outEntry.contentContainers.Insert(insertIdx, cc);
-                else
-                    outEntry.contentContainers.Add(cc);
-
-                seen.Add(key);
-            }
+                InsertCookingPanel(outEntry.contentContainers, HeaderProducedBy, sourcePrefab, cookable, seen);
 
             return true;
         }
 
-        // Aggregation for Strings page CONTAINER10
         internal static ContentContainer BuildAllEnvCookablePanelsContainer()
         {
             try
@@ -455,57 +356,47 @@ namespace Rephysicalized.Content.ModDb
 
         private static CodexConversionPanel BuildEnvironmentalCookingPanel(GameObject sourcePrefab, EnviromenmentalPreparation cookable)
         {
-            try
+            if (cookable == null || sourcePrefab == null) return null;
+
+            var conditions = new List<ElementUsage>();
+
+
+            Tag tempTag = cookable.enableFreezing
+                ? EnvCookablePanelTags.TemperatureFreezing
+                : EnvCookablePanelTags.TemperatureNormal;
+
+            float tK = Mathf.Max(0f, cookable.temperature);
+            conditions.Add(new ElementUsage(tempTag, tK, false,
+                (tag, amount, continuous) => $" {GameUtil.GetFormattedTemperature(tK)}"));
+
+            // Element gates
+            if (cookable.triggeringElements != null)
             {
-                string title = STRINGS.CODEX.PANELS.ENVIROMENTCOOKING;
-                var conditions = new List<ElementUsage>();
-
-                // Temperature
+                foreach (var hash in cookable.triggeringElements)
                 {
-                    string tempIcon = cookable.enableFreezing ? "crew_state_temp_down" : "crew_state_temp_up";
-                    Tag tempTag = new Tag(tempIcon);
-                    float tK = Mathf.Max(0f, cookable.temperature);
-                    string label = $" {GameUtil.GetFormattedTemperature(tK)}";
-                    conditions.Add(new ElementUsage(tempTag, tK, false, (tag, amount, continuous) => label));
+                    var el = ElementLoader.FindElementByHash(hash);
+                    if (el == null) continue;
+                    conditions.Add(new ElementUsage(el.tag, 0f, false, (tag, amount, continuous) => el.name));
                 }
-
-                // Element gates
-                if (cookable.triggeringElements != null && cookable.triggeringElements.Count > 0)
-                {
-                    foreach (var hash in cookable.triggeringElements)
-                    {
-                        var el = ElementLoader.FindElementByHash(hash);
-                        if (el == null) continue;
-                        conditions.Add(new ElementUsage(el.tag, 0f, false, (tag, amount, continuous) => el.name));
-                    }
-                }
-
-                // Pressure
-                if (cookable.requirePressure && cookable.pressureThreshold > 0f)
-                {
-                    Tag pressureTag = new Tag("Pressure");
-                    string label = $"Pressure >{GameUtil.GetFormattedMass(cookable.pressureThreshold)}";
-                    conditions.Add(new ElementUsage(pressureTag, cookable.pressureThreshold, false, (tag, amount, continuous) => label));
-                }
-
-                // Outputs
-                var outputs = new List<ElementUsage>();
-                if (!string.IsNullOrEmpty(cookable.ID))
-                {
-                    Tag outTag = new Tag(cookable.ID);
-                    float ratio = Mathf.Max(0f, cookable.massConversionRatio);
-                    outputs.Add(new ElementUsage(outTag, ratio, false));
-                }
-
-                return new CodexConversionPanel(title, conditions.ToArray(), outputs.ToArray(), sourcePrefab, null);
             }
-            catch
+
+            if (cookable.requirePressure && cookable.pressureThreshold > 0f)
             {
-                return null;
+                conditions.Add(new ElementUsage(
+                    EnvCookablePanelTags.Pressure,
+                    cookable.pressureThreshold,
+                    false,
+                    (tag, amount, continuous) => $"Pressure >{GameUtil.GetFormattedMass(cookable.pressureThreshold)}"));
             }
+
+            // Outputs
+            var outputs = new List<ElementUsage>();
+            if (!string.IsNullOrEmpty(cookable.ID))
+                outputs.Add(new ElementUsage(new Tag(cookable.ID), Mathf.Max(0f, cookable.massConversionRatio), false));
+            return new CodexConversionPanel(
+                STRINGS.CODEX.PANELS.ENVIROMENTCOOKING, conditions.ToArray(), outputs.ToArray(), sourcePrefab, null);
         }
 
-        // Placement helpers
 
         private static int FindInsertIndexAfterHeader(List<ContentContainer> containers, string header)
         {
@@ -538,12 +429,10 @@ namespace Rephysicalized.Content.ModDb
             if (containers == null || containers.Count == 0)
                 return 0;
 
-            // Before first conversion panel
             int firstConv = IndexOfFirstConversionPanel(containers);
             if (firstConv != -1)
                 return Mathf.Clamp(firstConv, 0, containers.Count);
 
-            // After first text block
             int firstText = IndexOfFirstTextContainer(containers);
             if (firstText != -1)
                 return Mathf.Clamp(firstText + 1, 0, containers.Count);
@@ -582,67 +471,23 @@ namespace Rephysicalized.Content.ModDb
             return -1;
         }
 
-        // Prefab resolution helpers
-
-        private static GameObject TryResolvePrefabByEntryId(string entryId)
+        private static GameObject TryResolvePrefab(string id)
         {
-            if (string.IsNullOrEmpty(entryId)) return null;
+            if (string.IsNullOrEmpty(id)) return null;
 
-            var go = Assets.TryGetPrefab(new Tag(entryId));
+            var go = Assets.TryGetPrefab(new Tag(id));
             if (go != null) return go;
 
-            int idx = entryId.LastIndexOf("::", StringComparison.Ordinal);
-            if (idx >= 0 && idx < entryId.Length - 2)
+            int idx = id.LastIndexOf("::", StringComparison.Ordinal);
+            if (idx >= 0 && idx < id.Length - 2)
             {
-                string suffix = entryId.Substring(idx + 2);
-                go = Assets.TryGetPrefab(new Tag(suffix));
+                go = Assets.TryGetPrefab(new Tag(id.Substring(idx + 2)));
                 if (go != null) return go;
             }
 
             return null;
         }
 
-        private static GameObject TryResolvePrefabFromEntry(CodexEntry entry)
-        {
-            if (entry == null) return null;
-
-            if (!string.IsNullOrEmpty(entry.id))
-            {
-                var go = Assets.TryGetPrefab(new Tag(entry.id));
-                if (go != null) return go;
-
-                int idx = entry.id.LastIndexOf("::", StringComparison.Ordinal);
-                if (idx >= 0 && idx < entry.id.Length - 2)
-                {
-                    string last = entry.id.Substring(idx + 2);
-                    go = Assets.TryGetPrefab(new Tag(last));
-                    if (go != null) return go;
-                }
-            }
-
-            return null;
-        }
-
-        private static GameObject TryResolvePrefabFromSubEntry(SubEntry se)
-        {
-            if (se == null) return null;
-
-            if (!string.IsNullOrEmpty(se.id))
-            {
-                var go = Assets.TryGetPrefab(new Tag(se.id));
-                if (go != null) return go;
-
-                int idx = se.id.LastIndexOf("::", StringComparison.Ordinal);
-                if (idx >= 0 && idx < se.id.Length - 2)
-                {
-                    string last = se.id.Substring(idx + 2);
-                    go = Assets.TryGetPrefab(new Tag(last));
-                    if (go != null) return go;
-                }
-            }
-
-            return null;
-        }
 
         private static GameObject TryResolveSeedFromPlant(GameObject plantPrefab)
         {
@@ -657,7 +502,6 @@ namespace Rephysicalized.Content.ModDb
             return null;
         }
 
-        // Element ID normalization
 
         internal static string TryCanonicalizeElementId(string idOrTag)
         {
@@ -723,39 +567,135 @@ namespace Rephysicalized.Content.ModDb
 
         private static void TryAppendAllForElementAliasesDirect(CodexEntry elementEntry, IEnumerable<string> aliases)
         {
-            if (elementEntry?.contentContainers == null || aliases == null)
-                return;
+            if (elementEntry?.contentContainers == null || aliases == null) return;
 
             var seen = EntryPanelKeys.GetOrCreateValue(elementEntry);
 
             foreach (var alias in aliases)
             {
                 if (string.IsNullOrEmpty(alias)) continue;
-                if (!OutputBuckets.TryGetValue(alias, out var list) || list.Count == 0)
-                    continue;
+                if (!OutputBuckets.TryGetValue(alias, out var list) || list.Count == 0) continue;
 
                 foreach (var (sourcePrefab, cookable) in list)
-                {
-                    var key = BuildPanelKey(sourcePrefab, cookable);
-                    if (seen.Contains(key))
-                        continue;
-
-                    var panel = BuildEnvironmentalCookingPanel(sourcePrefab, cookable);
-                    if (panel == null) continue;
-
-                    int insertIdx = FindInsertIndexAfterHeader(elementEntry.contentContainers, HeaderProducedBy);
-                    if (insertIdx < 0)
-                        insertIdx = FindInsertIndexFallback(elementEntry.contentContainers);
-
-                    var cc = new ContentContainer(new List<ICodexWidget> { panel }, ContentContainer.ContentLayout.Vertical);
-                    if (insertIdx >= 0 && insertIdx <= elementEntry.contentContainers.Count)
-                        elementEntry.contentContainers.Insert(insertIdx, cc);
-                    else
-                        elementEntry.contentContainers.Add(cc);
-
-                    seen.Add(key);
-                }
+                    InsertCookingPanel(elementEntry.contentContainers, HeaderProducedBy, sourcePrefab, cookable, seen);
             }
+        }
+    }
+
+  
+    [HarmonyPatch(typeof(CodexConversionPanel), "Configure")]
+    internal static class EnvCookableConversionPanelFixups
+    {
+        // CODEX.HEAT.TITLE is UI.FormatAsLink("Heat", nameof(HEAT)), so the article id is "HEAT".
+        private const string HeatArticleId = "HEAT";
+
+        private static readonly BindingFlags PrivateInstance =
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+
+      
+        private static readonly FieldInfo InsField =
+            FindField(typeof(CodexConversionPanel), "ins");
+
+        private static readonly FieldInfo IngredientsField =
+            FindField(typeof(CodexConversionPanel), "ingredientsContainer");
+
+        private static readonly FieldInfo OnClickField =
+            FindField(typeof(KButton), "onClick");
+
+        private static FieldInfo FindField(Type type, string name)
+        {
+            while (type != null)
+            {
+                var field = type.GetField(name, PrivateInstance);
+                if (field != null) return field;
+                type = type.BaseType;
+            }
+
+            return null;
+        }
+
+        private static void Postfix(CodexConversionPanel __instance)
+        {
+            var ins = InsField?.GetValue(__instance) as ElementUsage[];
+            var container = IngredientsField?.GetValue(__instance) as GameObject;
+            if (ins == null || container == null) return;
+
+            Transform rows = container.transform;
+
+         
+            int validCount = 0;
+            foreach (var usage in ins)
+            {
+                if (usage.tag == Tag.Invalid) continue;
+                validCount++;
+            }
+
+            int rowIndex = rows.childCount - validCount;
+            if (rowIndex < 0) return;
+
+            foreach (var usage in ins)
+            {
+                Tag tag = usage.tag;
+                if (tag == Tag.Invalid) continue;
+                if (rowIndex >= rows.childCount) break;
+
+                var references = rows.GetChild(rowIndex).GetComponent<HierarchyReferences>();
+                rowIndex++;
+                if (references == null) continue;
+
+                bool isFreezing = tag == EnvCookablePanelTags.TemperatureFreezing;
+                bool isHeating = tag == EnvCookablePanelTags.TemperatureNormal;
+                bool isPressure = tag == EnvCookablePanelTags.Pressure;
+
+                if (!isFreezing && !isHeating && !isPressure) continue;
+
+                var button = references.GetReference<KButton>("Button");
+
+                if (isPressure)
+                {
+                    var icon = references.GetReference<Image>("Icon");
+                    if (icon != null && ModAssets.PressureIcon != null)
+                        icon.sprite = ModAssets.PressureIcon;
+
+                    SetClickHandler(button, null);
+                    continue;
+                }
+
+                var tempIcon = references.GetReference<Image>("Icon");
+                if (tempIcon != null)
+                {
+                    tempIcon.sprite = Assets.GetSprite(
+                        isFreezing ? (HashedString)"crew_state_temp_down" : (HashedString)"crew_state_temp_up");
+                    tempIcon.color = isFreezing ? Color.blue : Color.red;
+                }
+
+                string description = GameUtil.SafeStringFormat(
+                    (string)(isFreezing
+                        ? global::STRINGS.CODEX.FORMAT_STRINGS.TEMPERATURE_UNDER
+                        : global::STRINGS.CODEX.FORMAT_STRINGS.TEMPERATURE_OVER),
+                    GameUtil.GetFormattedTemperature(usage.amount));
+
+                var amount = references.GetReference<LocText>("Amount");
+                if (amount != null)
+                {
+                    amount.text = description;
+                    amount.color = isFreezing ? Color.blue : Color.red;
+                }
+
+                var tooltip = references.GetReference<ToolTip>("Tooltip");
+                if (tooltip != null)
+                    tooltip.toolTip = description;
+
+                // Point the reader at the vanilla Heat page instead of a dead crew-state link.
+                SetClickHandler(button, () => ManagementMenu.Instance.codexScreen.ChangeArticle(HeatArticleId));
+            }
+        }
+
+    
+        private static void SetClickHandler(KButton button, System.Action handler)
+        {
+            if (button == null || OnClickField == null) return;
+            OnClickField.SetValue(button, handler);
         }
     }
 }

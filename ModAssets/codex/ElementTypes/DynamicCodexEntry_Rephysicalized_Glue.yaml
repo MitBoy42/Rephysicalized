@@ -1,0 +1,32 @@
+id: "GLUE"
+title: STRINGS.MISC.TAGS.GLUE
+category: "ELEMENTTYPES"
+parentId: "ELEMENTTYPES"
+contentContainers:
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.GLUE
+          style: Title
+      - !CodexDividerLine
+          preferredWidth: -1
+      - !CodexImage
+          elementIcon: NATURALRESIN
+          preferredWidth: 128
+          preferredHeight: 128
+#-----------------------------
+  - contentLayout: Vertical
+    lockID:
+
+    content:
+      - !CodexText
+          stringKey: STRINGS.MISC.TAGS.GLUE_DESC
+          style: Body
+      - !CodexElementCategoryList
+          categoryTag: GLUE
+
+contentMadeAndUsed:
+  - tag: GLUE

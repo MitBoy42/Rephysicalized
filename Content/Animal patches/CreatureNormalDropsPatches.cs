@@ -9,46 +9,106 @@ using UnityEngine;
 namespace Rephysicalized.Content.Animal_patches
 {
 
-
-    [HarmonyPatch(typeof(EntityTemplates), "DeathDropFunction")]
     public static class Consolidated_EntityTemplates_DeathDropFunction
     {
-        public static void Prefix(GameObject inst, ref float onDeathDropCount, ref string onDeathDropID)
+        private static bool TryMapPrefabToDeathDrop(Tag prefabTag, out string newDropID, out float newDropCount)
         {
+            newDropID = null;
+            newDropCount = 0f;
 
-            var kpid = inst.GetComponent<KPrefabID>();
-
-            Tag pt = kpid.PrefabTag;
-
-                if (pt == new Tag(SquirrelHugConfig.ID) || pt == new Tag(BabySquirrelHugConfig.ID))
-                {
-                    onDeathDropID = "Meat";
-                    onDeathDropCount = 0.5f;
-                    return;
-                }
-         if (pt == new Tag(SealConfig.ID) || pt == new Tag(BabySealConfig.ID))
-                {
-                    onDeathDropID = "Tallow";
-                    onDeathDropCount = 1f;
-                    return;
-                }
-
-                if (pt == new Tag(MoleConfig.ID) || pt == new Tag(BabyMoleConfig.ID) || pt == new Tag(MoleDelicacyConfig.ID) || pt == new Tag(BabyMoleDelicacyConfig.ID))
-                {
-                    onDeathDropCount = 1f;
-                    return;
-                }
-            if (pt == new Tag(PrehistoricPacuConfig.ID) || pt == new Tag(BabyPrehistoricPacuConfig.ID))
+            if (prefabTag == new Tag("SquirrelHug") || prefabTag == new Tag("SquirrelHugBaby"))
             {
-                onDeathDropCount = 2f;
-                return;
+                newDropID = "Meat";
+                newDropCount = 0.5f;
+                return true;
             }
-            if (pt == new Tag(IceBellyConfig.ID) || pt == new Tag(BabyIceBellyConfig.ID) || pt == new Tag(GoldBellyConfig.ID) || pt == new Tag(BabyGoldBellyConfig.ID) 
-                || pt == new Tag(StegoConfig.ID) || pt == new Tag(BabyStegoConfig.ID) || pt == new Tag(AlgaeStegoConfig.ID) || pt == new Tag(BabyAlgaeStegoConfig.ID))
+
+            if (prefabTag == new Tag("Seal") || prefabTag == new Tag("SealBaby"))
             {
-                onDeathDropCount = 4f;
-                return;
+                newDropID = "Tallow";
+                newDropCount = 1f;
+                return true;
+            }
+
+            if (prefabTag == new Tag("Mole") || prefabTag == new Tag("MoleBaby") || prefabTag == new Tag("MoleDelicacy") || prefabTag == new Tag("MoleDelicacyBaby"))
+            {
+                newDropCount = 1f;
+                return true;
+            }
+
+            if (prefabTag == new Tag("PrehistoricPacu") || prefabTag == new Tag("PrehistoricPacuBaby"))
+            {
+                newDropCount = 2f;
+                return true;
+            }
+
+            if (prefabTag == new Tag("Squid") || prefabTag == new Tag("SquidBaby"))
+            {
+                newDropCount = 2f;
+                return true;
+            }
+
+            if (prefabTag == new Tag("SeaTurtle") || prefabTag == new Tag("SeaTurtleBaby"))
+            {
+                newDropCount = 1f;
+                return true;
+            }
+
+            // Default branch from original patch: apply only to these extra belly/stego variants.
+            if (prefabTag == new Tag("IceBelly") || prefabTag == new Tag("IceBellyBaby") || prefabTag == new Tag("GoldBelly") || prefabTag == new Tag("GoldBellyBaby") || prefabTag == new Tag("Stego") || prefabTag == new Tag("StegoBaby") || prefabTag == new Tag("AlgaeStego") || prefabTag == new Tag("AlgaeStegoBaby"))
+            {
+                newDropCount = 4f;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static Tag GetPrefabTag(GameObject inst)
+        {
+            var prefabId = inst.GetComponent<KPrefabID>();
+            return prefabId != null ? prefabId.PrefabTag : default;
+        }
+
+        [HarmonyPatch(typeof(EntityTemplates), "DeathDropFunction", new System.Type[] { typeof(UnityEngine.GameObject), typeof(float), typeof(string) })]
+        public static class DeathDropFunction_Single
+        {
+            public static void Prefix(GameObject inst, ref float onDeathDropCount, ref string onDeathDropID)
+            {
+                Tag prefabTag = GetPrefabTag(inst);
+                if (!TryMapPrefabToDeathDrop(prefabTag, out string newDropID, out float newDropCount))
+                    return;
+
+                if (newDropID != null)
+                    onDeathDropID = newDropID;
+                onDeathDropCount = newDropCount;
+            }
+        }
+
+        [HarmonyPatch(typeof(EntityTemplates), "DeathDropFunction", new System.Type[] { typeof(UnityEngine.GameObject), typeof(float[]), typeof(string[]) })]
+        public static class DeathDropFunction_Array
+        {
+            public static void Prefix(GameObject inst, ref float[] onDeathDropCounts, ref string[] onDeathDropIDs)
+            {
+                Tag prefabTag = GetPrefabTag(inst);
+                if (!TryMapPrefabToDeathDrop(prefabTag, out string newDropID, out float newDropCount))
+                    return;
+
+                if (onDeathDropIDs == null || onDeathDropCounts == null)
+                    return;
+
+                int len = Math.Min(onDeathDropIDs.Length, onDeathDropCounts.Length);
+                for (int i = 0; i < len; i++)
+                {
+                    if (!string.IsNullOrEmpty(onDeathDropIDs[i]) && onDeathDropCounts[i] > 0f)
+                    {
+                        if (newDropID != null)
+                            onDeathDropIDs[i] = newDropID;
+                        onDeathDropCounts[i] = newDropCount;
+                    }
+                }
             }
         }
     }
 }
+

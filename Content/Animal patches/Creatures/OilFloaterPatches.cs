@@ -18,11 +18,13 @@ namespace Rephysicalized
     {
         private static ChoreTable.Builder Inject(ChoreTable.Builder builder)
         {
+
             return builder.Add(new SolidFuelStates.Def());
         }
 
         internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original)
         {
+
             var list = new List<CodeInstruction>(instructions);
             var pop = AccessTools.Method(typeof(ChoreTable.Builder), nameof(ChoreTable.Builder.PopInterruptGroup));
             var inject = AccessTools.Method(typeof(BaseOilFloaterConfig_SolidFuelChoreInjection), nameof(Inject));
@@ -49,7 +51,7 @@ namespace Rephysicalized
         [HarmonyPostfix]
         private static void Post(ref GameObject __result)
         {
-
+            if (!Config.Instance.ChemistrierSlicksters) return;
             __result.AddOrGet<KSelectable>();
 
             // Keep vanilla edible diet
@@ -93,7 +95,9 @@ namespace Rephysicalized
    new FuelInput(SimHashes.WoodLog.CreateTag()),
                 new FuelInput(SimHashes.ToxicMud.CreateTag()),
                 new FuelInput(SimHashes.Peat.CreateTag()),
-                new FuelInput(SimHashes.Carbon.CreateTag()),
+                new FuelInput(SimHashes.Coquina.CreateTag()),
+                new FuelInput(SimHashes.Fossil.CreateTag()),
+                 new FuelInput(SimHashes.Sulfur.CreateTag()),
             };
 
 
@@ -126,11 +130,12 @@ namespace Rephysicalized
             {
                   new FuelInput("PlantFiber"),
                     new FuelInput(SimHashes.WoodLog.CreateTag()),
-
                 new FuelInput(SimHashes.ToxicMud.CreateTag()),
                 new FuelInput(SimHashes.Peat.CreateTag()),
-                new FuelInput(SimHashes.Carbon.CreateTag()),
-              
+                new FuelInput(SimHashes.Coquina.CreateTag()),
+                new FuelInput(SimHashes.Fossil.CreateTag()),
+                    new FuelInput(SimHashes.Sulfur.CreateTag()),
+
             };
 
             const float baseKgInputPerKgMain = 1f;
@@ -175,7 +180,7 @@ namespace Rephysicalized
         [HarmonyPostfix]
         private static void Postfix(ref GameObject __result)
         {
-     
+            if (!Config.Instance.ChemistrierSlicksters) return;
             // Re-run SetupDiet with adjusted args
             // Original: SetupDiet(prefab, CO2, CrudeOil, CALORIES_PER_KG_OF_ORE, TUNING.CREATURES.CONVERSION_EFFICIENCY.NORMAL, null, 0f, MIN_POOP_SIZE_IN_KG)
             // Changes:
@@ -198,12 +203,14 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(OilFloaterHighTempConfig), nameof(OilFloaterHighTempConfig.CreateOilFloater))]
     internal static class OilFloaterHighTemp_CreateOilFloater_Postfix
     {
+
         private const float EfficiencyMul = 1.9f;
         private const float NewMinPoopKg = 10f;
 
         [HarmonyPostfix]
         private static void Postfix(ref GameObject __result)
         {
+            if (!Config.Instance.ChemistrierSlicksters) return;
             if (__result == null) return;
 
             var prefab = __result;

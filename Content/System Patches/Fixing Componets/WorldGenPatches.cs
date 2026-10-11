@@ -16,7 +16,6 @@ namespace Rephysicalized
     [HarmonyPatch]
     public static class DoSettleSim_ScaleInputMass_Prefix
     {
-        // Configure your multiplier
         public static float MassMultiplier => Config.Instance.SolidMassMult;
 
         // Cache: metal flags by Element index
@@ -32,37 +31,37 @@ namespace Rephysicalized
                 {
                     if (m.Name != "DoSettleSim") return false;
                     var p = m.GetParameters();
-                    if (p.Length != 11) return false;
 
-                    // Expected signature (with ref on indices 3,4,5):
-                    // (WorldGenSettings, BinaryWriter, uint,
-                    //  ref Sim.Cell[], ref float[], ref Sim.DiseaseCell[],
-                    //  WorldGen.OfflineCallbackFunction, Klei.Data, List<TemplateSpawning.TemplateSpawner>,
-                    //  Action<OfflineWorldGen.ErrorInfo>, int)
+                    // Current ONI signature (decompiled):
+                
+                    if (p.Length != 9) return false;
+
                     bool ok =
                         p[0].ParameterType == typeof(WorldGenSettings) &&
                         p[1].ParameterType == typeof(BinaryWriter) &&
                         p[2].ParameterType == typeof(uint) &&
-                        p[3].ParameterType.IsByRef && p[3].ParameterType.GetElementType() == typeof(Sim.Cell[]) &&
-                        p[4].ParameterType.IsByRef && p[4].ParameterType.GetElementType() == typeof(float[]) &&
-                        p[5].ParameterType.IsByRef && p[5].ParameterType.GetElementType() == typeof(Sim.DiseaseCell[]) &&
-                        p[6].ParameterType == typeof(WorldGen.OfflineCallbackFunction) &&
-                        p[7].ParameterType.FullName == "Klei.Data" &&
-                        p[8].ParameterType == typeof(List<TemplateSpawning.TemplateSpawner>) &&
-                        p[9].ParameterType == typeof(Action<OfflineWorldGen.ErrorInfo>) &&
-                        p[10].ParameterType == typeof(int);
+                        p[3].ParameterType.IsByRef && p[3].ParameterType.GetElementType() == typeof(WorldgenSimData) &&
+                        p[4].ParameterType == typeof(WorldGen.OfflineCallbackFunction) &&
+                        p[5].ParameterType.FullName == "Klei.Data" &&
+                        p[6].ParameterType == typeof(List<TemplateSpawning.TemplateSpawner>) &&
+                        p[7].ParameterType == typeof(Action<OfflineWorldGen.ErrorInfo>) &&
+                        p[8].ParameterType == typeof(int);
 
                     return ok;
                 });
         }
 
         [HarmonyPrefix]
-        public static void Prefix(ref Sim.Cell[] cells)
+        public static void Prefix(ref WorldgenSimData simData)
         {
             try
             {
-                if (cells == null || cells.Length == 0)
+                if ((simData.cells == null || simData.cells.Length == 0) && (simData.backwallCells == null || simData.backwallCells.Length == 0))
                     return;
+
+                var cells = simData.cells;
+                var backwallCells = simData.backwallCells;
+
 
                 var elements = ElementLoader.elements;
                 if (elements == null || elements.Count == 0)
@@ -70,12 +69,13 @@ namespace Rephysicalized
 
                 EnsureMetalCache(elements);
 
-                // Only scale when multiplier is meaningful; metals are overridden regardless.
                 bool applyScale = MassMultiplier > 0f && Mathf.Abs(MassMultiplier - 1f) > 1e-6f;
 
                 for (int i = 0; i < cells.Length; i++)
                 {
-                    var elemIdx = cells[i].elementIdx;
+                    var cell = cells[i];
+
+                    var elemIdx = cell.elementIdx;
                     if (elemIdx < 0 || elemIdx >= elements.Count)
                         continue;
 
@@ -83,22 +83,56 @@ namespace Rephysicalized
                     if (elem == null || !elem.IsSolid)
                         continue;
 
-                    float m = cells[i].mass;
+                    float m = cell.mass;
                     if (float.IsNaN(m) || m <= 0f)
                         continue;
 
                     if (_isMetalByIdx[elemIdx])
                     {
-                        // Metals: set to fixed 0.5 
-                        cells[i].mass = m * (0.25f + (MassMultiplier / 2f));
+                        cell.mass = m * (0.25f + (MassMultiplier / 2f));
                     }
                     else if (applyScale)
                     {
-                        // Other solids: apply multiplier
-                        cells[i].mass = m * MassMultiplier;
+                        cell.mass = m * MassMultiplier;
+                    }
+
+                    cells[i] = cell;
+                }
+
+                // Scale backwall masses as well
+                if (backwallCells != null)
+                {
+                    int count = Math.Min(backwallCells.Length, cells.Length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var bw = backwallCells[i];
+                        var elemIdx = bw.elementIdx;
+
+                        if (elemIdx < 0 || elemIdx >= elements.Count)
+                            continue;
+
+                        var elem = elements[elemIdx];
+                        if (elem == null || !elem.IsSolid)
+                            continue;
+
+                        float m = bw.mass;
+                        if (float.IsNaN(m) || m <= 0f)
+                            continue;
+
+                        if (_isMetalByIdx[elemIdx])
+                        {
+                            bw.mass = m * (0.25f + (MassMultiplier / 2f));
+                        }
+                        else if (applyScale)
+                        {
+                            bw.mass = m * MassMultiplier;
+                        }
+
+                        backwallCells[i] = bw;
                     }
                 }
-            }
+            } 
+
             catch (Exception)
             {
                 // Swallow to avoid breaking worldgen.

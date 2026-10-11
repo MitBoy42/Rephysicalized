@@ -19,28 +19,36 @@ namespace Rephysicalized
         public static Tag RichSoil = TagManager.Create("RichSoil");
         public static Tag Distillable = TagManager.Create("Distillable");
         public static Tag RephysSublimator = TagManager.Create("RephysSublimator");
+        public static Tag Glue = TagManager.Create("Glue");
     }
 
     public class ModAssets
     {
         public static Sprite MetalCapacityIcon;
 
+        public static Sprite PressureIcon;
 
-    
+
+
 
         [HarmonyPatch(typeof(Assets), "OnPrefabInit")]
         public class Assets_OnPrefabInit_Patch
         {
 
             public static string MetalCapacity = "ui_icon_metalcapacity";
+            public static string PressureIcon = "ui_icon_pressure";
+
             [HarmonyPriority(Priority.LowerThanNormal)]
             public static void Prefix(Assets __instance)
             {
                 ModAssets.MetalCapacityIcon = InjectionMethods.AddSpriteToAssets(__instance, MetalCapacity);
+                ModAssets.PressureIcon = InjectionMethods.AddSpriteToAssets(__instance, PressureIcon);
+
             }
+   
+
         }
     }
 }
-
 
 

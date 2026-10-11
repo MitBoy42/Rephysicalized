@@ -20,7 +20,8 @@ namespace Rephysicalized
     GeyserGenericConfig.SlushWater,
     GeyserGenericConfig.FilthyWater,
     GeyserGenericConfig.SlushSaltWater,
-    GeyserGenericConfig.SaltWater
+    GeyserGenericConfig.SaltWater,
+                GeyserGenericConfig.MurkyBrine
 };
 
         [HarmonyPostfix]

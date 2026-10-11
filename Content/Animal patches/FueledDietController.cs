@@ -8,13 +8,12 @@ namespace Rephysicalized
 {
     [RequireComponent(typeof(KPrefabID))]
     [SkipSaveFileSerialization]
-public class FueledDietController : KMonoBehaviour
+public class FueledDietController : KMonoBehaviour, ISim4000ms
     {
         [MyCmpReq] private KPrefabID prefabID;
         [MyCmpGet] private Storage storage;
         [MyCmpGet] private PrimaryElement primaryElement;
 
-        private bool lastHadCapacity = false;
         private static readonly EventSystem.IntraObjectHandler<FueledDietController> OnStorageChangeDelegate = new EventSystem.IntraObjectHandler<FueledDietController>((component, data) => component.OnStorageChange(data));
 
         public FueledDiet fueledDiet;
@@ -33,7 +32,8 @@ public class FueledDietController : KMonoBehaviour
  
         public bool EnableDebugLogs { get; set; } = false;
 
-        // Accumulate pending emissions (converted outputs). Emission/poop hookup is handled elsewhere.
+        private bool lastHadCapacity = false;
+
         private struct PendingEmission
         {
             public float mass;
@@ -62,7 +62,6 @@ public class FueledDietController : KMonoBehaviour
             }
         }
 
-        // Peek total pending fueled mass (kg), no clearing
         public float PeekPendingTotalMass()
         {
             float sum = 0f;
@@ -70,7 +69,6 @@ public class FueledDietController : KMonoBehaviour
             return sum;
         }
 
-        // Dequeue all pending outputs into 'buffer' and clear internal queue. Returns number of entries added.
         public int DequeuePendingOutputs(List<FueledOutput> buffer)
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
@@ -136,25 +134,49 @@ public class FueledDietController : KMonoBehaviour
 
             EnableInstanceConsumers();
 
-            // Initial check: disable consumers if no space
+            // Initial check (capacity-driven enable/disable). Sim4000ms() will keep the
+            // ElementConsumers' consumption sim-rate updated so they recover when the
+            // creature later enters element range.
             NudgeConsumers();
-            lastHadCapacity = HasFreeCapacityForFuel();
+
 
             if (EnableDebugLogs)
                 Debug.Log($"[FueledDiet] {name}: OnSpawn complete");
         }
 
-        private void OnStorageChange(object data)
+        public void Sim4000ms(float dt)
         {
-            bool nowHasCapacity = HasFreeCapacityForFuel(0.1f);
-            if (nowHasCapacity != lastHadCapacity)
+            // Periodic refresh: ElementConsumer sim rate depends on current sampling cell.
+            // If the creature starts out-of-range, we need a later UpdateSimData() call
+            // so it will start consuming once it enters the element radius.
+            if (consumers == null || consumers.Count == 0) return;
+            for (int i = 0; i < consumers.Count; i++)
             {
-                if (EnableDebugLogs)
-                    Debug.Log($"[FueledDiet] {name}: Storage capacity changed: {lastHadCapacity} -> {nowHasCapacity}. Nudging consumers.");
-                NudgeConsumers();
-                lastHadCapacity = nowHasCapacity;
+                var ec = consumers[i];
+                if (ec == null) continue;
+                // Refresh regardless of capacity; capacity gating is handled inside ElementConsumer.
+                ec.RefreshConsumptionRate();
             }
         }
+
+        private void OnStorageChange(object data)
+        {
+            // Storage may change for many reasons (inputs consumed, transfers in/out, etc.).
+            // Avoid disabling/enabling every time (can cause on/off churn).
+            // Only refresh the cached ElementConsumer rate when we cross a capacity threshold.
+            bool nowHasCapacity = HasFreeCapacityForFuel(0.1f);
+
+            if (EnableDebugLogs)
+                Debug.Log($"[FueledDiet] {name}: Storage changed -> capacityPossible={nowHasCapacity}. lastHadCapacity={lastHadCapacity}");
+
+            if (nowHasCapacity != lastHadCapacity)
+                NudgeConsumers();
+
+            // Always update our belief after possible state change.
+            lastHadCapacity = nowHasCapacity;
+        }
+
+
 
         // Total pending mass (for diagnostics/testing)
         public float TotalPendingMass
@@ -178,7 +200,6 @@ public class FueledDietController : KMonoBehaviour
             storage.storageFilters = null;
         }
 
-      
 
         private void SetupElementConsumers(FueledDiet diet)
         {
@@ -298,6 +319,7 @@ public class FueledDietController : KMonoBehaviour
                 if (ec == null) continue;
                 if (hasSpace)
                     ec.EnableConsumption(true);
+                // Do NOT call RefreshConsumptionRate() every nudge; it can cause sim churn.
             }
         }
 

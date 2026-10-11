@@ -4,9 +4,9 @@
   "success": true,
   "projectFilePath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\MitBoy\\.nuget\\packages\\ilrepack.lib.msbuild.task\\2.0.45\\ilrepack.lib.msbuild.task.2.0.45.nupkg.sha512",
+    "C:\\Users\\MitBoy\\.nuget\\packages\\ilrepack.lib.msbuild.task\\2.0.48\\ilrepack.lib.msbuild.task.2.0.48.nupkg.sha512",
     "C:\\Users\\MitBoy\\.nuget\\packages\\lib.harmony.ref\\2.4.2\\lib.harmony.ref.2.4.2.nupkg.sha512",
-    "C:\\Users\\MitBoy\\.nuget\\packages\\plib\\4.24.0\\plib.4.24.0.nupkg.sha512",
+    "C:\\Users\\MitBoy\\.nuget\\packages\\plib\\4.25.0\\plib.4.25.0.nupkg.sha512",
     "C:\\Users\\MitBoy\\.nuget\\packages\\system.reflection.emit\\4.7.0\\system.reflection.emit.4.7.0.nupkg.sha512"
   ],
   "logs": []

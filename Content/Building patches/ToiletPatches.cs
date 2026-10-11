@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,4 +62,98 @@ namespace Rephysicalized
             }
         }
     }
+
+    // If a gunk-clogged toilet is destroyed, spawn the missing gunk particles.
+
+    [HarmonyPatch(typeof(Toilet), nameof(Toilet.OnCleanUp))]
+    public static class Toilet_OnCleanUp_GunkSpawn_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(Toilet __instance)
+        {
+            if (__instance?.smi == null)
+            {   return;
+            }
+
+            var component = __instance.GetComponent<ToiletWorkableUse>();
+  
+
+            // Only spawn gunk particles if the last user type was the gunk monitor (not bladder).
+            if (component.lastElementRemovedFromDupe != GunkMonitor.GunkElement)
+                return;
+
+            float massKg = component.lastAmountOfWasteMassRemovedFromDupe;
+            if (massKg <= 0f)
+                return;
+
+            int cell = Grid.PosToCell(__instance.transform.GetPosition());
+
+            if (FallingWater.instance == null)
+                return;
+            FallingWater.instance.AddParticle(
+                cell,
+                ElementLoader.GetElementIndex(SimHashes.LiquidGunk),
+                massKg,
+                273.15f + 20f,
+                byte.MaxValue,
+                0);
+
+         
+        }
+    }
+    [HarmonyPatch(typeof(FlushToilet), nameof(FlushToilet.OnCleanUp))]
+    public static class FLushToilet_OnCleanUp_GunkSpawn_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(Toilet __instance)
+        {
+            if (__instance?.smi == null)
+            {
+                return;
+            }
+
+            var component = __instance.GetComponent<ToiletWorkableUse>();
+
+
+            // Only spawn gunk particles if the last user type was the gunk monitor (not bladder).
+            if (component.lastElementRemovedFromDupe != GunkMonitor.GunkElement)
+                return;
+
+            float massKg = component.lastAmountOfWasteMassRemovedFromDupe;
+            if (massKg <= 0f)
+                return;
+
+            int cell = Grid.PosToCell(__instance.transform.GetPosition());
+
+            if (FallingWater.instance == null)
+                return;
+            FallingWater.instance.AddParticle(
+                cell,
+                ElementLoader.GetElementIndex(SimHashes.LiquidGunk),
+                massKg,
+                273.15f + 20f,
+                byte.MaxValue,
+                0);
+
+
+        }
+    }
+
+    // Reset the cached waste mass after a successful gunk clean.
+
+    [HarmonyPatch(typeof(ToiletWorkableClean), nameof(ToiletWorkableClean.OnCompleteWork))]
+    public static class ToiletWorkableClean_ResetLastMass_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(ToiletWorkableClean __instance, WorkerBase worker)
+        {
+            var use = __instance.GetComponent<ToiletWorkableUse>();
+            if (use == null)
+                return;
+            use.lastAmountOfWasteMassRemovedFromDupe = 0f;
+        
+        }
+    }
 }
+
+

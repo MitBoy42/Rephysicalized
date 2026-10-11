@@ -21,19 +21,19 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(GlomConfig), nameof(GlomConfig.CreatePrefab))]
     internal static class Glom_SolidFuel_Transpiler
     {
-          
+
         private static ChoreTable.Builder Inject(ChoreTable.Builder builder)
         {
             if (OrganicOverhaulIntegration.IsPresent())
                 return builder; // run original
 
             return builder.Add(new SolidFuelStates.Def());
-            
+
         }
 
         internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase _)
         {
-            
+
 
             var list = new List<CodeInstruction>(instructions);
 
@@ -53,7 +53,7 @@ namespace Rephysicalized
                 }
             }
             return list;
-       
+
         }
     }
 
@@ -216,9 +216,9 @@ namespace Rephysicalized
                 }
             }
         }
-    
-}
-        internal static class GlomGridCompat
+
+    }
+    internal static class GlomGridCompat
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsValid(int cell) => Grid.IsValidCell(cell);
@@ -280,7 +280,7 @@ namespace Rephysicalized
             if (OrganicOverhaulIntegration.IsPresent())
                 return;
             __result.AddOrGetDef<SlimeArtilleryMonitor.Def>();
-        
+
         }
     }
 
@@ -299,7 +299,7 @@ namespace Rephysicalized
         {
             public GameObject targetDupe;
             internal bool lastGate; // for logging state changes
-            
+
             public Instance(IStateMachineTarget master, Def def) : base(master, def) { }
 
             public void ClearTarget()
@@ -331,7 +331,7 @@ namespace Rephysicalized
                 // Log only on gate change to avoid spam
                 if (allowed != smi.lastGate)
                 {
-                 //   Debug.Log($"{GlomSlimeLog.Prefix} Gate {(allowed ? "ON" : "OFF")} (target={(smi.targetDupe != null)}, bodyMassOK={smi.HasEnoughFuel()})");
+                    //   Debug.Log($"{GlomSlimeLog.Prefix} Gate {(allowed ? "ON" : "OFF")} (target={(smi.targetDupe != null)}, bodyMassOK={smi.HasEnoughFuel()})");
                     smi.lastGate = allowed;
                 }
                 return allowed;
@@ -345,7 +345,7 @@ namespace Rephysicalized
             // Validate existing target
             if (smi.targetDupe != null && !IsValidTarget(smi, smi.targetDupe))
             {
-       
+
                 smi.targetDupe = null;
             }
 
@@ -373,8 +373,8 @@ namespace Rephysicalized
             }
 
             if (best != null)
-     //           Debug.Log($"{GlomSlimeLog.Prefix} Acquired target: {best.name} at d={bestDist}");
-            smi.targetDupe = best;
+                //           Debug.Log($"{GlomSlimeLog.Prefix} Acquired target: {best.name} at d={bestDist}");
+                smi.targetDupe = best;
         }
 
         private static bool IsValidTarget(Instance smi, GameObject dupe)
@@ -521,7 +521,7 @@ namespace Rephysicalized
         internal static void LaunchSlimeComet(Vector3 from, Vector3 to, float cometMassKg)
         {
             var prefab = Assets.GetPrefab(new Tag(SLIME_COMET_ID));
-        
+
             var go = Util.KInstantiate(prefab);
             go.transform.SetPosition(from);
             go.SetActive(true);
@@ -529,7 +529,7 @@ namespace Rephysicalized
             var comet = go.GetComponent<Comet>();
             var pe = go.GetComponent<PrimaryElement>();
             var kbac = go.GetComponent<KBatchedAnimController>();
-       
+
 
             // Force payload to specified mass and clamp any mass ranges (version-safe)
             pe.Mass = cometMassKg;
@@ -572,7 +572,7 @@ namespace Rephysicalized
                     if (ft == typeof(Vector2))
                     {
                         f.SetValue(obj, v2);
-                  //      Debug.Log($"{GlomSlimeLog.Prefix} Set {fieldName}=({v2.x},{v2.y})");
+                        //      Debug.Log($"{GlomSlimeLog.Prefix} Set {fieldName}=({v2.x},{v2.y})");
                     }
                     else if (ft.FullName?.Contains("FloatRange") == true)
                     {
@@ -584,7 +584,7 @@ namespace Rephysicalized
                             minF.SetValue(fr, v2.x);
                             maxF.SetValue(fr, v2.y);
                             f.SetValue(obj, fr);
-                    //        Debug.Log($"{GlomSlimeLog.Prefix} Set {fieldName}.min/max=({v2.x},{v2.y})");
+                            //        Debug.Log($"{GlomSlimeLog.Prefix} Set {fieldName}.min/max=({v2.x},{v2.y})");
                         }
                     }
                 }
@@ -593,7 +593,7 @@ namespace Rephysicalized
                     if (ft.IsAssignableFrom(value.GetType()))
                     {
                         f.SetValue(obj, value);
-               //         Debug.Log($"{GlomSlimeLog.Prefix} Set {fieldName}={value}");
+                        //         Debug.Log($"{GlomSlimeLog.Prefix} Set {fieldName}={value}");
                     }
                 }
             }

@@ -132,8 +132,7 @@ namespace Rephysicalized
 
             // Prefer PlantMassTrackerComponent if present
             var pmt = mother.GetComponent<PlantMassTrackerComponent>();
-            var pe = pmt == null ? mother.GetComponent<PrimaryElement>() : mother.GetComponent<PrimaryElement>(); // we may still need PE for temperature
-
+            var pe = pmt == null ? mother.GetComponent<PrimaryElement>() : mother.GetComponent<PrimaryElement>(); 
             // Determine current mass (prefer PMT's tracked mass if available)
             float currentMotherMass = 1f;
             if (pmt != null)

@@ -4,101 +4,56 @@ using UnityEngine;
 
 namespace Rephysicalized
 {
-    // Pool identifier marker types (must be non-static, non-abstract)
-    internal sealed class DinofernConsumerPoolId { }
-    internal sealed class DinofernStoragePoolId { }
-    internal sealed class DinofernRemoverStoragePoolId { }
+    [HarmonyPatch(typeof(DinofernConfig), nameof(DinofernConfig.CreatePrefab))]
+    internal static class DinofernConfig_CreatePrefab_Patch
+    {
+        private static void Postfix(ref GameObject __result)
+        {
+            if (!Config.Instance.ChemistrierDinofern) return;
+            EntityTemplates.ExtendPlantToFertilizable(__result, new PlantElementAbsorber.ConsumeInfo[]
+            {
 
-  
+                new PlantElementAbsorber.ConsumeInfo
+                {
+                    tag = ModTags.RichSoil,
+                    massConsumptionRate = 0.004f
+                }
+            });
+        }
+    }
 
     [HarmonyPatch(typeof(Dinofern), nameof(Dinofern.OnSpawn))]
     public static class Dinofern_OnSpawn_Patch
     {
+
+        private static readonly Tag[] ChlorineGasTags = { SimHashes.ChlorineGas.CreateTag()};
+
         public static void Postfix(Dinofern __instance)
         {
-            if (__instance == null) return;
             var go = __instance.gameObject;
-
-            // 1) Ensure the consumer stores gas in Storage so PMT can observe a removal delta.
-            // Dinofern consumes ChlorineGas via ElementConsumer.
-            var consumers = ListPool<ElementConsumer, DinofernConsumerPoolId>.Allocate();
-            try
+            Storage storage = go.GetComponent<Storage>();
+            storage.showInUI = true;
+            foreach (var consumer in go.GetComponentsInChildren<ElementConsumer>(includeInactive: true))
             {
-                go.GetComponents(consumers);
-
-                var childConsumers = go.GetComponentsInChildren<ElementConsumer>(includeInactive: true);
-                if (childConsumers != null)
-                {
-                    for (int i = 0; i < childConsumers.Length; i++)
-                    {
-                        var c = childConsumers[i];
-                        if (c != null && !consumers.Contains(c))
-                            consumers.Add(c);
-                    }
-                }
-
-                for (int i = 0; i < consumers.Count; i++)
-                {
-                    var c = consumers[i];
-                    if (c == null) continue;
-                
-                    c.storeOnConsume = true;
-                }
-            }
-            finally
-            {
-                consumers.Recycle();
+                if (consumer != null)
+                    consumer.storeOnConsume = true;
             }
 
-            // 2) Ensure PMT exists and initialize from registry.
             var tracker = go.AddOrGet<PlantMassTrackerComponent>();
-            var kpid = go.GetComponent<KPrefabID>();
-            if (kpid != null && PlantMassTrackerRegistry.TryGetConfig(kpid.PrefabID().Name, out var cfg) && cfg != null)
-            {
+            if (PlantMassTrackerRegistry.TryGetConfig(go.GetComponent<KPrefabID>().PrefabID().Name, out var cfg))
                 tracker.InitializeFromConfig(cfg);
-            }
 
-            // 3) Register storages for ChlorineGas Tag so PMT counts its consumption.
             RegisterDinofernStoragesForChlorine(tracker, go);
 
-            // 4) Attach remover that clears stored chlorine; PMT will observe the delta and add mass.
             go.AddOrGet<DinofernChlorineRemover>();
         }
 
         private static void RegisterDinofernStoragesForChlorine(PlantMassTrackerComponent tracker, GameObject root)
         {
-            if (tracker == null || root == null) return;
-
-            var storages = ListPool<Storage, DinofernStoragePoolId>.Allocate();
-            try
+            foreach (var storage in root.GetComponentsInChildren<Storage>(includeInactive: true))
             {
-                root.GetComponents(storages);
-
-                var childStorages = root.GetComponentsInChildren<Storage>(includeInactive: true);
-                if (childStorages != null)
-                {
-                    for (int i = 0; i < childStorages.Length; i++)
-                    {
-                        var s = childStorages[i];
-                        if (s != null && !storages.Contains(s))
-                            storages.Add(s);
-                    }
-                }
-
-                // Correct Tag for ChlorineGas. PMT expects Tag[] not string[].
-                // In ONI, this is simply new Tag("ChlorineGas") or SimHashes.ChlorineGas.CreateTag().
-                Tag chlorineTag = SimHashes.ChlorineGas.CreateTag();
-
-                for (int i = 0; i < storages.Count; i++)
-                {
-                    var s = storages[i];
-                    if (s == null) continue;
-                    tracker.RegisterMonitorStorage(s, new[] { chlorineTag });
-                }
-            }
-            finally
-            {
-                storages.Recycle();
+                if (storage != null)
+                    tracker.RegisterMonitorStorage(storage, ChlorineGasTags);
             }
         }
     }
@@ -107,54 +62,31 @@ namespace Rephysicalized
     // which PMT translates into "consumed by plant" and adds to plant mass.
     public sealed class DinofernChlorineRemover : KMonoBehaviour, ISim1000ms
     {
-        private static readonly SimHashes TargetGas = SimHashes.ChlorineGas;
-
+   
         public void Sim1000ms(float dt)
         {
-            var storages = ListPool<Storage, DinofernRemoverStoragePoolId>.Allocate();
-            try
+            foreach (var storage in gameObject.GetComponentsInChildren<Storage>(includeInactive: true))
             {
-                GetComponents(storages);
+                if (storage == null)
+                    continue;
 
-                var childStorages = gameObject.GetComponentsInChildren<Storage>(includeInactive: true);
-                if (childStorages != null)
+                var items = storage.items;
+                if (items == null)
+                    continue;
+
+                for (int i = items.Count - 1; i >= 0; i--)
                 {
-                    for (int i = 0; i < childStorages.Length; i++)
-                    {
-                        var s = childStorages[i];
-                        if (s != null && !storages.Contains(s))
-                            storages.Add(s);
-                    }
+                    var item = items[i];
+                    if (item == null)
+                        continue;
+
+                    var primaryElement = item.GetComponent<PrimaryElement>();
+                    if (primaryElement == null || primaryElement.ElementID != SimHashes.ChlorineGas)
+                        continue;
+
+                    storage.Remove(item, true);
+                    Util.KDestroyGameObject(item);
                 }
-
-                for (int sIdx = 0; sIdx < storages.Count; sIdx++)
-                {
-                    var storage = storages[sIdx];
-                    if (storage == null) continue;
-
-                    var items = storage.items;
-                    if (items == null) continue;
-
-                    for (int i = items.Count - 1; i >= 0; i--)
-                    {
-                        var go = items[i];
-                        if (go == null) continue;
-
-                        var pe = go.GetComponent<PrimaryElement>();
-                        if (pe == null) continue;
-
-                        if (pe.ElementID == TargetGas)
-                        {
-                            // Removing the stored item triggers a storage decrease; PMT counts this as consumed mass.
-                            storage.Remove(go, true);
-                            Util.KDestroyGameObject(go);
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                storages.Recycle();
             }
         }
     }

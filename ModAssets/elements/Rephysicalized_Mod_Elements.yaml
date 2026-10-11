@@ -9,7 +9,7 @@ elements:
     strength: 0.6
     highTemp: 4600
     highTempTransitionTarget: MoltenCarbon
-    highTempTransitionOreId: Hydrogen
+    highTempTransitionOreId: SolidHydrogen
     highTempTransitionOreMassConversion: 0.06
     defaultTemperature: 296.15
     defaultMass: 600
@@ -29,7 +29,7 @@ elements:
     localizationID: STRINGS.ELEMENTS.ASHBYPRODUCT.NAME
     dlcId: ""
   - elementId: CrudByproduct
-    specificHeatCapacity: 1
+    specificHeatCapacity: 0.7
     thermalConductivity: 2
     solidSurfaceAreaMultiplier: 1
     liquidSurfaceAreaMultiplier: 1
@@ -37,7 +37,7 @@ elements:
     strength: 0.6
     highTemp: 1883
     highTempTransitionTarget: Magma
-    highTempTransitionOreId: CarbonDioxide
+    highTempTransitionOreId: SolidCarbonDioxide
     highTempTransitionOreMassConversion: 0.2
     defaultTemperature: 296.15
     defaultMass: 1840
@@ -55,4 +55,105 @@ elements:
     isDisabled: false
     state: Solid
     localizationID: STRINGS.ELEMENTS.CRUDBYPRODUCT.NAME
+    dlcId: ""
+  - elementId: SiliconRP
+    specificHeatCapacity: 0.705
+    thermalConductivity: 149
+    solidSurfaceAreaMultiplier: 1
+    liquidSurfaceAreaMultiplier: 1
+    gasSurfaceAreaMultiplier: 1
+    strength: 1.5
+    highTemp: 1687
+    highTempTransitionTarget: MoltenSiliconRP
+    defaultTemperature: 296.15
+    defaultMass: 1840
+    maxMass: 1840
+    hardness: 10
+    molarMass: 28
+    lightAbsorptionFactor: 0.6
+    radiationAbsorptionFactor: 0.5
+    radiationPer1000Mass: 0
+    materialCategory: ManufacturedMaterial
+    tags:
+    - BuildableAny
+    - Plumbable
+    - Glasses
+    - PreciousRock
+    buildMenuSort: 5
+    isDisabled: false
+    state: Solid
+    localizationID: STRINGS.ELEMENTS.SILICONRP.NAME
+    dlcId: ""
+      
+  - elementId: MoltenSiliconRP
+    specificHeatCapacity: 0.705
+    thermalConductivity: 149
+    speed: 100
+    solidSurfaceAreaMultiplier: 1
+    liquidSurfaceAreaMultiplier: 25
+    gasSurfaceAreaMultiplier: 1
+    liquidCompression: 1.01
+    minHorizontalFlow: 30
+    minVerticalFlow: 10
+    highTemp: 3538
+    lowTemp: 1684
+    highTempTransitionTarget: SiliconGasRP
+    lowTempTransitionTarget: SiliconRP
+    defaultTemperature: 1884
+    defaultMass: 1840
+    maxMass: 1840
+    molarMass: 28
+    lightAbsorptionFactor: 1
+    radiationAbsorptionFactor: 0.5
+    radiationPer1000Mass: 0
+    tags:
+    isDisabled: false
+    state: Liquid
+    localizationID: STRINGS.ELEMENTS.MOLTENSILICONRP.NAME
+    dlcId: ""
+  - elementId: SiliconGasRP
+    specificHeatCapacity:  0.705
+    thermalConductivity: 149
+    solidSurfaceAreaMultiplier: 25
+    liquidSurfaceAreaMultiplier: 1
+    gasSurfaceAreaMultiplier: 1
+    flow: 0.1
+    lowTemp: 3535
+    toxicity: 0
+    lowTempTransitionTarget: MoltenSiliconRP
+    defaultTemperature:  3738 
+    molarMass: 28
+    lightAbsorptionFactor: 0.5
+    radiationAbsorptionFactor: 0.8
+    radiationPer1000Mass: 0
+    materialCategory: Unbreathable
+    isDisabled: false
+    state: Gas
+    localizationID: STRINGS.ELEMENTS.SILICONGASRP.NAME
+    dlcId: ""
+  - elementId: PlantFiberRP
+    specificHeatCapacity: 1.48
+    thermalConductivity: 2
+    solidSurfaceAreaMultiplier: 1
+    liquidSurfaceAreaMultiplier: 1
+    gasSurfaceAreaMultiplier: 1
+    strength: 0.7
+    highTemp: 573.15 # 300 celcius
+    highTempTransitionTarget: CarbonDioxide
+    highTempTransitionOreId: AshByproduct
+    highTempTransitionOreMassConversion: 0.6
+    defaultTemperature: 300
+    defaultMass: 1000
+    maxMass: 1840
+    hardness: 1
+    molarMass: 217.8529
+    lightAbsorptionFactor: 1
+    radiationAbsorptionFactor: 0.6
+    radiationPer1000Mass: 0
+    materialCategory: Organics
+    tags:
+    buildMenuSort: 1
+    isDisabled: false
+    state: Solid
+    localizationID: STRINGS.ELEMENTS.PLANTFIBERRP.NAME
     dlcId: ""

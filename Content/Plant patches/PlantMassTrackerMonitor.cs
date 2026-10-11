@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+﻿﻿using HarmonyLib;
 using Database;
 using KSerialization;
 using Klei.AI;
@@ -23,10 +23,6 @@ namespace Rephysicalized
         // Only tags explicitly registered as consumables are tracked
         private readonly HashSet<Tag> _allowedConsumptionTags = new HashSet<Tag>();
         private readonly List<Storage> _storages = new List<Storage>();
-        private readonly Dictionary<Storage, Dictionary<Tag, float>> _prevTotalsByStorageTag = new Dictionary<Storage, Dictionary<Tag, float>>();
-
-        // storages PMT should ignore (e.g., production storages like Carbon)
-        private readonly HashSet<Storage> _ignoredStorages = new HashSet<Storage>();
 
         // Config injected by registry
         private List<MaterialYield> _yields = new List<MaterialYield> { new MaterialYield("RotPile", 1f) };
@@ -34,20 +30,14 @@ namespace Rephysicalized
         private string _tinkerEffectId = "FarmTinker";
 
 
-        // Persisted plant mass; also mirrored on the plot via PlotMassStore
-        [Serialize] private float trackedMassKg = 1f;
+        // Tracked mass used at runtime only; no longer persisted. Yields are calculated
+        // directly from the PrimaryElement mass (PE) on harvest/uproot.
+        private float trackedMassKg = 1f;
         public float TrackedMassKg
         {
             get => trackedMassKg;
-            private set
-            {
-                trackedMassKg = value;
-                _plotStore?.Set(trackedMassKg);
-            }
+            private set => trackedMassKg = value;
         }
-
-        private PlotMassStore _plotStore;
-        private bool _loadedFromPlotStore;
 
         // Observation/diff tracking
         private float _lastObservedPlantMassKg = -1f;
@@ -63,9 +53,6 @@ namespace Rephysicalized
         // Suppression flag to avoid counting during teardown or when explicitly disabled
         private bool _suppressAccumulation = false;
 
-        // Final teardown flag (kept for API completeness; used by external calls if needed)
-        private bool _finalTeardown = false;
-
         // Pending mass to subtract at harvest due to PlantFiberProducer spawning fiber
         private float _pendingPlantFiberSubtractKg = 0f;
 
@@ -80,9 +67,6 @@ namespace Rephysicalized
             Subscribe((int)GameHashes.Uprooted, OnUprooted);
             Subscribe((int)GameHashes.Harvest, OnHarvested);
 
-            // Try to bind plot store and restore mass
-            TryBindPlotStoreFromPlantablePlot();
-
             if (_primaryElement != null)
             {
                 _lastObservedPlantMassKg = Mathf.Max(0f, _primaryElement.Mass);
@@ -95,12 +79,10 @@ namespace Rephysicalized
             // IMPORTANT: stop accumulation and unsubscribe BEFORE base cleanup
             _suppressAccumulation = true;
 
-            foreach (var s in _storages)
-                s?.Unsubscribe((int)GameHashes.OnStorageChange, OnAnyStorageChanged);
+            foreach (var storage in _storages)
+                PlantMassTrackerRegistry.UnregisterStorageTracker(storage, this);
 
             _storages.Clear();
-            _prevTotalsByStorageTag.Clear();
-            _ignoredStorages.Clear();
 
             base.OnCleanUp();
         }
@@ -110,9 +92,6 @@ namespace Rephysicalized
             // Decay harvest->dig suppression window
             if (_suppressDigTicksAfterHarvest > 0)
                 _suppressDigTicksAfterHarvest--;
-
-            if (!_suppressAccumulation && !_finalTeardown)
-                PollStoragesAndAccumulate();
 
             if (!DebugExposeMassOnPrimaryElement || _primaryElement == null)
                 return;
@@ -146,50 +125,6 @@ namespace Rephysicalized
             _lastObservedPlantMassKg = Mathf.Max(0f, _primaryElement.Mass);
         }
 
-        private float CalculateConsumptionDelta()
-        {
-            float consumed = 0f;
-
-            foreach (var storage in _storages)
-            {
-                if (storage == null || PlantMassTrackerTeardown.IsSuppressed(storage)) continue;
-
-                if (!_prevTotalsByStorageTag.TryGetValue(storage, out var prevByTag))
-                {
-                    prevByTag = new Dictionary<Tag, float>();
-                    _prevTotalsByStorageTag[storage] = prevByTag;
-                }
-
-                // Seed missing for allowed tags
-                foreach (var tag in _allowedConsumptionTags)
-                {
-                    if (!prevByTag.ContainsKey(tag))
-                        prevByTag[tag] = SumStorageByTag(storage, tag);
-                }
-
-                foreach (var tag in _allowedConsumptionTags)
-                {
-                    float now = SumStorageByTag(storage, tag);
-                    float prev = prevByTag[tag];
-                    float delta = prev - now;
-                    if (delta > 0f)
-                        consumed += delta;
-                    prevByTag[tag] = now;
-                }
-            }
-
-            return consumed;
-        }
-
-        private void PollStoragesAndAccumulate()
-        {
-            if (_finalTeardown) return;
-
-            float consumed = CalculateConsumptionDelta();
-            if (consumed > 0f)
-                TrackedMassKg += consumed;
-        }
-
         // Called by registry once per plant, when config is known
         internal void InitializeFromConfig(PlantMassTrackerConfig config)
         {
@@ -205,106 +140,47 @@ namespace Rephysicalized
         internal void RegisterMonitorStorage(Storage storage, IEnumerable<Tag> consumedTags)
         {
             if (storage == null) return;
-            if (_ignoredStorages.Contains(storage)) return; // skip ignored storages
 
-            // If no explicit tags provided, do not register/subscribe this storage yet
-            bool anyAdded = false;
-            if (consumedTags != null)
+            // Only register storages whose monitor declares at least one consumed tag.
+            var tags = consumedTags?.Where(t => t != null).Distinct().ToList();
+            if (tags == null || tags.Count == 0)
+                return;
+
+            foreach (var tag in tags)
+                _allowedConsumptionTags.Add(tag);
+
+            if (!_storages.Contains(storage))
             {
-                foreach (var tag in consumedTags)
+                _storages.Add(storage);
+                PlantMassTrackerRegistry.RegisterStorageTracker(storage, this);
+            }
+        }
+
+        internal void AddConsumedStorageMass(Storage storage, List<PlantElementAbsorber.Planner.ConsumeCommand> consumeCommands)
+        {
+            if (storage == null || !_storages.Contains(storage) || _suppressAccumulation || consumeCommands == null)
+                return;
+
+            float consumedMass = 0f;
+            for (int i = 0; i < consumeCommands.Count; i++)
+            {
+                var command = consumeCommands[i];
+                if (command.primaryElement == null || command.deltaMass <= 0f)
+                    continue;
+
+                var consumedItem = command.primaryElement.gameObject;
+                foreach (var tag in _allowedConsumptionTags)
                 {
-                    if (_allowedConsumptionTags.Add(tag))
-                        anyAdded = true;
+                    if (consumedItem.HasTag(tag))
+                    {
+                        consumedMass += command.deltaMass;
+                        break;
+                    }
                 }
             }
-            if (!anyAdded)
-                return;
 
-            TryBindPlotStoreFromStorage(storage);
-
-            bool alreadyRegistered = _storages.Contains(storage);
-
-            if (!_prevTotalsByStorageTag.TryGetValue(storage, out var snapshot))
-            {
-                snapshot = new Dictionary<Tag, float>();
-                _prevTotalsByStorageTag[storage] = snapshot;
-            }
-
-            // Seed baselines for allowed tags so existing mass is not counted as "consumed"
-            foreach (var tag in _allowedConsumptionTags)
-            {
-                if (!snapshot.ContainsKey(tag))
-                    snapshot[tag] = SumStorageByTag(storage, tag);
-            }
-
-            // Only subscribe and add once
-            if (!alreadyRegistered)
-            {
-                storage.Subscribe((int)GameHashes.OnStorageChange, OnAnyStorageChanged);
-                _storages.Add(storage);
-            }
-        }
-
-        private void TryBindPlotStoreFromPlantablePlot()
-        {
-            if (_plotStore != null) return;
-
-            var plot = GetComponentInParent<PlantablePlot>();
-            if (plot == null) return;
-
-            _plotStore = plot.gameObject.AddOrGet<PlotMassStore>();
-            RestoreFromPlotStoreIfNeeded();
-        }
-
-        private void TryBindPlotStoreFromStorage(Storage storage)
-        {
-            if (_plotStore != null || storage == null) return;
-
-            var plot = storage.GetComponentInParent<PlantablePlot>();
-            if (plot == null) return;
-
-            _plotStore = plot.gameObject.AddOrGet<PlotMassStore>();
-            RestoreFromPlotStoreIfNeeded();
-        }
-
-        private void RestoreFromPlotStoreIfNeeded()
-        {
-            if (_loadedFromPlotStore || _plotStore == null) return;
-
-            float saved = Mathf.Max(0f, _plotStore.Get());
-            if (saved > 0.0001f)
-                trackedMassKg = saved;          // resume from plot state
-            else
-                _plotStore.Set(trackedMassKg);   // initialize plot from current
-
-            _loadedFromPlotStore = true;
-        }
-
-
-
-        private void OnAnyStorageChanged(object _)
-        {
-            if (_suppressAccumulation || _finalTeardown)
-                return;
-
-            float consumed = CalculateConsumptionDelta();
-            if (consumed > 0f)
-                TrackedMassKg += consumed;
-        }
-
-        private static float SumStorageByTag(Storage storage, Tag tag)
-        {
-            float sum = 0f;
-            var items = storage.items;
-            for (int i = 0; i < items.Count; i++)
-            {
-                var go = items[i];
-                if (go == null) continue;
-                if (!go.HasTag(tag)) continue;
-                var pe = go.GetComponent<PrimaryElement>();
-                if (pe != null) sum += pe.Mass;
-            }
-            return sum;
+            if (consumedMass > 0f)
+                AddMassDelta(consumedMass);
         }
 
         // Public mass API (prey, tinker, etc.)
@@ -323,7 +199,7 @@ namespace Rephysicalized
 
         public void AddTinkerMass(float kg)
         {
-
+  
             AddMassDelta(kg);
         }
 
@@ -348,25 +224,6 @@ namespace Rephysicalized
             _suppressInitialExternalDelta = false;
         }
 
-        // Allow other systems to mark storages as "ignored"
-        public void IgnoreStorage(Storage storage)
-        {
-            if (storage == null) return;
-            _ignoredStorages.Add(storage);
-        }
-
-        public void IgnoreAndUnregisterStorage(Storage storage)
-        {
-            if (storage == null) return;
-            _ignoredStorages.Add(storage);
-
-            if (_storages.Remove(storage))
-            {
-                storage.Unsubscribe((int)GameHashes.OnStorageChange, OnAnyStorageChanged);
-                _prevTotalsByStorageTag.Remove(storage);
-            }
-        }
-
         private void OnHarvested(object data)
         {
             // Detect PlantFiber spawn for subtraction
@@ -385,7 +242,6 @@ namespace Rephysicalized
                 }
             }
 
-            PollStoragesAndAccumulate();
             ApplyVisualFromTrackerNow();
             SpawnYieldsAndReset(isHarvest: true);
             _suppressDigTicksAfterHarvest = 2;
@@ -396,18 +252,14 @@ namespace Rephysicalized
             if (_suppressDigTicksAfterHarvest > 0)
                 return;
 
-            // Flush any last-second storage consumption before converting
-            PollStoragesAndAccumulate();
-            // Keep visual in sync for UI, but conversion will use tracked mass (not PE)
             ApplyVisualFromTrackerNow();
-            // No PlantFiber on uproot; ensure pending subtraction is clear
             _pendingPlantFiberSubtractKg = 0f;
 
             SpawnYieldsAndReset(isHarvest: false);
         }
 
-        // Returns the mass to convert. Use the tracked mass only to avoid PE clamp/timing skew.
-        private float GetMassForConversion() => Mathf.Max(0f, TrackedMassKg);
+        // Returns the mass to convert. Use the PrimaryElement mass directly.
+        private float GetMassForConversion() => _primaryElement != null ? Mathf.Max(0f, _primaryElement.Mass) : Mathf.Max(0f, TrackedMassKg);
 
         private void SpawnYieldsAndReset(bool isHarvest)
         {
@@ -452,14 +304,11 @@ namespace Rephysicalized
             }
             float totalSubtract = isHarvest ? (effectiveHarvestSubtract * yieldMult + (hasRottenHeaps ? 4f : 0f)) : 0f;
 
-            float tracked = Mathf.Max(0f, TrackedMassKg);
-            float peMass = (_primaryElement != null) ? Mathf.Max(1f, _primaryElement.Mass) : Mathf.Max(1f, tracked);
-
-            float trackedExcess = Mathf.Max(0f, tracked - baselineSubtractKg);
+            // Always compute yields from the PrimaryElement mass (PE)
+     
+            float peMass = (_primaryElement != null) ? Mathf.Max(1f, _primaryElement.Mass) : 1f;
             float peExcess = Mathf.Max(0f, peMass - baselineSubtractKg);
-
-            float baseNet = Mathf.Min(trackedExcess, peExcess);
-            float net = Mathf.Max(0f, baseNet - totalSubtract);
+            float net = Mathf.Max(0f, peExcess - totalSubtract);
 
             // Subtract PlantFiberProducer amount if this harvest will spawn fiber
             if (isHarvest && _pendingPlantFiberSubtractKg > 0f)
@@ -615,38 +464,6 @@ namespace Rephysicalized
             }
         }
 
-        public void BeginFinalTeardown()
-        {
-            if (_finalTeardown) return;
-            _finalTeardown = true;
-
-            string plantId = _kPrefabId != null ? _kPrefabId.PrefabID().Name : gameObject.name;
-
-            // 1) Unsubscribe immediately to avoid observing storage removals (or any spurious OnStorageChange)
-            foreach (var s in _storages)
-            {
-                if (s == null) continue;
-                s.Unsubscribe((int)GameHashes.OnStorageChange, OnAnyStorageChanged);
-            }
-
-            // 2) Reseat baselines to current amounts (defensive if any passive polling occurs)
-            foreach (var s in _storages)
-            {
-                if (s == null) continue;
-
-                if (!_prevTotalsByStorageTag.TryGetValue(s, out var prevByTag))
-                {
-                    prevByTag = new Dictionary<Tag, float>();
-                    _prevTotalsByStorageTag[s] = prevByTag;
-                }
-
-                foreach (var tag in _allowedConsumptionTags)
-                {
-                    float now = SumStorageByTag(s, tag);
-                    prevByTag[tag] = now;
-                }
-            }
-        }
     }
 }
 

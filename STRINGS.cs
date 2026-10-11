@@ -13,6 +13,8 @@ namespace Rephysicalized
     class STRINGS
     {
         public class CREATURES
+        
+
         { public class ATTRIBUTES
             { public class AGEDELTA
                 {
@@ -20,7 +22,32 @@ namespace Rephysicalized
                     public static LocString DESC = "Time seems to move faster or slower for them.";
                 }
                     }
+
+            public class STATUSITEMS
+
+            {
+                public class MILDIRRADIATION
+                {
+                    public static LocString NAME = "Mild Irradiation";
+                    public static LocString TOOLTIP = "This critter is experiencing mild radiation poisoning. It also has a higher chance of laying morph eggs";
                 }
+                public class HIGHIRRADIATION
+                {
+                    public static LocString NAME = "High Irradiation";
+                    public static LocString TOOLTIP = "This critter is experiencing severe radiation poisoning. It also has a significantly higher chance of laying morph eggs";
+                }
+
+
+            }
+            public class MODIFIERS
+
+            {
+                public class HADSUGARWATER
+                {
+                    public static LocString NAME = "Hydrated: Nectar";
+                }
+            }
+         }
         public class MISC
         {
             public class TAGS
@@ -31,11 +58,14 @@ namespace Rephysicalized
                 public static LocString DISTILLABLE = UI.FormatAsLink("Distillable", nameof(DISTILLABLE));
                 public static LocString DISTILLABLE_DESC = "Organic matter suitable for distillation into Algae or Phyto Oil.";
 
+                public static LocString GLUE = UI.FormatAsLink("Glue", nameof(GLUE));
+                public static LocString GLUE_DESC = "A sticky substance used for bonding materials together.";
+
                 public static LocString REPHYSSUBLIMATOR = UI.FormatAsLink("Sublimator", nameof(REPHYSSUBLIMATOR));
                 public static LocString REPHYSSUBLIMATOR_DESC = "Materials suitable for sublmation at Sublimation Station.";
 
-                public static LocString RICHSOIL = UI.FormatAsLink("Rich Soil", nameof(RICHSOIL));
-                public static LocString RICHSOIL_DESC = "A type of soil with large amount of plant nutrients. It can be used as fertilizer component.";
+                public static LocString RICHSOIL = UI.FormatAsLink("Carbonized Soil", nameof(RICHSOIL));
+                public static LocString RICHSOIL_DESC = "A type of soil with large amount of Carbon. It can be used as fertilizer component.";
 
                 public static LocString ALGAE = UI.FormatAsLink("Algae", nameof(ALGAE));
             }
@@ -43,6 +73,18 @@ namespace Rephysicalized
 
         public class BUILDINGS
         {
+            public class PREFABS
+            {
+                public class WATERCOOLER
+                {
+                    public class OPTION_TOOLTIPS
+                    {
+                       
+                            public static LocString SUGARWATER = "Extremely sweet juice";
+                        
+                    }
+                }
+            }
             public class SUPERMATERIALREFINERY
             {
                 public static LocString DU_TO_LEAD = "Speeds up Uranium Decay into Lead. Highly Radioactive!";
@@ -52,6 +94,15 @@ namespace Rephysicalized
                 public static LocString BOOSTERDECRAFTBASIC = "Disassemble any basic booster into Microchips";
 
                 public static LocString BOOSTERDECRAFTADVANCED = "Disassemble any advanced booster into Microchips";
+            }
+
+            public class GLASSFORGE
+            {
+                public static LocString SILICON = "Extracts pure Silicon from minerals. Also releases a large amount of hot Carbon Dioxide";
+            }
+            public class ADVANCEDCRAFTINGTABLE
+            {
+                public static LocString MICROCHIP = "Assembles a Microchip from Silicon";
             }
             public class MILKSEPARATOR
             {
@@ -63,6 +114,14 @@ namespace Rephysicalized
             public class MILKPRESS
             {
                 public static LocString BALMLILY_PHYTOOIL = "Converts Balm Lily to Phyto Oil";
+                public static LocString TABLESALT = "Extracts Table Salt from Salty Sticks";
+
+            }
+            public class SLUDGEPRESS
+            {
+                public static LocString MUCUS = "Separates Water and Slime in Mucin. If Mucin is too cold, the Ice will clog the press.";
+                public static LocString SQUIDINK = "Separates Carbon from Squid Ink. Has a high chance of clogging the press.";
+                public static LocString FISHMILK = "Separates BrackWax from Ovolene. Has a high chance of clogging the press.";
 
             }
             public class CHEMICALREFINERY
@@ -75,11 +134,23 @@ namespace Rephysicalized
             {
                 public static LocString DEPLETEDURANIUM_ENRICHEDURANIUM = "Bombarding Depleted Uranium with high energy particles to enrich it";
                 public static LocString LUMENQUARTZ = "Grows a Quartz Crystal by Hydrothermal Synthesis";
+                public static LocString PEARL = "Molds an artificial Pearl from shell powder and binding agent.";
             }
             public class ALGAEDISTILLERY
             {
                 public static LocString SLIME = "Deliver Slime";
                 public static LocString KELP = "Deliver Seakomb Leafs";
+                public static LocString NORI = "Deliver Nori";
+            }
+            public class WOODMAKER
+            {
+                public static LocString LATEX = "Extracts Latex from Gum Wood while keeping it intact. For the most part.";
+      
+            }
+            public class MICROBEMUSHER
+            {
+                public static LocString NUTRIENTBAR = "All the essential nutrients for survival and nothing else.";
+
             }
 
             public class SUBLIMATIONSTATION
@@ -103,12 +174,12 @@ namespace Rephysicalized
         public static partial class MATERIAL_MODIFIERS
         {
          
-            public static LocString WATTAGE = (LocString)(UI.FormatAsLink("Wattage Capacity", "POWER") + ": {0}");
+            public static LocString WATTAGE = (LocString)(UI.FormatAsLink("Battery Capacity", "POWER") + ": {0}");
 
             public static partial class TOOLTIP
             {
                
-                public static LocString WATTAGE = (LocString)("Making wires or batteries with this material will modify their " + UI.PRE_KEYWORD + "Max Wattage" + UI.PST_KEYWORD + " by {0}.");
+                public static LocString WATTAGE = (LocString)("Making batteries with this material will modify their " + UI.PRE_KEYWORD + "Max Wattage" + UI.PST_KEYWORD + " by {0}.");
             }
 
             public static LocString CAPACITY = (LocString)(UI.FormatAsLink("Storage Capacity", "POWER") + ": {0}");
@@ -141,29 +212,63 @@ namespace Rephysicalized
             public class ASHBYPRODUCT
             {
                 public static LocString NAME = UI.FormatAsLink("Ash", nameof(ASHBYPRODUCT));
-                public static LocString DESC = "Ash is a byproduct of organic matter combustion. It can be used as a fertilizer or filtration medium.";
+                public static LocString DESC = "Ash is a byproduct of organic matter combustion. It can be used as a fertilizer or filtration medium. Part of the Rephysicalized mod.";
             }
             public class CRUDBYPRODUCT
             {
                 public static LocString NAME = UI.FormatAsLink("Crud", nameof(CRUDBYPRODUCT));
-                public static LocString DESC = "Crud is a byproduct of various industrial or metabolic processes. It's a thick, unpleasant-looking mixture of Silicate and Carbon, suitable only for construction.";
+                public static LocString DESC = "Crud is a byproduct of various industrial or metabolic processes. It's a thick, unpleasant-looking mixture, suitable only for construction. Part of the Rephysicalized mod.";
             }
 
-            public class CORROSIVE
+            public class SILICONRP
             {
-          
-                public static LocString NAME = "Corrosive Element";
+                public static LocString NAME = UI.FormatAsLink("Silicon", nameof(SILICONRP));
+                public static LocString DESC = "(Si) Silicon is a common metalloid, but is rarely found in its pure form. It is a hard, brittle crystalline solid. Part of the Rephysicalized mod.";
+            }
+            public class PLANTFIBERRP
+            {
+                public static LocString NAME = UI.FormatAsLink("Plant Husk", nameof(PLANTFIBERRP));
+                public static LocString DESC = "Plant Fiber composes the outer layer of plants.";
+            }
+            public class MOLTENSILICONRP
+            {
+                public static LocString NAME = UI.FormatAsLink("Moltten Silicon", nameof(MOLTENSILICONRP));
+                public static LocString DESC = "(Si) Silicon in its liquid state. Part of the Rephysicalized mod.";
+            }
+
+            public class SILICONGASRP
+            {
+                public static LocString NAME = UI.FormatAsLink("Silicon Gas", nameof(SILICONGASRP));
+                public static LocString DESC = "(Si) Silicon in its gaseous state. Part of the Rephysicalized mod.";
             }
 
         }
 
         internal static class STATUSITEMS
         {
+
+         
+                public static LocString NOGAS = "Gas Supply";
+               
+            
+            public class ACIDBURNSCRITTER
+            {
+     
+                public static LocString NAME = "Chemical Burns";
+                public static LocString TOOLTIP = "This critter has been injured from their recent exposure to Nuclear Waste.";
+            }
+
             public class FUEL_SEEKING
             {
                 public static LocString NAME = "Seeking Gastrolith";
-                public static LocString TOOLTIP = "This critter found something to gulp on/";
+                public static LocString TOOLTIP = "This critter found something to gulp on.";
             }
+            public class HADSUGARWATER
+            {
+                public static LocString NAME = "Hydrated: Nectar";
+                public static LocString TOOLTIP = "This critter recently drank Nectar from a Critter Fountain. It doesn't mind overcrowding quite as much right now";
+            }
+
             public class FUEL_EATING
             {
                 public static LocString NAME = "Gulping up Gastrolith";
@@ -179,30 +284,48 @@ namespace Rephysicalized
                 public static LocString NAME = "Cryostasis";
                 public static LocString TOOLTIP = "This egg will not incubate or lose viability.";
             }
+            public class FISHMILKEGG
+            {
+                public static LocString NAME = "Ovolene Incubation";
+                public static LocString TOOLTIP = "This egg's incubaton speed is boosted by nutrient-rich environment.";
+            }
+     
+
+            public class INFISHMILK
+            {
+                public static LocString NAME = "Submerged in Ovolene";
+                public static LocString TOOLTIP = "This liquid seems to be boosting the critter's reproduction speed.";
+                public static LocString EFFECT = "In Ovolene";
+            }
             public class NOTENOUGHBODYMASS
             {
                 public static LocString NAME = "Scale growth stopped";
                 public static LocString TOOLTIP = "Not enough body mass to convert into scales.";
             }
-            public class NOTENOUGHBODYMASS_MILK
+            public class NOTENOUGHBODYMASSMILK
             {
-                public static LocString NAME = "Not enough body mass";
-                public static LocString TOOLTIP = "Milk production paused: not enough body mass to convert into milk.";
+                public static LocString NAME = "Milk production stopped";
+                public static LocString TOOLTIP = "Not enough body mass to convert into milk.";
             }
             public class HIVE_DEPLETED
             {
                 public static LocString NAME = "Depleted";
                 public static LocString TOOLTIP = "This Hive is depleted of mass and can't spawn Beetas. A supply of Carbon Dioxide is needed.";
             }
-            public class CORROSIVESCALDING
-            {
-                public static LocString NAME = "Corrosive liquid scalding";
-                public static LocString TOOLTIP = "This critter is scalding from a corrosive liquid.";
-            }
         }
 
         internal static class DUPLICANTS
         {
+            public class STATUSITEMS
+            {
+                public class NUCLEARBURNS
+                {
+                    public static LocString NOTIFICATION_NAME = "Chemical Burns";
+                    public static LocString NOTIFICATION_TOOLTIP = "Duplicants have been exposed to Dangerous Chemicals.";
+                    public static LocString NAME = "Chemical Burns";
+                    public static LocString TOOLTIP = "This duplicant has been injured from their recent exposure to Dangerous Chemicals.";
+                }
+            }
             internal static class HEALINGMETABOLISM
             {
                 public static LocString NAME = "Healing Metabolism";
@@ -223,6 +346,11 @@ namespace Rephysicalized
                 public static LocString NAME = "Refilling Iron";
                 public static LocString STATUS_MESSAGE = "Refilling Iron";
                 public static LocString TOOLTIP = "Duplicant refilling their Iron reserves";
+            }
+            internal static class DUPLICANTDRANKSUGARWATER
+            {
+                public static LocString NAME = "Extra Hydrated: Nectar";
+                public static LocString TOOLTIP = "Duplicant drank refreshing but fatty Nectar.";
             }
 
             internal static class STATS
@@ -264,6 +392,11 @@ namespace Rephysicalized
             {
                 public static LocString NAME = "Duplicant Oxygen Use";
                 public static LocString TOOLTIP = "Adjusts the amount of Oxygen a Duplicant breathes.  \n\n Adjusted due to SPOM not being viable anymore and required Oxygen for combustion.";
+            }
+            public class METALELECTROBANKCOST
+            {
+                public static LocString NAME = "Metal Power Bank Cost";
+                public static LocString TOOLTIP = "Adjusts the Metal Ore cost of crafting Metal Power Banks. You can decrease it if you feel like small solid mass multiplier is too punishing.";
             }
             public class BUILDINGHEATEXCHANGE
             {
@@ -314,16 +447,131 @@ namespace Rephysicalized
             public class DEBRISDISSOLVING
             {
                 public static LocString NAME = "Debris Dissolving";
-                public static LocString TOOLTIP = "Creates various reaction when specific debris comes into contact with specific liquids. For example, Polluted Dirt will pollute Water or Iron will turn into Rust in it.";
+                public static LocString TOOLTIP = "Enables the dissolution is various element chunks in specific liquids. The full list of interactions is in the Database.";
 
             }
-            public class WATTAGECAPACITY
+            public class CHEMISTRIER
             {
-                public static LocString NAME = "Wattage Capacity Modifiers";
+                public static LocString NAME = "Chemistrier";
+                public static LocString TOOLTIP = "Rebalances some conversions to be more realistic. In general the idea to make conversions less of a mess in terms of not having elements magically convert into something completely different." +
+                    "\n\nThis alters game balance in a more significant way.";
+                public class SWEETLES
+                {
+                    public static LocString NAME = "Sweetles";
+                    public static LocString TOOLTIP = "Sweetles still consume Sulfur but now they require Carbon Dioxide to make Sucrose (Chemosynthesis). ";
 
-                public static LocString TOOLTIP = "Changes the wattage capacity of wires and power transformers based on the building material. Can negatively affect performance in late-game colonies.";
+
+                }
+                public class SLICKSTERS
+                {
+                    public static LocString NAME = "Slicksters";
+                    public static LocString TOOLTIP = "Slicksters now require organic materials or Sulfur to make Crude Oil. ";
+
+
+                }
+                public class BONBONTREE
+                {
+                    public static LocString NAME = "BonBon Tree";
+                    public static LocString TOOLTIP = "BonBon Trees require Carbonized Soil together with Snow.";
+
+                }
+                public class DEWPALM
+                {
+                    public static LocString NAME = "Gum Palm";
+                    public static LocString TOOLTIP = "Gum Palms require both Carbon Dioxide and Sulfur (Chemosynthesis).";
+
+                }
+                public class DINOFERN
+                {
+                    public static LocString NAME = "Megafrond";
+                    public static LocString TOOLTIP = "Megafronds require a little bit of Carbonized Soil and we can assume they just cycle through all this Chlorine.";
+
+                }
+                public class SNAILIRON
+                {
+                    public static LocString NAME = "Gildgos";
+                    public static LocString TOOLTIP = "Gildgos consume various rocks instead of Sulfur, which makes a bit more sense with Obsidian poop.";
+
+                }
+            }
+
+            public class FISSION
+            {
+                public static LocString NAME = "Radbolt Fission";
+
+               
+                public class STRENGHT
+                {
+                    public static LocString NAME = "Fission Strenght";
+                    public static LocString TOOLTIP = "How much mass is converted by radbolt payload. For most elements, base is 1 kg per one 1 radbolt payload";
+                }
+                public class URANIUMENRICHMENT
+                {
+                    public static LocString NAME = "Uranium Enrichment Multiplier";
+                    public static LocString TOOLTIP = "How much weaker Iranium Ore conversion into Enriched Uranium is compared to fission of other metals. 200 times weaker by default.";
+                }
+                public class GOLDTOIRIDIUM
+                {
+                    public static LocString NAME = "Gold to Iridium";
+                    public static LocString TOOLTIP = "Allows Gold, Gold Amalgam and Electrum to be converted into Iridum, which breaks game progression. If disabled, Gold converts into Tungsten instead.";
+                }
+            }
+            public class RADIATIONRANCHING
+            {
+                public static LocString NAME = "Radiation Ranching";
+
+
+                public class MILDTHRESHOLD
+                {
+                    public static LocString NAME = "Mild Threshold";
+                    public static LocString TOOLTIP = "Lower bound at which mild irradiation effect starts";
+                }
+                public class HIGHTHRESHOLD
+                {
+                    public static LocString NAME = "High Threshold";
+                    public static LocString TOOLTIP = "Lower bound at which high irradiation effect starts";
+                }
+                public class MILDAGING
+                {
+                    public static LocString NAME = "Mild Aging";
+                    public static LocString TOOLTIP = "How much mild irradiation affects aging. 1 is one extra day each day";
+                }
+                public class HIGHAGING
+                {
+                    public static LocString NAME = "High Aging";
+                    public static LocString TOOLTIP = "How much high irradiation affects aging. 1 is one extra day each day";
+                }
+                public class MILDMETABOLISM
+                {
+                    public static LocString NAME = "Mild Metabolism";
+                    public static LocString TOOLTIP = "Metabolism multiplier for mild irradiation. Even though in creature status it shows as additive, it's actually multiplicative and it's a formatting error in the UI";
+                }
+                public class HIGHMETABOLISM
+                {
+                    public static LocString NAME = "High Metabolism";
+                    public static LocString TOOLTIP = "Metabolism multiplier for high irradiation. Even though in creature status it shows as additive, it's actually multiplicative and it's a formatting error in the UI";
+                }
 
             }
+                public class EROSION
+            {
+                public static LocString NAME = "Erosion";
+                public static LocString TOOLTIP = "Wild plants will consume mass from natural tiles they are planted on over time, until the tile breaks.";
+
+            }
+
+            public class IRRADIATEDCRITTERS
+            {
+                public static LocString NAME = "Irradiated Critters";
+                public static LocString TOOLTIP = "Radiation speeds up critter metabolism and scale growth at the cost of faster aging and lower happiness. It also increases the chance of laying egg morphs.";
+
+            }
+            //public class SILICON
+            //{
+            //    public static LocString NAME = "Silicon";
+            //    public static LocString TOOLTIP = "Adds Silicon as manufacturable element. Wow!";
+
+            //}
         }
 
         public class CODEX
@@ -374,7 +622,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
                         "This mod removes most instances of Mass creation and deletion from most game systems, primarily Buildings, Plants and Critters, as well as does rebalancing to account for that. \n\n" +
                         "Some warnings: This mod, although tested, is made with AI by a Non-Programmer. It may be not the most optimized. Also, Due to Mass Conservation, it does significantly change balance of some systems.  \n\n " +
                         "Some 'meta' systems such as SPOM would not work in Rephysicalized. I've tried my best to update UI and the Codex to list relevant changes.\n\n " +
-                        "There are still a few places where mass is not conserved: Duplicant input and outputs; Usage of Microchips; Rocket Exaust; Consumption of Dirt and Water by research stations. Some of these may be rephysicalized in the Future."
+                        "There are still a few places where mass is not conserved: Duplicant input and outputs; Rocket Exaust; Consumption of Dirt and Water by research stations. Some of these may be rephysicalized in the Future."
                         ;
 
                     public static LocString WORLD = (LocString)
@@ -384,32 +632,34 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
 
                     public static LocString DUPLICANTS = (LocString)
                         "Duplicants consume half as much O2, this is done to balance out building oxygen consumption and the nerf to SPOM. \n\nDuplicants have 6000kcal stomachs now (can go without food for 6 days). \n\nDuplicants and Bionics consume more calories and power while healing. \n\n " +
-                        "Duplicants won't get \"chilly surrondings\" debuff when stepping in liquids of less 5kg. \n\nDupes pee the same amount on floor vs. the toilet.";
+                        "Duplicants won't get \"chilly surrondings\" debuff when stepping in liquids of less 5kg. \n\nDupes pee the same amount on floor vs. the toilet.\n\n Bionic Duplicants have Metal capacity which is used up when they are creating microchips or healing. They automatically eat Iron when it gets too low.";
 
                     public static LocString PLANTS = (LocString)
                         "Plants now track the consumed mass - the mass is shown in the UI and it will yield back stuff the plant consumed, but reprocessed into something else, and with the subtracted amount of \"actual harvest\". \n\nIf the plant was pollinated or fertilized, it will increase the growth speed but won't actually increase byproduct output. \n\n Digging up the plant preemptively will also give back the reprocessed mass. \n\n" +
-                        "Plants don't just drop solids, they can fart out gases or spill liquids. \n\n Carnivore plants will take into the account consumed critter mass.  \n\n Applying fertilizer to plants will increase their mass by 5kg as well. \n\n " +
+                        "Plants don't just drop solids, they can fart out gases or spill liquids. \n\nCarnivore plants will take into the account consumed critter mass.  \n\n Applying fertilizer to plants will increase their mass by 5kg as well. \n\n " +
                         "Plants have their byproducts listed in the Rephysicalized Drops table. This is why you will see lovwer harvest amount listed in the codex for some plants: Their harvest is determined by their Mass instead. \n\n" +
-                        "Balm Lilies require Salt to grow and can be processed into PhytoOil.\n\n " + "Alveo Veras will scale their CO2 consumption and Oxygen production with Lux and produce Rock. Up to 100000 Lux.\n\n" + "Bonbon trees produce even more Nectar in light brighter than 10000 Lux, up to 2 times in light of 100000 Lux. \n\n"
-                        + "Oxyferns also consume more CO2 and create more Oxygen under light. \n\n";
+                        "Balm Lilies require Salt to grow and can be processed into PhytoOil.\n\n " +"Alveo Veras will scale their CO2 consumption and Oxygen production with Lux and produce Rock. Up to 100000 Lux.\n\n" + "Bonbon trees produce even more Nectar in light brighter than 10000 Lux, up to 2 times in light of 100000 Lux. \n\n"
+                        + "Oxyferns also consume more CO2 and create more Oxygen under light.\n\n";
 
                     public static LocString ITEMS = (LocString)
                        "Many items now have proper primary elements instead of Genetic Ooze. \n\nLumen Quartz is made of Granite and can be created at a Diamond Press. To prevent infinite lux, combined light from Quartz can't exceed 1000 lux. You can plant them in a pot!\n\n" +
-                     "Dew Drips can be frozen or heated into Brackene directly.\n\n " + "Boosters can be deconstructed into Microchips at the Crafting Station. \n\n " +
-                        "Atmosuits and Jetsuits have their Scalding temperature equal to 60% of their metal melting temperature. It makes some materials worse but Jesuits may be just good enough to swim in Lava! LeadSuits also have a nerf to their Scalding temperature, but not as serious.\n\n" + "Pills are swallowed faster.\n\n";
+                     "Dew Drips can be frozen or heated into Brackene directly.\n\n"+"Boosters can be deconstructed into Microchips at the Crafting Station. \n\n " +
+                       "Atmosuits and Jetsuits have their Scalding temperature equal to 60% of their metal melting temperature. It makes some materials worse but Jesuits may be just good enough to swim in Lava! LeadSuits also have a nerf to their Scalding temperature, but not as serious.\n\n" + "Pills are swallowed faster.\n\n";
 
                     public static LocString CREATURES = (LocString)
-                        "Creature Mass is now a dynamic parameter.\n\nCritter's initial mass on spawn/birth will be equal to the half the egg mass.\n\n " +
+                        "Creature Mass is now a dynamic parameter.\n\nCritter's initial mass on spawn/birth will be equal to the half the egg mass.\n\n "+
                         "Critters increase their mass by eating, and the amount  of the growth will be equal to the mass consumed minus the poop. Critters are rebalanced with this in mind, and many have their consumption/output adjusted or " +
                         "have completely new mechanics added to them. \n\nThe mass then is recalled when a creature dies - the normal meat drop gets subtracted and the residual loot drops as rephysicalized drops (usually rot unless it is something important).\n\n " +
                         "Critters visually increase in size as they grow in mass (cosmetic only).  \n\n Critters can be separated into 2 categories based on mass: normal and gluttons. Normal critters typically gain just about 1kg of mass per cycle " +
                         "and their drops on death are not very important. Gluttons like Shove Voles or Spigot Seals give important maraterials or food on death and their mass tends to grow much larger in mass.  \n\n  Critter Pick-Up and Dro-Off gained a specialised critter mass range scalers to help dealing with critter relocation.  \n\n  " +
                         "Some animals were hard to rephysicalize and got a diet extension. It's called \"Fueled Diet\" or \"Gastrolith diet\", and has critters consume secondary materials that do not provide them calories, but will help initiate resource conversion. These critters have Rephysicalized Metaboslim in their codex. \n\n"+
                         "Critters affected by Rephysicalized Metabolism: Stegos, Slicksters, Sweetles, Floxes and Morbs.\n\n"+ "Carnivore critters would poop the amount of materials based on the prey mass.\n\n"
-                      + "Morbs can spawn from unflipped Composts as well as Outhouses. They can slowly convert some materials into slime, but beware of the release method.\n\n"+
+                      +"Morbs can spawn from unflipped Composts as well as Outhouses. They can slowly convert some materials into slime, but beware of the release method.\n\n"+
                         "Shine Bug family increases their light output as you morph them into more royal breeds.\n\n" +
                         "Critters' mass also takes into accont scale growth and milk production - this allows you to extract their scales or milk preemptively by selecting them and clicking attack button (one time use).\n\n" +
-                        "Critter Fountain Brackene consumption is also tracked with Rephysicalized Pee. Some of the Brackene is absorbed by the critter and the rest is excreted. Critters may have excrete unique liquids depending on the species!";
+                        "Critter Fountain Brackene consumption is also tracked with Rephysicalized Pee. Some of the Brackene is absorbed by the critter and the rest is excreted. Critters may excrete unique liquids depending on the species!\n\n" +
+                        "Nectar is added as a Critter drinkable liquid.\n\nRadiation speeds up critter metabolism and scale growth at the cost of faster aging and lower happiness. It also increases the chance of laying egg morphs. There are two stages - Mild and High. Shove Voles, Moos and Shine Bugs are immune to radiation." +
+                        "Mild Irradiation happens at >75 rads and High happens at >150 rads. Irradiation increases egg morph chances. This is not shown in the egg chances statistics, but basically it pushes all of them to be more equal in probablility. Even if an egg morph's chance is 0, Highly irradiated critter has about 6% chance of laying it.";
 
                     public static LocString BUILDINGS = (LocString)
                         "Combustion engines now require Oxidizer gas (a new gas tag including Oxygen and Polluted Oxygen) to operate.  Most can draw it from the surrounding environment, but some require piped input.\n\n" +
@@ -417,16 +667,17 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
                         "Buildings also respect the mass conservation, with the exception of research stations, at least at the moment. \n\nThermo Regulator and Thermo Aquatuner have dynaming power consumption dependant on the SHC of the element throughput. Effectively, Thermoregulator drains less energ overall while Aquatuner drains less energy with water throughput but more with Super Coolant.\n\n" +
                         "Food Rehydrator stores used plastic of the dehydrated food inside. The food from rehydrator comes out mushier and much easier (faster) to consume.\n\n" + "Critter Drop-Off and Critter Pick-Up have critter mass configuration. \n\n" +
                         "Carbon Scrubber does not delete CO2 anymore, and instead stores it, so you may move it out later somewhere. MAKE SURE TO CONNECT A GAS PIPE TO IT, OTHERWISE IT WONT WORK!\n\n" + "Batteries will take damage in Water and explode!\n\n" + "Producing items from Uranium will emit radiation during fabriaction.\n\n" +
-                        "Mercury Lamp is nerfed a bit, since it is too strong in Rephysicalized, while Sun lamp's energy consumption is halved.";
+                        "Mercury Lamp is nerfed a bit, since it is too strong in Rephysicalized, while Sun lamp's energy consumption is halved.\n\n Nori and Seakomb can be distilled into algae.";
                        
 
                     public static LocString MATERIALS = (LocString)
-                        "Ash is a new material created by burning organic matter. It can be used as a fertilizer or filtration medium, or consumed by sage Hatches to recycle some of the coal back. It was added to prevent mass loss from combustion.\n\n " +
-                        "Crud is new a material suitable only for building, though it can be melted into Magma. It represent a highly processed wasteproduct which can't recyled.\n\n " +
+                        "Ash is a new material created by burning organic matter. It can be used as a fertilizer or filtration medium, or consumed by sage Hatches to recycle some of the coal back. It was added to prevent mass loss from combustion.\n\n" +
+                        "Crud is new a material suitable only for building, though it can be melted into Magma. It represent a highly processed wasteproduct which can't recyled.\n\n" +
+                         "Silicon is new element with several alternative uses. And even more importantly, it allows to extract Oxygen out of minerals in form of Carbon Dioxide.\n\n" +
                         "Some elements have their state changes reworked. Rust creates Iron and Oxygen on melting, Optional configuration for Metal Ores turns them into actual compounds." +
                         "If you are playing with Rephysicalized Metal Ores enabled, the amount of Metal needed to make Conductive Wires is reduced, to balance out smaller metal yeild from ores." +
                         "Uranium now has a realistic melting temperature.\n\n "  +
-                    "Wire and transformer wattage capacity is affected by metal you are using - metals with better irl electric conductivity will give better wattage capacity, with the exception of Mercury." +
+                    "Battery capacity is affected by metal you are using - metals with better irl electric conductivity will give better capacity." +
                         "Many metals also received Storage Capacity modifier. Storage Capacity is loosely based on the metal's fatigue resistance, Metals with better resistance can handle higher loads, which allows for higher storage capacity."
                         ;
 
@@ -451,7 +702,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
     }
 
     [HarmonyPatch(typeof(global::CodexCache), nameof(global::CodexCache.CodexCacheInit))]
-    [HarmonyPriority(Priority.VeryLow)] // run last after all mods/vanilla
+[HarmonyPriority(Priority.VeryLow)] // run last after all mods/vanilla
     public static class RephysicalizedCodexRegistration
     {
         private const string CategoryKey = "REPHYSICALIZED";
@@ -470,7 +721,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
 
                 try
                 {
-                    Debug.Log("[Rephysicalized/Codex] Running registration (no skip)"); // removed guard
+Debug.Log("[Rephysicalized/Codex] Running registration (no skip)"); // removed guard
 
                     sAddedCategoryIds.Clear();
                     sAddedEntryIds.Clear();
@@ -521,14 +772,14 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
                         // Use plain title (no UI.FormatAsLink) to avoid "MISSING." sidebar labels
                         LocString display = title;
 
-                        var subcatEntry = CodexEntryGenerator.GenerateCategoryEntry(
-                                                    subcatId,
-                                                    display,
-                                                    new Dictionary<string, CodexEntry>(),
-                                                    Assets.GetSprite("codexCategory_icon"),
-                                                    largeFormat: false,
-                                                    sort: false
-                                                );
+var subcatEntry = CodexEntryGenerator.GenerateCategoryEntry(
+                            subcatId,
+                            display,
+                            new Dictionary<string, CodexEntry>(),
+                            Assets.GetSprite("codexCategory_icon"),
+                            largeFormat: false,
+                            sort: false
+                        );
 
 
                         subcatEntry.parentId = topCategoryId;
@@ -571,7 +822,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
                             sAddedCategoryIds.Add(subcatId);
                     }
 
-                    Debug.Log("[Rephysicalized/Codex] Registration complete, added " + sAddedCategoryIds.Count + " categories.");
+Debug.Log("[Rephysicalized/Codex] Registration complete, added " + sAddedCategoryIds.Count + " categories.");
 
                     sInitialized = true;
                 }
@@ -592,15 +843,15 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
             Strings.Add(CategoryStringPath, "Rephysicalized");
 
             LocString display = (LocString)"Rephysicalized";
-            var topEntry = CodexEntryGenerator.GenerateCategoryEntry(
-                            id,
-                            display,
-                            new Dictionary<string, CodexEntry>(),
-                            Assets.GetSprite("codexCategory_icon"),
-                            largeFormat: true,
-                            sort: true
-                        );
-            topEntry.sortString = "R";
+var topEntry = CodexEntryGenerator.GenerateCategoryEntry(
+                id,
+                display,
+                new Dictionary<string, CodexEntry>(),
+                Assets.GetSprite("codexCategory_icon"),
+                largeFormat: true,
+                sort: true
+            );
+topEntry.sortString = "R";
 
             topEntry.parentId = null;
 
@@ -610,7 +861,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
             return id;
         }
 
-        private static bool EntryExistsAnywhere(string rawId)
+private static bool EntryExistsAnywhere(string rawId)
         {
             string id = global::CodexCache.FormatLinkID(rawId);
             if (CodexCache.entries != null && CodexCache.entries.ContainsKey(id))

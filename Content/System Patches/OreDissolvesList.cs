@@ -1,4 +1,4 @@
-﻿using Epic.OnlineServices.UserInfo;
+﻿﻿using Epic.OnlineServices.UserInfo;
 using JetBrains.Annotations;
 using Rephysicalized.Content.System_Patches;
 using System;
@@ -18,14 +18,14 @@ namespace Rephysicalized.Content.System_Patches
     {
     }
 
+
+
     internal static class OrePrefabHelpers
     {
         public static GameObject GetOrCreateOrePrefab(SimHashes elementID)
         {
-
             try
             {
-
                 var tag = new Tag(elementID.ToString());
                 var existing = Assets.TryGetPrefab(tag);
                 if (existing != null)
@@ -35,16 +35,10 @@ namespace Rephysicalized.Content.System_Patches
 
             return EntityTemplates.CreateSolidOreEntity(elementID);
         }
-
+       
     }
-
-
-    //______
-    //WATER CONTAMINATION
-    //_______
-
-
-    public class SaltConfig : IOreDissolvesConfig
+//Water contamination
+    public class SaltinWaterConfig : IOreDissolvesConfig
     {
         public SimHashes ElementID => SimHashes.Salt;
 
@@ -54,13 +48,30 @@ namespace Rephysicalized.Content.System_Patches
             var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.07f;
             oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedfluid = SimHashes.SaltWater;
             oreDissolves.absorbedFluid = SimHashes.Water;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
+    public class SaltinDirtyWaterConfig : IOreDissolvesConfig
+    {
+        public SimHashes ElementID => SimHashes.Salt;
 
+        public GameObject CreatePrefab()
+        {
+            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            oreDissolves.usedoreratio = 0.3f;
+            oreDissolves.conversionspeed = 0.005f;
+            oreDissolves.minmass = 100f;
+            oreDissolves.emittedfluid = SimHashes.MurkyBrine;
+            oreDissolves.absorbedFluid = SimHashes.DirtyWater;
+            oreDissolves.DeltaT = 0f;
+            return solidOreEntity;
+        }
+    }
     public class IsoResinConfig : IOreDissolvesConfig
     {
         public SimHashes ElementID => SimHashes.Isoresin;
@@ -70,9 +81,10 @@ namespace Rephysicalized.Content.System_Patches
             var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ;
             oreDissolves.usedoreratio = 0.25f;
             oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedfluid = SimHashes.Resin;
             oreDissolves.absorbedFluid = SimHashes.Water;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
@@ -84,15 +96,16 @@ namespace Rephysicalized.Content.System_Patches
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ;
             oreDissolves.usedoreratio = 0.77f;
-
+       
             oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedfluid = SimHashes.SugarWater;
             oreDissolves.absorbedFluid = SimHashes.Water;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
-    public class ToxicSandConfig : IOreDissolvesConfig
+    public class ToxicSandToWaterConfig : IOreDissolvesConfig
     {
         public SimHashes ElementID => SimHashes.ToxicSand;
 
@@ -102,9 +115,27 @@ namespace Rephysicalized.Content.System_Patches
             var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.01f;
             oreDissolves.conversionspeed = 0.01f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedfluid = SimHashes.DirtyWater;
             oreDissolves.absorbedFluid = SimHashes.Water;
+            oreDissolves.DeltaT = 0f;
+            return solidOreEntity;
+        }
+    }
+        public class ToxicSandToBrineConfig : IOreDissolvesConfig
+    {
+        public SimHashes ElementID => SimHashes.ToxicSand;
+
+        public GameObject CreatePrefab()
+        {
+            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            oreDissolves.usedoreratio = 0.01f;
+            oreDissolves.conversionspeed = 0.01f;
+            oreDissolves.minmass = 100f;
+            oreDissolves.emittedfluid = SimHashes.MurkyBrine;
+            oreDissolves.absorbedFluid = SimHashes.Brine;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
@@ -119,16 +150,13 @@ namespace Rephysicalized.Content.System_Patches
             oreDissolves.usedoreratio = 0.01f;
 
             oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedfluid = SimHashes.DirtyWater;
             oreDissolves.absorbedFluid = SimHashes.Water;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
-
-
-
-
     public class ToxicMudConfig : IOreDissolvesConfig
     {
         public SimHashes ElementID => SimHashes.ToxicMud;
@@ -139,16 +167,93 @@ namespace Rephysicalized.Content.System_Patches
             var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.025f;
             oreDissolves.conversionspeed = 0.01f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedfluid = SimHashes.DirtyWater;
             oreDissolves.absorbedFluid = SimHashes.Water;
+            oreDissolves.DeltaT = 0f;
+            return solidOreEntity;
+        }
+    }
+    // Speacial conversions
+    public class BleachStoneConfig : IOreDissolvesConfig
+    {
+        public SimHashes ElementID => SimHashes.BleachStone;
+        public GameObject CreatePrefab()
+        {
+            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            oreDissolves.usedoreratio = 0.2f;
+
+            oreDissolves.conversionspeed = 0.02f;
+            oreDissolves.minmass = 100f;
+            oreDissolves.emittedfluid = SimHashes.RefinedLipid;
+            oreDissolves.absorbedFluid = SimHashes.PhytoOil;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
 
-    //______
-    //METALS RUSTING
-    //_______
+    public class SlimeConfig : IOreDissolvesConfig
+    {
+        public SimHashes ElementID => SimHashes.SlimeMold;
+
+        public GameObject CreatePrefab()
+        {
+            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            oreDissolves.usedoreratio = 0.1f;
+            oreDissolves.conversionspeed = 0.02f;
+            oreDissolves.minmass = 100f;
+            oreDissolves.emittedfluid = SimHashes.Ethanol;
+            oreDissolves.emittedore = SimHashes.Dirt;
+            oreDissolves.EmittedFluidMult = 0.75f;
+            oreDissolves.EmittedOreMult = 0.25f;
+            oreDissolves.absorbedFluid = SimHashes.SugarWater;
+            oreDissolves.DeltaT = 0f;
+            return solidOreEntity;
+     
+          
+        }
+    }
+    public class ToxicMudFertilizer : IOreDissolvesConfig
+    {
+        public SimHashes ElementID => SimHashes.ToxicMud;
+
+        public GameObject CreatePrefab()
+        {
+            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
+            oreDissolves.usedoreratio = 0.75f;
+            oreDissolves.conversionspeed = 0.02f;
+            oreDissolves.minmass = 10f;
+            oreDissolves.emittedore = SimHashes.Fertilizer;
+            oreDissolves.absorbedFluid = SimHashes.LiquidPhosphorus;
+            oreDissolves.DeltaT = 10f;
+            return solidOreEntity;
+        }
+    }
+    public class RefinedCarbon : IOreDissolvesConfig
+    {
+        public SimHashes ElementID => SimHashes.RefinedCarbon;
+
+        public GameObject CreatePrefab()
+        {
+            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>();
+            oreDissolves.usedoreratio = 0.5f;
+            oreDissolves.conversionspeed = 0.001f;
+            oreDissolves.minmass = 10f;
+            oreDissolves.emittedore = SimHashes.Diamond;
+            oreDissolves.absorbedFluid = SimHashes.MoltenCarbon;
+            oreDissolves.DeltaT = -10f;
+            return solidOreEntity;
+        }
+    }
+
+
+
+    //Metal oxidation 
+
     public class IronConfig : IOreDissolvesConfig
     {
         public SimHashes ElementID => SimHashes.Iron;
@@ -158,10 +263,11 @@ namespace Rephysicalized.Content.System_Patches
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.6f;
-            oreDissolves.conversionspeed = 0.002f;
-            oreDissolves.minmass = 100f;
+            oreDissolves.conversionspeed = 0.02f;
+            oreDissolves.minmass = 10f;
             oreDissolves.emittedore = SimHashes.Rust;
             oreDissolves.absorbedFluid = SimHashes.Water;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
@@ -171,18 +277,19 @@ namespace Rephysicalized.Content.System_Patches
 
         public GameObject CreatePrefab()
         {
-            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+                GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             if (Config.Instance.RephysicalizedMetalOre)
             {
                 var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.8f;
-                oreDissolves.conversionspeed = 0.002f;
-                oreDissolves.minmass = 100f;
+                oreDissolves.conversionspeed = 0.02f;
+                oreDissolves.minmass = 10f;
                 oreDissolves.emittedore = SimHashes.Cuprite;
                 oreDissolves.absorbedFluid = SimHashes.Water;
+                oreDissolves.DeltaT = 0f;
             }
-            return solidOreEntity;
-
+                return solidOreEntity;
+            
         }
     }
 
@@ -197,10 +304,11 @@ namespace Rephysicalized.Content.System_Patches
             {
                 var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.73f;
-                oreDissolves.conversionspeed = 0.002f;
-                oreDissolves.minmass = 100f;
+                oreDissolves.conversionspeed = 0.02f;
+                oreDissolves.minmass = 10f;
                 oreDissolves.emittedore = SimHashes.NickelOre;
                 oreDissolves.absorbedFluid = SimHashes.LiquidSulfur;
+                oreDissolves.DeltaT = 0f;
             }
             return solidOreEntity;
 
@@ -218,10 +326,32 @@ namespace Rephysicalized.Content.System_Patches
             {
                 var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.71f;
-                oreDissolves.conversionspeed = 0.002f;
-                oreDissolves.minmass = 100f;
+                oreDissolves.conversionspeed = 0.02f;
+                oreDissolves.minmass = 10f;
                 oreDissolves.emittedore = SimHashes.Cobaltite;
                 oreDissolves.absorbedFluid = SimHashes.LiquidSulfur;
+                oreDissolves.DeltaT = 0f;
+            }
+            return solidOreEntity;
+
+        }
+    }
+    public class ZincConfig : IOreDissolvesConfig
+    {
+        public SimHashes ElementID => SimHashes.Zinc;
+
+        public GameObject CreatePrefab()
+        {
+            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+            if (Config.Instance.RephysicalizedMetalOre)
+            {
+                var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+                oreDissolves.usedoreratio = 0.66f;
+                oreDissolves.conversionspeed = 0.02f;
+                oreDissolves.minmass = 10f;
+                oreDissolves.emittedore = SimHashes.ZincOre;
+                oreDissolves.absorbedFluid = SimHashes.LiquidSulfur;
+                oreDissolves.DeltaT = 0f;
             }
             return solidOreEntity;
 
@@ -232,20 +362,23 @@ namespace Rephysicalized.Content.System_Patches
         public SimHashes ElementID => SimHashes.Aluminum;
         public GameObject CreatePrefab()
         {
-            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
+           GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             if (Config.Instance.RephysicalizedMetalOre)
             {
 
                 var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.6f;
-                oreDissolves.conversionspeed = 0.002f;
-                oreDissolves.minmass = 100f;
+
+                oreDissolves.conversionspeed = 0.02f;
+                oreDissolves.minmass = 10f;
                 oreDissolves.emittedore = SimHashes.AluminumOre;
                 oreDissolves.absorbedFluid = SimHashes.Water;
 
+
+                oreDissolves.DeltaT = 0f;
             }
-            return solidOreEntity;
-        }
+                return solidOreEntity;
+                 }
     }
 
     public class Gold : IOreDissolvesConfig
@@ -258,61 +391,17 @@ namespace Rephysicalized.Content.System_Patches
             {
                 var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>();
                 oreDissolves.usedoreratio = 0.6f;
-                oreDissolves.conversionspeed = 0.002f;
-                oreDissolves.minmass = 100f;
+                oreDissolves.conversionspeed = 0.02f;
+                oreDissolves.minmass = 10f;
                 oreDissolves.emittedore = SimHashes.GoldAmalgam;
                 oreDissolves.absorbedFluid = SimHashes.Mercury;
+                oreDissolves.DeltaT = 0f;
             }
             return solidOreEntity;
         }
     }
 
-
-    //______
-    //MISC
-    //_______
-    public class SlimeConfig : IOreDissolvesConfig
-    {
-        public SimHashes ElementID => SimHashes.SlimeMold;
-
-        public GameObject CreatePrefab()
-        {
-            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
-            oreDissolves.usedoreratio = 0.1f;
-            oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 100f;
-            oreDissolves.emittedfluid = SimHashes.Ethanol;
-            oreDissolves.emittedore = SimHashes.Dirt;
-            oreDissolves.EmittedFluidMult = 0.75f;
-            oreDissolves.EmittedOreMult = 0.25f;
-            oreDissolves.absorbedFluid = SimHashes.SugarWater;
-            return solidOreEntity;
-
-
-        }
-    }
-    public class ToxicMudFertilizer : IOreDissolvesConfig
-    {
-        public SimHashes ElementID => SimHashes.ToxicMud;
-
-        public GameObject CreatePrefab()
-        {
-            GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
-            oreDissolves.usedoreratio = 0.75f;
-            oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 10f;
-            oreDissolves.emittedore = SimHashes.Fertilizer;
-            oreDissolves.emittedfluid = SimHashes.LiquidMethane;
-            oreDissolves.EmittedOreMult = 0.90f;
-            oreDissolves.EmittedFluidMult = 0.10f;
-            oreDissolves.absorbedFluid = SimHashes.LiquidPhosphorus;
-            return solidOreEntity;
-        }
-    }
-
-
+    // Dirt Pollution
     public class Dirt : IOreDissolvesConfig
     {
         public SimHashes ElementID => SimHashes.Dirt;
@@ -322,13 +411,14 @@ namespace Rephysicalized.Content.System_Patches
             var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 1f;
             oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedore = SimHashes.ToxicSand;
             oreDissolves.absorbedFluid = SimHashes.DirtyWater;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
-    public class Mud : IOreDissolvesConfig
+ public class Mud : IOreDissolvesConfig
     {
         public SimHashes ElementID => SimHashes.Mud;
         public GameObject CreatePrefab()
@@ -337,45 +427,33 @@ namespace Rephysicalized.Content.System_Patches
             var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 1f;
             oreDissolves.conversionspeed = 0.02f;
-            oreDissolves.minmass = 10f;
+            oreDissolves.minmass = 100f;
             oreDissolves.emittedore = SimHashes.ToxicMud;
             oreDissolves.absorbedFluid = SimHashes.DirtyWater;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
 
-
-    public class RefinedCarbon : IOreDissolvesConfig
+    public class Fossil : IOreDissolvesConfig
     {
-        public SimHashes ElementID => SimHashes.RefinedCarbon;
-
+        public SimHashes ElementID => SimHashes.Fossil;
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>();
-            oreDissolves.usedoreratio = 0.5f;
-            oreDissolves.conversionspeed = 0.001f;
-            oreDissolves.minmass = 10f;
-            oreDissolves.emittedore = SimHashes.Diamond;
-            oreDissolves.absorbedFluid = SimHashes.MoltenCarbon;
+            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            oreDissolves.usedoreratio = 1f;
+            oreDissolves.conversionspeed = 0.02f;
+            oreDissolves.minmass = 100f;
+            oreDissolves.emittedore = SimHashes.Coquina;
+            oreDissolves.absorbedFluid = SimHashes.SaltWater;
+            oreDissolves.DeltaT = 0f;
             return solidOreEntity;
         }
     }
-}
-public class BleachStoneConfig : IOreDissolvesConfig
-{
-    public SimHashes ElementID => SimHashes.BleachStone;
-    public GameObject CreatePrefab()
-    {
-        GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-        var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
-        oreDissolves.usedoreratio = 0.2f;
-        oreDissolves.conversionspeed = 0.02f;
-        oreDissolves.minmass = 100f;
-        oreDissolves.emittedfluid = SimHashes.RefinedLipid;
-        oreDissolves.absorbedFluid = SimHashes.PhytoOil;
-        return solidOreEntity;
-    }
+
+
+
 }
 
 

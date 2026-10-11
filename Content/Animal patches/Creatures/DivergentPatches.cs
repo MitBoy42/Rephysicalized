@@ -16,6 +16,7 @@ namespace YourModNamespace.Patches
     {
         static void Postfix(GameObject __result)
         {
+
             var dietInfos = new List<Diet.Info>
             {
                 new Diet.Info(
@@ -56,8 +57,9 @@ namespace YourModNamespace.Patches
 
         static void Postfix(GameObject __result)
         {
-          
-                float caloriesPerKg = DivergentTuning.STANDARD_CALORIES_PER_CYCLE / NewKgOreEatenPerCycle;
+            if (!Config.Instance.ChemistrierSweetles) return;
+
+            float caloriesPerKg = DivergentTuning.STANDARD_CALORIES_PER_CYCLE / NewKgOreEatenPerCycle;
 
                 List<Diet.Info> dietInfos = BaseDivergentConfig.BasicSulfurDiet(
                     SimHashes.Sand.CreateTag(),

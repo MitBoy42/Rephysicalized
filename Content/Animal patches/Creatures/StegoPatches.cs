@@ -94,6 +94,7 @@ namespace Rephysicalized
                 new FuelInput(SimHashes.SandStone.CreateTag()),
                 new FuelInput(SimHashes.Clay.CreateTag()),
                 new FuelInput(SimHashes.SedimentaryRock.CreateTag()),
+                new FuelInput(SimHashes.SiltStone.CreateTag()),
                 new FuelInput(SimHashes.Mud.CreateTag()),
             };
 
@@ -139,6 +140,8 @@ namespace Rephysicalized
                 new FuelInput(SimHashes.SandStone.CreateTag()),
                 new FuelInput(SimHashes.RefinedCarbon.CreateTag()),
                 new FuelInput(SimHashes.SedimentaryRock.CreateTag()),
+                new FuelInput(SimHashes.SiltStone.CreateTag()),
+          
                 new FuelInput(SimHashes.Mud.CreateTag()),
             };
 
@@ -184,9 +187,32 @@ namespace Rephysicalized
 
     // Reliable disable of vanilla poop conversion for Stego by clearing consumed calories just before Poop.
     // Scope: Only Stego prefabs (matches any PrefabID containing 'Stego', case-insensitive).
-    [HarmonyPatch(typeof(CreatureCalorieMonitor.Instance), nameof(CreatureCalorieMonitor.Instance.Poop))]
+    // CreatureCalorieMonitor.Instance may contain multiple Poop overloads in newer builds.
+    // Target by signature to avoid ambiguous overload crashes.
+    [HarmonyPatch(typeof(CreatureCalorieMonitor.Instance))]
     internal static class Stego_DisableVanillaPoop_Prefix
     {
+        [HarmonyTargetMethod]
+        private static System.Reflection.MethodBase TargetMethod()
+        {
+            var methods = typeof(CreatureCalorieMonitor.Instance).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            // Stego wants to disable the vanilla poop generation that happens during the main poop event.
+            // CreatureCalorieMonitor calls Poop(data == null ? null : data), so target Poop(PoopData) first.
+            for (int i = 0; i < methods.Length; i++)
+            {
+                var m = methods[i];
+                if (m == null || m.Name != "Poop") continue;
+                var ps = m.GetParameters();
+                if (ps.Length == 1 && ps[0].ParameterType == typeof(PoopData))
+                    return m;
+            }
+
+          
+
+            return null;
+        }
+
         [HarmonyPrefix]
         private static void Prefix(CreatureCalorieMonitor.Instance __instance)
         {

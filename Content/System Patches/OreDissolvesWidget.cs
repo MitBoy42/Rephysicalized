@@ -1,154 +1,117 @@
-﻿using System;
+﻿
+using Rephysicalized.Content.System_Patches;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using STRINGS;
-using Rephysicalized.Content.System_Patches;
 
 namespace Rephysicalized.Content.ModDb
 {
     public static class OreDissolvesWidget
     {
-        // Build an aggregated ContentContainer containing CodexConversionPanel widgets for all IOreDissolvesConfig entries.
-        // This container can be appended by the codex registration code into a dedicated page (Dissolving).
         public static ContentContainer BuildAllDissolvingPanelsContainer()
         {
             try
             {
-                var widgets = new List<ICodexWidget>();
-                var unique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                // Scan all elements and check if they have OreDissolves component in their prefab
+                List<ICodexWidget> content = new List<ICodexWidget>();
+                HashSet<string> stringSet = new HashSet<string>((IEqualityComparer<string>)StringComparer.OrdinalIgnoreCase);
                 foreach (Element element in ElementLoader.elements)
                 {
-                    if (element == null || !element.IsSolid) continue;
-
-                    GameObject prefab = null;
-                    try
+                    if (element != null && element.IsSolid)
                     {
-                        prefab = Assets.TryGetPrefab(element.tag);
-                    }
-                    catch { continue; }
-
-                    if (prefab == null) continue;
-
-                    // If the prefab contains multiple OreDissolves components (e.g. ToxicMud has 2 patches),
-                    // create a separate Codex panel for each component.
-                    var allDissolves = prefab.GetComponents<OreDissolves>();
-                    if (allDissolves == null || allDissolves.Length == 0)
-                        continue;
-
-                    foreach (var dissolvesInstance in allDissolves)
-                    {
-                        if (dissolvesInstance == null)
+                        GameObject prefab;
+                        try
+                        {
+                            prefab = Assets.TryGetPrefab(element.tag);
+                        }
+                        catch
+                        {
                             continue;
-
-                        string key = BuildPanelKeyFromComponent(dissolvesInstance, element);
-                        if (!unique.Add(key))
-                            continue;
-
-                        var panel = BuildPanelFromComponent(element, dissolvesInstance);
-                        if (panel != null)
-                            widgets.Add(panel);
+                        }
+                        if (!((UnityEngine.Object)prefab == (UnityEngine.Object)null))
+                        {
+                            OreDissolves[] components = prefab.GetComponents<OreDissolves>();
+                            if (components != null && components.Length != 0)
+                            {
+                                foreach (OreDissolves dissolves in components)
+                                {
+                                    if (!((UnityEngine.Object)dissolves == (UnityEngine.Object)null))
+                                    {
+                                        string str = OreDissolvesWidget.BuildPanelKeyFromComponent(dissolves, element);
+                                        if (stringSet.Add(str))
+                                        {
+                                            ICodexWidget codexWidget = OreDissolvesWidget.BuildPanelFromComponent(element, dissolves);
+                                            if (codexWidget != null)
+                                                content.Add(codexWidget);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-
-                if (widgets.Count == 0)
-                    return null;
-
-                return new ContentContainer(widgets, ContentContainer.ContentLayout.Vertical);
+                return content.Count == 0 ? (ContentContainer)null : new ContentContainer(content, ContentContainer.ContentLayout.Vertical);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Debug.LogError($"[Rephysicalized.OreDissolves] BuildAllDissolvingPanelsContainer failed: {e}");
-                return null;
+                Debug.LogError((object)string.Format("[Rephysicalized.OreDissolves] BuildAllDissolvingPanelsContainer failed: {0}", (object)ex));
+                return (ContentContainer)null;
             }
         }
 
-        private static string BuildPanelKeyFromComponent(OreDissolves dissolves, Element element)
-        {
-            // include emitted fluid/ore + absorbed fluid to distinguish patches on the same prefab
-            return $"{element.id}::{dissolves.emittedfluid}::{dissolves.emittedore}::{dissolves.absorbedFluid}";
-        }
+        private static string BuildPanelKeyFromComponent(OreDissolves dissolves, Element element) => string.Format("{0}::{1}::{2}::{3}", (object)element.id, (object)dissolves.emittedfluid, (object)dissolves.emittedore, (object)dissolves.absorbedFluid);
 
-        private static ICodexWidget BuildPanelFromComponent(Element element, OreDissolves dissolves)
+        private static ICodexWidget BuildPanelFromComponent(
+          Element element,
+          OreDissolves dissolves)
         {
             try
             {
-                // Converter (absorbed fluid / liquid input in sim) vs absorbed ore (solid input in sim).
-                // UI requirement:
-                // - converter (middle / fabricator icon) should be the absorbed fluid (liquid input in sim)
-                // - input (left) should be the absorbed ore (solid input in sim)
-                var converterElement = ElementLoader.FindElementByHash(dissolves.absorbedFluid);
-                if (converterElement == null)
-                    return null;
-
-                // The solid being dissolved is the element represented by this prefab (primary element).
-                var oreInputElement = element;
-
-
-                // Outputs: dissolving can emit both liquid and ore at the same time.
-                Element emittedFluidElement = null;
+                Element elementByHash = ElementLoader.FindElementByHash(dissolves.absorbedFluid);
+                if (elementByHash == null)
+                    return (ICodexWidget)null;
+                Element oreInputElement = element;
+                Element emittedFluidElement = (Element)null;
                 if (dissolves.emittedfluid != SimHashes.Vacuum)
                     emittedFluidElement = ElementLoader.GetElement(dissolves.emittedfluid.CreateTag());
-
-                Element emittedOreElement = null;
+                Element emittedOreElement = (Element)null;
                 if (dissolves.emittedore != SimHashes.Vacuum)
                     emittedOreElement = ElementLoader.GetElement(dissolves.emittedore.CreateTag());
-
                 if (emittedFluidElement == null && emittedOreElement == null)
-                    return null;
-
-                // Use the solid element prefab
-                GameObject prefab = null;
+                    return (ICodexWidget)null;
+                GameObject gameObject = (GameObject)null;
                 try
                 {
-                    prefab = Assets.GetPrefab(element.tag);
+                    gameObject = Assets.GetPrefab(element.tag);
                 }
-                catch { }
-
-                if (prefab == null) return null;
-
-                // Input list (left side): absorbed ore (solid)
-                var inputs = new List<ElementUsage>();
-                inputs.Add(new ElementUsage(oreInputElement.tag, 1f, false, (t, a, c) => oreInputElement.name));
-
-                // Converter (middle icon) should be the absorbed liquid.
-                // CodexConversionPanel expects a prefab gameobject for the converter icon, not a Tag.
-                // Using the absorbed fluid's prefab provides the correct middle icon.
-                GameObject converterPrefab = null;
+                catch
+                {
+                }
+                if ((UnityEngine.Object)gameObject == (UnityEngine.Object)null)
+                    return (ICodexWidget)null;
+                List<ElementUsage> elementUsageList1 = new List<ElementUsage>();
+                elementUsageList1.Add(new ElementUsage(oreInputElement.tag, 1f, false, (Func<Tag, float, bool, string>)((t, a, c) => oreInputElement.name)));
+                GameObject converter = (GameObject)null;
                 try
                 {
-                    converterPrefab = Assets.GetPrefab(converterElement.tag);
+                    converter = Assets.GetPrefab(elementByHash.tag);
                 }
-                catch { }
-
-                if (converterPrefab == null)
-                    converterPrefab = prefab;
-
-                // Output list (right side): emitted substances (both can exist)
-                var outputs = new List<ElementUsage>();
-
+                catch
+                {
+                }
+                if ((UnityEngine.Object)converter == (UnityEngine.Object)null)
+                    converter = gameObject;
+                List<ElementUsage> elementUsageList2 = new List<ElementUsage>();
                 if (emittedFluidElement != null)
-                    outputs.Add(new ElementUsage(emittedFluidElement.tag, 1f, false, (t, a, c) => emittedFluidElement.name));
-
+                    elementUsageList2.Add(new ElementUsage(emittedFluidElement.tag, 1f, false, (Func<Tag, float, bool, string>)((t, a, c) => emittedFluidElement.name)));
                 if (emittedOreElement != null)
-                    outputs.Add(new ElementUsage(emittedOreElement.tag, 1f, false, (t, a, c) => emittedOreElement.name));
-
-                if (inputs.Count == 0 || outputs.Count == 0) return null;
-
-                // Title: show whether this patch dissolves into fluid or reacts into ore.
-                string title = element.name + " (" + (dissolves.emittedfluid != SimHashes.Vacuum ? "Dissolves" : "Reacts") + ")";
-                var panel = new CodexConversionPanel(title, inputs.ToArray(), outputs.ToArray(), converterPrefab, null);
-
-
-                return panel;
+                    elementUsageList2.Add(new ElementUsage(emittedOreElement.tag, 1f, false, (Func<Tag, float, bool, string>)((t, a, c) => emittedOreElement.name)));
+                return elementUsageList1.Count == 0 || elementUsageList2.Count == 0 ? (ICodexWidget)null : (ICodexWidget)new CodexConversionPanel(element.name + " (" + (dissolves.emittedfluid != SimHashes.Vacuum ? "Dissolves" : "Reacts") + ")", elementUsageList1.ToArray(), elementUsageList2.ToArray(), converter, (CodexConversionPanel.IconSettings)null);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Debug.LogError($"[Rephysicalized.OreDissolves] BuildPanelFromComponent failed: {e}");
-                return null;
+                Debug.LogError((object)string.Format("[Rephysicalized.OreDissolves] BuildPanelFromComponent failed: {0}", (object)ex));
+                return (ICodexWidget)null;
             }
         }
     }
 }
-

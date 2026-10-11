@@ -9,9 +9,53 @@ namespace Rephysicalized.Content.Eggs
     [HarmonyPatch(typeof(IncubationMonitor), nameof(IncubationMonitor.InitializeStates))]
     public static class Patch_IncubationMonitor_Cryostasis_PreventDeltas
     {
+
+
+        private static bool IsInFishMilkCell(IncubationMonitor.Instance smi)
+        {
+            if (smi == null || smi.gameObject == null) return false;
+            int cell = Grid.PosToCell(smi.transform.GetPosition());
+            if (!Grid.IsValidCell(cell)) return false;
+            return Grid.Element[cell] != null && Grid.Element[cell].id == SimHashes.FishMilk;
+        }
+
+        private static readonly Dictionary<IncubationMonitor.Instance, Effect> fishMilkOvoleneEffects = new();
+
+        private static Effect GetOrCreateFishMilkOvoleneEffect(IncubationMonitor.Instance smi)
+        {
+            if (smi == null) return null;
+
+            if (fishMilkOvoleneEffects.TryGetValue(smi, out var eff))
+                return eff;
+
+            eff = new Effect(
+                id: "FishMilkOvoleneIncubation",
+                name: STRINGS.STATUSITEMS.FISHMILKEGG.NAME,
+                description: STRINGS.STATUSITEMS.FISHMILKEGG.TOOLTIP,
+                duration: 0f,
+                show_in_ui: true,
+                trigger_floating_text: false,
+                is_bad: false
+            );
+
+            eff.Add(new AttributeModifier(Db.Get().Amounts.Incubation.deltaAttribute.Id, 1f, STRINGS.STATUSITEMS.FISHMILKEGG.NAME, is_multiplier: true));
+
+
+            fishMilkOvoleneEffects[smi] = eff;
+            return eff;
+        }
+
+
+        private static bool HasFishMilkOvolene(Effects effects)
+        {
+            return effects != null && effects.HasEffect("FishMilkOvoleneIncubation");
+        }
+
         private const float CryoThresholdK = 173.15f;
       
         private static readonly Dictionary<IncubationMonitor.Instance, Effect> cryoEffects = new();
+
+
 
         // Build/get our lightweight UI effect
         private static Effect GetOrCreateCryoEffect(IncubationMonitor.Instance smi)
@@ -48,8 +92,26 @@ namespace Rephysicalized.Content.Eggs
             sm.root.Update((smi, dt) =>
             {
                 bool cryo = IsCryo(smi);
+                bool fishMilk = IsInFishMilkCell(smi);
+
                 var effects = smi.GetComponent<Effects>();
                 if (effects == null) return;
+
+                if (fishMilk)
+                {
+                    if (!HasFishMilkOvolene(effects))
+                    {
+                        var eff = GetOrCreateFishMilkOvoleneEffect(smi);
+                        if (eff != null)
+                            effects.Add(eff, true);
+                    }
+                }
+                else
+                {
+                    if (HasFishMilkOvolene(effects))
+                        effects.Remove("FishMilkOvoleneIncubation");
+                }
+
 
                 // Ensure our UI effect presence
                 var cryoEff = GetOrCreateCryoEffect(smi);
@@ -69,10 +131,8 @@ namespace Rephysicalized.Content.Eggs
                 }
                 else
                 {
-                    // Leaving cryo: remove our UI effect
                     if (cryoEff != null && effects.HasEffect(cryoEff.Id))
                         effects.Remove(cryoEff.Id);
-                    // Let the state machine re-apply incubating/suppressed as normal
                 }
             }, UpdateRate.SIM_4000ms);
         }

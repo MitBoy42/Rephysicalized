@@ -18,7 +18,7 @@ using KMod;
 namespace Rephysicalized
 {
 
-    // Seal and BabySeal: adjust death loot and diet consumption/production without affecting calorie tracker
+    // Seal and BabySeal: adjust  consumption/production without affecting calorie tracker
     [HarmonyPatch(typeof(SealConfig), nameof(SealConfig.CreateSeal))]
     public static class SealConfig_CreateSeal_Postfix
     {

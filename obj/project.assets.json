@@ -2,13 +2,13 @@
   "version": 3,
   "targets": {
     ".NETStandard,Version=v2.1": {
-      "ILRepack.Lib.MSBuild.Task/2.0.45": {
+      "ILRepack.Lib.MSBuild.Task/2.0.48": {
         "type": "package",
         "build": {
           "build/ILRepack.Lib.MSBuild.Task.targets": {}
         },
         "buildMultiTargeting": {
-          "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.targets": {}
+          "buildMultiTargeting/ILRepack.Lib.MSBuild.Task.targets": {}
         }
       },
       "Lib.Harmony.Ref/2.4.2": {
@@ -22,7 +22,7 @@
           }
         }
       },
-      "PLib/4.24.0": {
+      "PLib/4.25.0": {
         "type": "package",
         "dependencies": {
           "Lib.Harmony.Ref": "2.4.2"
@@ -63,18 +63,17 @@
     }
   },
   "libraries": {
-    "ILRepack.Lib.MSBuild.Task/2.0.45": {
-      "sha512": "SWGkzp5rT48gGK1ZR0GenOHh9CWaFwxI+NsHl3Cp/+N9G1NtVjpfk3Bxl5D8Uy+ciR7Q8P//CUvFZX1tsJQnQA==",
+    "ILRepack.Lib.MSBuild.Task/2.0.48": {
+      "sha512": "vI+Jivcy1/eIFAXC5Kxa9K4OTQIiD69eqOuCh6ulWX7/kGlACKFB/csrSVqt7b08XxoAIMn96tJxLXe3TkDEqg==",
       "type": "package",
-      "path": "ilrepack.lib.msbuild.task/2.0.45",
+      "path": "ilrepack.lib.msbuild.task/2.0.48",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "build/ILRepack.Lib.MSBuild.Task.dll",
         "build/ILRepack.Lib.MSBuild.Task.targets",
-        "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.dll",
-        "buildCrossTargeting/ILRepack.Lib.MSBuild.Task.targets",
-        "ilrepack.lib.msbuild.task.2.0.45.nupkg.sha512",
+        "buildMultiTargeting/ILRepack.Lib.MSBuild.Task.targets",
+        "ilrepack.lib.msbuild.task.2.0.48.nupkg.sha512",
         "ilrepack.lib.msbuild.task.nuspec"
       ]
     },
@@ -94,10 +93,10 @@
         "ref/netstandard2.0/0Harmony.xml"
       ]
     },
-    "PLib/4.24.0": {
-      "sha512": "AhaVieP0WdaNe++VOytuzbTLldkxp7AiCaAe5IpeCqyvnNZ8VW3eRviCjbYomJn15aXDHHyY8xRdRRZNqzcezA==",
+    "PLib/4.25.0": {
+      "sha512": "Vu8DyNlKIHS41oYgZENAAyxo8PXLqU/jyc7MbEvoaQY/1yZkIUrrLvA9TwQONaJvj8T7EvBNpvMt8uN4NVrehg==",
       "type": "package",
-      "path": "plib/4.24.0",
+      "path": "plib/4.25.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -106,7 +105,7 @@
         "lib/net48/PLib.xml",
         "lib/netstandard2.1/PLib.dll",
         "lib/netstandard2.1/PLib.xml",
-        "plib.4.24.0.nupkg.sha512",
+        "plib.4.25.0.nupkg.sha512",
         "plib.nuspec"
       ]
     },
@@ -207,6 +206,7 @@
       },
       "frameworks": {
         "netstandard2.1": {
+          "framework": "netstandard2.1",
           "targetAlias": "netstandard2.1",
           "projectReferences": {
             "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
@@ -229,6 +229,7 @@
     },
     "frameworks": {
       "netstandard2.1": {
+        "framework": "netstandard2.1",
         "targetAlias": "netstandard2.1",
         "dependencies": {
           "ILRepack.Lib.MSBuild.Task": {

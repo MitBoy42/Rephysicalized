@@ -1,108 +1,102 @@
-﻿using HarmonyLib;
-using System;
+using HarmonyLib;
+using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using TUNING;
+using System.Reflection.Emit;
 using UnityEngine;
 
 namespace Rephysicalized
 {
-
     [HarmonyPatch(typeof(EntityConfigManager), "LoadGeneratedEntities")]
     public static class Oxyfern_AddToDescription
     {
         public static void Prefix()
         {
-            const string key = "STRINGS.CREATURES.SPECIES.OXYFERN.DESC";
-            // Append gas input functionality to the description
-            Strings.Add(key, Strings.Get(key) + "\n\n <b>REPHYSICALIZED: Massively increases CO2 consumption and Oxygen production under light. At 50 000 Lux or higher, it will consume 50g/s of CO2 and make 80 g/s of Oxygen.</b>");
+            const string key = "STRINGS.CODEX.OXYFERN.BODY.CONTAINER1";
+            Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Massively increases CO2 consumption and Oxygen production under light. At 50 000 Lux or higher, it will consume 50g/s of CO2 and make 80 g/s of Oxygen.</b>");
         }
     }
 
     internal static class OxyfernTuning
     {
-        // Domesticated (replanted) base rates @ 0 lux
+        // Rates at 0 lux, for replanted (domesticated) and wild plants respectively.
         public const float DOMESTIC_WATER_RATE = 0.015f;
         public const float DOMESTIC_DIRT_RATE = 0.015f;
         public const float DOMESTIC_CO2_RATE = 0.005f;
         public const float DOMESTIC_O2_RATE = 0.035f;
+        public const float WILD_CO2_RATE = 0.002f;
+        public const float WILD_O2_RATE = 0.002f;
 
-        // Wild (not replanted) base rates @ 0 lux (keep vanilla)
-        public const float WILD_CO2_RATE = 0.00015625f; // from Oxyfern.SetConsumptionRate()
-        public const float WILD_O2_RATE = 0.03125f;     // from OxyfernConfig
+        // Rates reached once the plant is fully lit.
+        public const float LUX_SATURATION = 50000f;
+        public const float TARGET_CO2_RATE = 0.05f;
+        public const float TARGET_O2_RATE = 0.08f;
 
-        // Lux scaling
-        public const float LUX_SATURATION = 50000f;     // 50k lux saturation point
-        public const float TARGET_CO2_RATE = 0.05f;     // >= 50k lux
-        public const float TARGET_O2_RATE = 0.08f;      // >= 50k lux
-
-        // Vanilla OxyfernConfig oxygen base output element mass
+        // Vanilla Oxygen output mass, used as the multiplier baseline.
         public const float VANILLA_O2_OUTPUT_ELEMENT = 0.03125f;
 
-        // Constant raw pull from the environment via ElementConsumer
+        // Raw CO2 pull from the environment into the plant's own buffer. Deliberately far above the
+        // plant's own consumption so the buffer stays topped up regardless of lux.
         public const float CONST_ENV_CO2_PULL = 0.1f;
+
+        // Size of the plant's internal CO2 buffer, in kg. Also caps the ElementConsumer's capacityKG so
+        // the plant cannot hoard an unbounded amount of gas.
+        public const float BUFFER_CAPACITY_KG = 1f;
     }
 
-    // Applies domesticated (replanted) base consumption changes and
-    // dynamically scales CO2 conversion and O2 production with light (lux) from 0..50k.
-    // Note: CO2 pull from environment is forced to a constant 0.1f elsewhere in this file.
-    [AddComponentMenu("KMonoBehaviour/Rephysicalized/OxyfernLightScaler")] 
+    /// <summary>
+    /// Scales the Oxyfern's CO2 consumption and oxygen output with the light falling on it.
+    ///
+    /// Water and dirt stay fixed: only the gas side reacts to lux. The ElementConverter is retuned each
+    /// tick (CO2 in, O2 out) while the ElementConsumer that refills the internal buffer is left on a
+    /// constant rate, so the buffer behaves like PlantGasConsumer's: it fills at a fixed rate and the
+    /// plant eats from it at the lux-scaled rate. Net gas is roughly mass neutral.
+
+    /// </summary>
+    [AddComponentMenu("KMonoBehaviour/Rephysicalized/OxyfernLightScaler")]
     public sealed class OxyfernLightScaler : KMonoBehaviour, ISim1000ms
     {
+        private static readonly Tag Co2Tag = SimHashes.CarbonDioxide.CreateTag();
+        private static readonly Tag WaterTag = SimHashes.Water.CreateTag();
+        private static readonly Tag DirtTag = GameTags.Dirt;
+
         private ReceptacleMonitor receptacle;
-        private ElementConsumer gasConsumer; // CO2 consumer
+        private ElementConsumer gasConsumer;
         private ElementConverter converter;
-
-        // Optional convenience refs (exist on plants) used to adjust irrigation/fertilization rates
-        private Component irrigation;    // "Irrigation" MonoBehaviour
-        private Component fertilization; // "Fertilization" MonoBehaviour
-
         private float baseOxygenElementRate = OxyfernTuning.VANILLA_O2_OUTPUT_ELEMENT;
-
-        private readonly Tag waterTag = SimHashes.Water.CreateTag();
-        private readonly Tag dirtTag = GameTags.Dirt;
-        private readonly Tag co2Tag = SimHashes.CarbonDioxide.CreateTag();
-
-        // Cache last-applied values to avoid unnecessary writes every tick
-        private float lastDesiredCO2 = -1f;
-        private float lastDesiredO2 = -1f;
+        private float lastCo2Rate = -1f;
+        private float lastO2Rate = -1f;
 
         public override void OnSpawn()
         {
             base.OnSpawn();
 
             receptacle = GetComponent<ReceptacleMonitor>();
-
-            // Pick the ElementConsumer that consumes CO2
-            var consumers = GetComponents<ElementConsumer>();
-            if (consumers != null && consumers.Length > 0)
-                gasConsumer = consumers.FirstOrDefault(c => c != null && c.elementToConsume == SimHashes.CarbonDioxide);
-
             converter = GetComponent<ElementConverter>();
+            gasConsumer = GetComponents<ElementConsumer>().FirstOrDefault(c => c != null && c.elementToConsume == SimHashes.CarbonDioxide);
 
-            if (converter != null && converter.outputElements != null && converter.outputElements.Length > 0)
+            if (converter?.outputElements != null)
             {
-                // Capture the existing configured oxygen base element mass (vanilla is 0.03125f)
                 var oxygen = converter.outputElements.FirstOrDefault(oe => oe.elementHash == SimHashes.Oxygen);
                 if (oxygen.elementHash == SimHashes.Oxygen)
                     baseOxygenElementRate = oxygen.massGenerationRate;
-                // Converter UI is enabled on prefab patch below
             }
 
-            if (gasConsumer != null)
-            {
-                // Force constant CO2 pull from environment; hide consumer UI in scaler to avoid flicker
-                gasConsumer.consumptionRate = OxyfernTuning.CONST_ENV_CO2_PULL;
-                gasConsumer.showInStatusPanel = false;
-                gasConsumer.showDescriptor = false;
-            }
+            ApplyConstantBufferRefill();
+            ApplyDomesticatedRates();
+            lastCo2Rate = lastO2Rate = -1f;
+            Sim1000ms(0f);
+        }
 
-            // Grab Irrigation/Fertilization components if present
-            irrigation = GetComponent("Irrigation");
-            fertilization = GetComponent("Fertilization");
-
-            // Apply domesticated irrigation/fertilization if already replanted
-            TryApplyDomesticatedIrrigationAndFertilization();
+        /// <summary>
+        /// Forces the converter rates to be rewritten on the next tick.
+        /// Vanilla <c>SetConsumptionRate</c> overwrites the CO2 consumer's rate whenever the plant is
+        /// replanted, so the cached "already applied" values have to be invalidated or the lux scaling
+        /// would never be re-applied after a replant.
+        /// </summary>
+        public void ResyncAfterVanillaReset()
+        {
+            lastCo2Rate = -1f;
+            lastO2Rate = -1f;
         }
 
         public void Sim1000ms(float dt)
@@ -111,259 +105,190 @@ namespace Rephysicalized
                 return;
 
             int cell = Grid.PosToCell(transform.GetPosition());
-            float lux = Grid.IsValidCell(cell) ? (float)Grid.LightIntensity[cell] : 0f;
+            float lux = Grid.IsValidCell(cell) ? Grid.LightIntensity[cell] : 0f;
             float t = Mathf.Clamp01(lux / OxyfernTuning.LUX_SATURATION);
 
-            bool isDomesticated = receptacle != null && receptacle.Replanted;
+            bool domesticated = receptacle != null && receptacle.Replanted;
+            float co2 = Mathf.Lerp(domesticated ? OxyfernTuning.DOMESTIC_CO2_RATE : OxyfernTuning.WILD_CO2_RATE, OxyfernTuning.TARGET_CO2_RATE, t);
+            float o2 = Mathf.Lerp(domesticated ? OxyfernTuning.DOMESTIC_O2_RATE : OxyfernTuning.WILD_O2_RATE, OxyfernTuning.TARGET_O2_RATE, t);
 
-            float baseCO2 = isDomesticated ? OxyfernTuning.DOMESTIC_CO2_RATE : OxyfernTuning.WILD_CO2_RATE;
-            float baseO2 = isDomesticated ? OxyfernTuning.DOMESTIC_O2_RATE : OxyfernTuning.WILD_O2_RATE;
+            ApplyConstantBufferRefill();
 
-            // Desired rates based on lux interpolation
-            float desiredCO2 = Mathf.Lerp(baseCO2, OxyfernTuning.TARGET_CO2_RATE, t);
-            float desiredO2 = Mathf.Lerp(baseO2, OxyfernTuning.TARGET_O2_RATE, t);
-
-            // Only update when changed enough
-            if (Mathf.Approximately(desiredCO2, lastDesiredCO2) && Mathf.Approximately(desiredO2, lastDesiredO2))
-            {
-                // Still ensure constant env pull (defensive)
-                if (gasConsumer != null && !Mathf.Approximately(gasConsumer.consumptionRate, OxyfernTuning.CONST_ENV_CO2_PULL))
-                {
-                    gasConsumer.consumptionRate = OxyfernTuning.CONST_ENV_CO2_PULL;
-                    gasConsumer.showInStatusPanel = false;
-                    gasConsumer.showDescriptor = false;
-                    gasConsumer.capacityKG = 1f;
-                }
+            if (Mathf.Approximately(co2, lastCo2Rate) && Mathf.Approximately(o2, lastO2Rate))
                 return;
-            }
 
-            // Compute output multiplier so that produced oxygen equals desiredO2
-            float multiplier = desiredO2 / Mathf.Max(baseOxygenElementRate, 1e-6f);
+            // ElementConverter multiplies OUTPUTS by OutputMultiplier but never its inputs, so the CO2
+            // input rate is set directly and the multiplier only tunes how much oxygen comes out.
+            converter.outputMultiplier = o2 / Mathf.Max(baseOxygenElementRate, 1e-6f);
 
-                // Tune O2 to desiredO2 via output multiplier
-                converter.outputMultiplier = multiplier;
-
-                // IMPORTANT: ElementConverter does NOT multiply inputs by outputMultiplier.
-                // Therefore, set the CO2 input rate directly to desiredCO2 (do NOT divide by multiplier).
-                for (int i = 0; i < converter.consumedElements.Length; i++)
-                {
-                    var consumed = converter.consumedElements[i];
-                    if (consumed.Tag == co2Tag)
-                    {
-                        converter.consumedElements[i].MassConsumptionRate = desiredCO2;
-                        break;
-                    }
-                }
-      
-
-            // Keep the gas consumer as a constant raw pull from the environment (do not show in UI)
-            if (gasConsumer != null)
+            var consumed = converter.consumedElements;
+            for (int i = 0; i < consumed.Length; i++)
             {
-                gasConsumer.consumptionRate = OxyfernTuning.CONST_ENV_CO2_PULL;
-                gasConsumer.showInStatusPanel = false;
-                gasConsumer.showDescriptor = false;
-                gasConsumer.capacityKG = 1f;
+                if (consumed[i].Tag == Co2Tag)
+                {
+                    consumed[i].MassConsumptionRate = co2;
+                    break;
+                }
             }
 
-            lastDesiredCO2 = desiredCO2;
-            lastDesiredO2 = desiredO2;
+            lastCo2Rate = co2;
+            lastO2Rate = o2;
         }
 
-        // Applies domesticated irrigation/fertilization rates when replanted.
-        // Updates Irrigation/Fertilization consumedElements entries for Water and Dirt.
-        public void TryApplyDomesticatedIrrigationAndFertilization()
+        /// <summary>
+        /// Keeps the CO2 consumer pulling a constant amount into the plant's internal buffer, regardless
+        /// of lux or of vanilla <c>SetConsumptionRate</c> (which runs on replant). Also hides its UI,
+        /// since the buffered gas is an implementation detail and the real rate is on the converter.
+        /// capacityKG is pinned to the buffer size so the consumer stops once the plant's buffer is
+        /// full and resumes as the plant eats into it. Left unset it defaults to infinity, which would
+        /// let the plant accumulate an unbounded amount of CO2.
+        /// </summary>
+        private void ApplyConstantBufferRefill()
+        {
+            if (gasConsumer == null)
+                return;
+
+            if (!Mathf.Approximately(gasConsumer.consumptionRate, OxyfernTuning.CONST_ENV_CO2_PULL))
+                gasConsumer.consumptionRate = OxyfernTuning.CONST_ENV_CO2_PULL;
+
+            gasConsumer.capacityKG = OxyfernTuning.BUFFER_CAPACITY_KG;
+
+            gasConsumer.showInStatusPanel = false;
+            gasConsumer.showDescriptor = false;
+        }
+
+        /// <summary>
+        /// Applies the replanted water/dirt rates. Vanilla changes these on replant too, but only to its
+        /// own values; this re-applies ours afterwards so the UI and the sim agree.
+        /// </summary>
+        public void ApplyDomesticatedRates()
         {
             if (receptacle == null || !receptacle.Replanted)
                 return;
 
-            // Helper to adjust a component that owns PlantElementAbsorber.ConsumeInfo[] consumedElements
-            void AdjustRatesOn(object comp)
+            // Read through the Defs rather than reflecting on the live monitor components: the Def is
+            // what both the UI descriptors and the Codex read, so this keeps them consistent.
+            var irrigDef = gameObject.GetDef<IrrigationMonitor.Def>();
+            if (irrigDef?.consumedElements != null)
             {
-                if (comp == null) return;
-
-                var t = Traverse.Create(comp);
-                var infos = t.Field("consumedElements").GetValue<PlantElementAbsorber.ConsumeInfo[]>();
-                if (infos == null || infos.Length == 0)
-                    return;
-
-                bool changed = false;
-                for (int i = 0; i < infos.Length; i++)
+                for (int i = 0; i < irrigDef.consumedElements.Length; i++)
                 {
-                    if (infos[i].tag == waterTag && !Mathf.Approximately(infos[i].massConsumptionRate, OxyfernTuning.DOMESTIC_WATER_RATE))
-                    {
-                        infos[i].massConsumptionRate = OxyfernTuning.DOMESTIC_WATER_RATE;
-                        changed = true;
-                    }
-                    else if (infos[i].tag == dirtTag && !Mathf.Approximately(infos[i].massConsumptionRate, OxyfernTuning.DOMESTIC_DIRT_RATE))
-                    {
-                        infos[i].massConsumptionRate = OxyfernTuning.DOMESTIC_DIRT_RATE;
-                        changed = true;
-                    }
-                }
-
-                if (changed)
-                {
-                    // Write back in case the array is copied on set
-                    t.Field("consumedElements").SetValue(infos);
-
-                    // Try common refresh methods present on Irrigation/Fertilization
-                    var type = comp.GetType();
-                    var refresh =
-                        type.GetMethod("RefreshConsumptionRate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                        ?? type.GetMethod("Refresh", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                        ?? type.GetMethod("OnPrefabInit", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    if (refresh != null)
-                    {
-                        try { refresh.Invoke(comp, null); } catch { /* ignore */ }
-                    }
+                    if (irrigDef.consumedElements[i].tag == WaterTag)
+                        irrigDef.consumedElements[i].massConsumptionRate = OxyfernTuning.DOMESTIC_WATER_RATE;
                 }
             }
 
-            AdjustRatesOn(irrigation);
-            AdjustRatesOn(fertilization);
-        }
-    }
-
-    // Ensure our scaler is present on each Oxyfern; also ensure Storage is visible in UI on instances
-    [HarmonyPatch(typeof(Oxyfern), nameof(Oxyfern.OnSpawn))]
-    public static class Oxyfern_OnSpawn_Patch
-    {
-        public static void Postfix(Oxyfern __instance)
-        {
-            if (__instance == null) return;
-            var go = __instance.gameObject;
-
-            // Attach scaler
-            go.AddOrGet<OxyfernLightScaler>();
-
-            // Ensure storage shows in UI on spawned instances (covers existing saves)
-            var storage = go.GetComponent<Storage>();
-            if (storage != null)
-                storage.showInUI = true;
-
-          
-        }
-    }
-
-    // Re-apply domesticated irrigation/fertilizer when the plant is replanted
-    [HarmonyPatch(typeof(Oxyfern), nameof(Oxyfern.OnReplanted))]
-    public static class Oxyfern_OnReplanted_Patch
-    {
-        public static void Postfix(Oxyfern __instance)
-        {
-            if (__instance == null) return;
-            var go = __instance.gameObject;
-
-            var scaler = go.GetComponent<OxyfernLightScaler>();
-            scaler?.TryApplyDomesticatedIrrigationAndFertilization();
-
-            // Keep constant environment CO2 pull after vanilla SetConsumptionRate and hide consumer UI
-            var consumers = go.GetComponents<ElementConsumer>();
-            if (consumers != null)
+            var dirtElementTag = SimHashes.Dirt.CreateTag();
+            var fertDef = gameObject.GetDef<FertilizationMonitor.Def>();
+            if (fertDef?.consumedElements != null)
             {
-                foreach (var c in consumers)
+                for (int i = 0; i < fertDef.consumedElements.Length; i++)
                 {
-                    if (c != null && c.elementToConsume == SimHashes.CarbonDioxide)
-                    {
-                        c.consumptionRate = OxyfernTuning.CONST_ENV_CO2_PULL;
-                        c.showInStatusPanel = false;
-                        c.showDescriptor = false;
-                        c.capacityKG = 1f;
-                    }
+                    var tag = fertDef.consumedElements[i].tag;
+                    if (tag == DirtTag || tag == dirtElementTag)
+                        fertDef.consumedElements[i].massConsumptionRate = OxyfernTuning.DOMESTIC_DIRT_RATE;
                 }
             }
         }
     }
 
-    // Force constant CO2 pull immediately after vanilla SetConsumptionRate runs
-    [HarmonyPatch(typeof(Oxyfern), nameof(Oxyfern.SetConsumptionRate))]
-    public static class Oxyfern_SetConsumptionRate_Patch
-    {
-        public static void Postfix(Oxyfern __instance)
-        {
-            var consumers = __instance.GetComponents<ElementConsumer>();
-            if (consumers == null) return;
-
-            foreach (var c in consumers)
-            {
-                if (c != null && c.elementToConsume == SimHashes.CarbonDioxide)
-                {
-                    // Constant raw pull from environment; do not scale elsewhere; hide consumer UI
-                    c.consumptionRate = OxyfernTuning.CONST_ENV_CO2_PULL;
-                    c.showInStatusPanel = false;
-                    c.showDescriptor = false;
-                }
-            }
-        }
-    }
-
-    // Ensure UI descriptors reflect domesticated irrigation/fertilization rates,
-    // show converter in UI, hide consumer UI, and show Storage in UI on prefab
     [HarmonyPatch(typeof(OxyfernConfig), nameof(OxyfernConfig.CreatePrefab))]
     public static class OxyfernConfig_CreatePrefab_Patch
     {
+        /// <summary>Survive in any atmosphere. See PlantSafeAtmosphereTranspiler.</summary>
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            => PlantSafeAtmosphereTranspiler.CollapseSafeAtmospheres(instructions);
+
         public static void Postfix(GameObject __result)
         {
-            if (__result == null) return;
+            if (__result == null)
+                return;
 
-            // Update Irrigation UI (Water)
+            // Show the internal gas buffer and the converter so the lux-scaled rates are visible.
+            var storage = __result.GetComponent<Storage>();
+            if (storage != null)
+                storage.showInUI = true;
+
+            // Cap the gas buffer so the consumer stops filling a full buffer and resumes as the plant
+            // eats into it, instead of accumulating an unbounded amount of CO2.
+            var gasConsumers = __result.GetComponents<ElementConsumer>();
+            foreach (var c in gasConsumers)
+            {
+                if (c != null && c.elementToConsume == SimHashes.CarbonDioxide)
+                    c.capacityKG = OxyfernTuning.BUFFER_CAPACITY_KG;
+            }
+
+            // Prefab descriptors reflect the replanted rates, matching what the scaler applies.
             var irrigDef = __result.GetDef<IrrigationMonitor.Def>();
-            if (irrigDef != null && irrigDef.consumedElements != null)
+            if (irrigDef?.consumedElements != null)
             {
                 var waterTag = SimHashes.Water.CreateTag();
                 for (int i = 0; i < irrigDef.consumedElements.Length; i++)
                 {
                     if (irrigDef.consumedElements[i].tag == waterTag)
-                    {
-                        irrigDef.consumedElements[i].massConsumptionRate = OxyfernTuning.DOMESTIC_WATER_RATE; // 0.015f
-                    }
+                        irrigDef.consumedElements[i].massConsumptionRate = OxyfernTuning.DOMESTIC_WATER_RATE;
                 }
             }
 
-            // Update Fertilization UI (Dirt)
             var fertDef = __result.GetDef<FertilizationMonitor.Def>();
-            if (fertDef != null && fertDef.consumedElements != null)
+            if (fertDef?.consumedElements != null)
             {
                 var dirtElementTag = SimHashes.Dirt.CreateTag();
-                var dirtGameTag = GameTags.Dirt;
-
                 for (int i = 0; i < fertDef.consumedElements.Length; i++)
                 {
                     var tag = fertDef.consumedElements[i].tag;
-                    if (tag == dirtElementTag || tag == dirtGameTag)
-                    {
-                        fertDef.consumedElements[i].massConsumptionRate = OxyfernTuning.DOMESTIC_DIRT_RATE; // 0.015f
-                    }
+                    if (tag == dirtElementTag || tag == GameTags.Dirt)
+                        fertDef.consumedElements[i].massConsumptionRate = OxyfernTuning.DOMESTIC_DIRT_RATE;
                 }
             }
 
-            // Show Storage in UI on the prefab
-            var storage = __result.GetComponent<Storage>();
+  
+            var consumers = __result.GetComponents<ElementConsumer>();
+            foreach (var consumer in consumers)
+            {
+                if (consumer != null && consumer.elementToConsume == SimHashes.CarbonDioxide)
+                {
+                    consumer.showInStatusPanel = false;
+                    consumer.showDescriptor = false;
+                }
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Oxyfern), nameof(Oxyfern.OnSpawn))]
+    public static class Oxyfern_OnSpawn_Patch
+    {
+        public static void Postfix(Oxyfern __instance)
+        {
+            if (__instance == null)
+                return;
+
+            var go = __instance.gameObject;
+            go.AddOrGet<OxyfernLightScaler>();
+
+            // Covers plants already placed in older saves.
+            var storage = go.GetComponent<Storage>();
             if (storage != null)
                 storage.showInUI = true;
+        }
+    }
 
-            // Show ElementConverter in UI so conversion rates can be tracked
-            var converter = __result.GetComponent<ElementConverter>();
-            if (converter != null)
-            {
-                // Prefer direct fields/properties if available in your build
-                try { converter.showDescriptors = true; } catch { /* older builds may differ */ }
-                try { converter.ShowInUI = true; } catch { /* older builds may differ */ }
-            }
 
-            // Hide ElementConsumer UI/descriptor on prefab for CO2 consumers
-            var consumers = __result.GetComponents<ElementConsumer>();
-            if (consumers != null)
-            {
-                foreach (var c in consumers)
-                {
-                    if (c != null && c.elementToConsume == SimHashes.CarbonDioxide)
-                    {
-                        c.showInStatusPanel = false;
-                        c.showDescriptor = false;
-                    }
-                }
-            }
+    [HarmonyPatch(typeof(Oxyfern), nameof(Oxyfern.OnReplanted))]
+    [HarmonyPatch(typeof(Oxyfern), nameof(Oxyfern.SetConsumptionRate))]
+    public static class Oxyfern_OnReplanted_Patch
+    {
+        public static void Postfix(Oxyfern __instance)
+        {
+            if (__instance == null)
+                return;
+
+            var scaler = __instance.GetComponent<OxyfernLightScaler>();
+            if (scaler == null)
+                return;
+
+            scaler.ApplyDomesticatedRates();
+            scaler.ResyncAfterVanillaReset();
         }
     }
 }

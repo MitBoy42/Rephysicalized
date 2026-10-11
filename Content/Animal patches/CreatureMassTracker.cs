@@ -10,26 +10,53 @@ namespace Rephysicalized
     [AddComponentMenu("KMonoBehaviour/Creatures/CreatureMassTracker")]
     public partial class CreatureMassTracker : KMonoBehaviour, ISim1000ms
     {
-        public enum AccumulationMode
-        {
-            Calories = 0,
-            ConsumedMass = 1
-        }
-
-        [Serialize] public AccumulationMode Mode = AccumulationMode.Calories;
-
         // Baseline and conversion knobs
         [Serialize] public float STARTING_MASS = 1f;
-        [Serialize] public float CALORIE_RATIO = 100000f; // kg = calories / CALORIE_RATIO (Calories mode)
-        [Serialize] public float MASS_RATIO = 1f;         // kg delta = consumed_kg * MASS_RATIO (ConsumedMass mode)
+        [Serialize] public float MASS_RATIO = 1f;         // kg delta = consumed_kg * MASS_RATIO 
 
         // Intake accumulators (telemetry)
-        [Serialize] private float caloriesConsumedTotal = 0f;
         [Serialize] private float massConsumedTotal = 0f;
 
         [MyCmpGet] private PrimaryElement primaryElement;
 
         [Serialize] public List<ExtraDropSpec> ExtraDrops;
+        [Serializable]
+        public class PerFoodRatioSpec
+        {
+            [Serialize] public string consumedTag;
+            [Serialize] public float ratio = 1f;
+        }
+
+        // Allow external application of per-food overrides and rebuild runtime lookup immediately.
+        public void SetPerFoodOverrides(List<PerFoodRatioSpec> overrides)
+        {
+            PerFoodOverrides = overrides;
+            perFoodLookup = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+            if (PerFoodOverrides != null)
+            {
+                foreach (var o in PerFoodOverrides)
+                {
+                    if (o == null || string.IsNullOrEmpty(o.consumedTag)) continue;
+                    perFoodLookup[o.consumedTag] = o.ratio;
+                }
+            }
+
+            //try
+            //{
+            //    if (gameObject != null)
+            //    {
+            //        string creatureName = !string.IsNullOrEmpty(gameObject.name) ? gameObject.name : "<unnamed>";
+            //        Debug.Log($"[Rephysicalized][CreatureMassTracker] {creatureName} SetPerFoodOverrides: {string.Join(", ", perFoodLookup.Keys)}");
+            //    }
+            //}
+            //catch { }
+        }
+        // Per-instance copy (not serialized). Per-food overrides are registered at prefab level
+
+        public List<PerFoodRatioSpec> PerFoodOverrides;
+
+        // Runtime lookup built from PerFoodOverrides for fast access (name -> ratio)
+        private Dictionary<string, float> perFoodLookup;
 
         // Snapshot the prefab's mass once; used as baseline for visuals
         [Serialize] private bool initializedFromPrefabMass = false;
@@ -48,6 +75,39 @@ namespace Rephysicalized
         }
 
         private static readonly Dictionary<Tag, List<ExtraDropSpec>> s_DefaultDropsByPrefabTag = new Dictionary<Tag, List<ExtraDropSpec>>();
+
+        // Static registry for per-prefab per-food overrides. This is used as a fallback so
+        // prefab-level registrations survive into spawned instances even if PerFoodOverrides
+        // didn't serialize into instances for some reason.
+        private static readonly Dictionary<Tag, List<PerFoodRatioSpec>> s_PerFoodOverridesByPrefabTag = new Dictionary<Tag, List<PerFoodRatioSpec>>();
+
+        public static void RegisterPerFoodOverridesForPrefab(Tag prefabTag, List<PerFoodRatioSpec> overrides)
+        {
+            if (!prefabTag.IsValid || overrides == null) return;
+            var copy = new List<PerFoodRatioSpec>(overrides.Count);
+            for (int i = 0; i < overrides.Count; i++)
+            {
+                var o = overrides[i];
+                if (o != null) copy.Add(new PerFoodRatioSpec { consumedTag = o.consumedTag, ratio = o.ratio });
+            }
+            s_PerFoodOverridesByPrefabTag[prefabTag] = copy;
+        }
+
+        public static List<PerFoodRatioSpec> GetRegisteredPerFoodOverrides(Tag prefabTag)
+        {
+            if (!prefabTag.IsValid) return null;
+            if (s_PerFoodOverridesByPrefabTag.TryGetValue(prefabTag, out var list))
+            {
+                var copy = new List<PerFoodRatioSpec>(list.Count);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var o = list[i];
+                    if (o != null) copy.Add(new PerFoodRatioSpec { consumedTag = o.consumedTag, ratio = o.ratio });
+                }
+                return copy;
+            }
+            return null;
+        }
 
         public static void RegisterDefaultDropsForPrefab(Tag prefabTag, List<ExtraDropSpec> drops)
         {
@@ -113,6 +173,20 @@ namespace Rephysicalized
                     ExtraDrops = new List<ExtraDropSpec>() { new ExtraDropSpec { id = RotPileConfig.ID, fraction = 1f } };
             }
 
+            // Build runtime lookup for per-food overrides (case-insensitive by name)
+            // Initialize lookup and always try to load per-food overrides from the prefab registry.
+            perFoodLookup = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                var kpid = GetComponent<KPrefabID>();
+                var reg = kpid != null ? GetRegisteredPerFoodOverrides(kpid.PrefabTag) : null;
+                if (reg != null && reg.Count > 0)
+                {
+                    SetPerFoodOverrides(reg);
+                }
+            }
+            catch { }
+
             Subscribe(CALORIES_CONSUMED_EVENT_ID, OnCaloriesConsumed);
         }
 
@@ -172,31 +246,43 @@ namespace Rephysicalized
             var smi = gameObject.GetSMI<CreatureCalorieMonitor.Instance>();
             var diet = smi?.stomach?.diet;
             var info = diet?.GetDietInfo(consumedTag);
+
             if (info == null)
                 return;
 
-            if (Mode == AccumulationMode.Calories)
+            // Convert calories to consumed kg via diet info and report
+            float consumedKg = info.ConvertCaloriesToConsumptionMass(caloriesFromEvent);
+            if (consumedKg > 0f)
             {
-                caloriesConsumedTotal += caloriesFromEvent;
-
-                // kg = calories / CALORIE_RATIO
-                float kgGain = (CALORIE_RATIO > 0f) ? (caloriesFromEvent / CALORIE_RATIO) : 0f;
-                if (kgGain > 0f)
+                try
                 {
-                    // Apply to body mass only; sync will update PE to include derived masses
-                    bodyMassKg = Mathf.Max(0.001f, bodyMassKg + kgGain);
+                    //      string creatureName = string.IsNullOrEmpty(gameObject.name) ? "<unnamed>" : gameObject.name;
+                    //     Debug.Log($"[Rephysicalized][CreatureMassTracker] {creatureName} consumed food. Calories={caloriesFromEvent}, Tag={consumedTag}, MassKg={consumedKg}");
                 }
-            }
-            else // AccumulationMode.ConsumedMass
-            {
-                // Convert calories to consumed kg via diet info
-                float consumedKg = info.ConvertCaloriesToConsumptionMass(caloriesFromEvent);
-                if (consumedKg > 0f)
-                    ReportConsumedMass(consumedKg);
+                catch { }
+
+                // Use per-food override when available
+                ReportConsumedMass(evt.tag, consumedKg);
             }
         }
 
+
+        // Report mass by tag so per-food overrides can be applied. This is the preferred entry.
+        public void ReportConsumedMass(Tag consumedTag, float kilograms)
+        {
+            if (kilograms <= 0f) return;
+
+            float ratio = GetRatioForConsumedTag(consumedTag);
+            ReportConsumedMass_Internal(kilograms, ratio);
+        }
+
+        // Backwards-compatible overload: no tag -> use default MASS_RATIO
         public void ReportConsumedMass(float kilograms)
+        {
+            ReportConsumedMass_Internal(kilograms, MASS_RATIO);
+        }
+
+        private void ReportConsumedMass_Internal(float kilograms, float ratio)
         {
             if (kilograms <= 0f)
                 return;
@@ -204,11 +290,19 @@ namespace Rephysicalized
             massConsumedTotal += kilograms;
 
             // Add to body mass only
-            float kgGain = kilograms * Mathf.Max(0f, MASS_RATIO);
+            float kgGain = kilograms * Mathf.Max(0f, ratio);
             if (kgGain > 0f)
             {
                 bodyMassKg = Mathf.Max(0.001f, bodyMassKg + kgGain);
             }
+        }
+
+        private float GetRatioForConsumedTag(Tag consumedTag)
+        {
+            if (consumedTag == null || !consumedTag.IsValid) return MASS_RATIO;
+            if (perFoodLookup != null && !string.IsNullOrEmpty(consumedTag.Name) && perFoodLookup.TryGetValue(consumedTag.Name, out var r))
+                return r;
+            return MASS_RATIO;
         }
 
         public void AddExternalMass(float kilograms)
@@ -218,7 +312,7 @@ namespace Rephysicalized
             bodyMassKg = Mathf.Max(0.001f, bodyMassKg + kilograms);
         }
 
-        public float GetTotalCaloriesConsumed() => caloriesConsumedTotal;
+        public float GetTotalCaloriesConsumed() => 0f;
         public float GetTotalMassConsumed() => massConsumedTotal;
 
         // Explicit: sets a new absolute baseline; clears accumulators and sets body mass
@@ -230,24 +324,9 @@ namespace Rephysicalized
             bodyMassKg = clamped;
 
             STARTING_MASS = clamped;
-            caloriesConsumedTotal = 0f;
             massConsumedTotal = 0f;
         }
 
-        public void SetAccumulationMode(AccumulationMode newMode, bool keepCurrentMassAsBaseline = true)
-        {
-            if (newMode == Mode)
-                return;
-
-            if (keepCurrentMassAsBaseline)
-            {
-                STARTING_MASS = GetCurrentMass();
-                caloriesConsumedTotal = 0f;
-                massConsumedTotal = 0f;
-            }
-
-            Mode = newMode;
-        }
 
         public void CopyFrom(CreatureMassTracker other, bool carryOverAsStartingMass = true)
         {
@@ -256,25 +335,23 @@ namespace Rephysicalized
             float carryMass = other.GetCurrentMass();
             SetMassAbsolute(carryMass); // sets body mass and baseline
 
-            CALORIE_RATIO = other.CALORIE_RATIO;
             MASS_RATIO = other.MASS_RATIO;
-            Mode = other.Mode;
 
             if (!carryOverAsStartingMass)
             {
-                this.caloriesConsumedTotal = other.caloriesConsumedTotal;
                 this.massConsumedTotal = other.massConsumedTotal;
             }
         }
         public void OnEggLaid_DecreaseBodyMass()
         {
             float toRemove = Mathf.Max(0f, STARTING_MASS) * 2f;
-                float minBody = Mathf.Max(0.001f, STARTING_MASS);
-            bodyMassKg = Mathf.Max(minBody, bodyMassKg - toRemove); }
+            float minBody = Mathf.Max(0.001f, STARTING_MASS);
+            bodyMassKg = Mathf.Max(minBody, bodyMassKg - toRemove);
+        }
 
 
         // Compute scale mass from monitors (ScaleGrowth/ElementGrowth + ScaleGrowthMonitor or WellFedShearable)
-        private static float ComputeScaleMassKgFromMonitors(GameObject go)
+        internal static float ComputeScaleMassKgFromMonitors(GameObject go)
         {
             if (TryGetScaleDefAndPercent01(go, out _, out var dropMass, out var pct01))
                 return pct01 * dropMass;
@@ -282,7 +359,7 @@ namespace Rephysicalized
         }
 
         // Compute milk mass from MilkProductionMonitor (kg). If no monitor or zero, returns 0.
-        private static float ComputeMilkMassKgFromMilkMonitor(GameObject go)
+        internal static float ComputeMilkMassKgFromMilkMonitor(GameObject go)
         {
             var milkSmi = go != null ? go.GetSMI<MilkProductionMonitor.Instance>() : null;
             if (milkSmi == null) return 0f;
@@ -293,7 +370,7 @@ namespace Rephysicalized
         }
 
         // Helper: resolve scale percent and drop def/tag
-        private static bool TryGetScaleDefAndPercent01(GameObject go, out Tag dropTag, out float dropMass, out float percent01)
+        internal static bool TryGetScaleDefAndPercent01(GameObject go, out Tag dropTag, out float dropMass, out float percent01)
         {
             dropTag = Tag.Invalid;
             dropMass = 0f;
@@ -372,26 +449,30 @@ namespace Rephysicalized
             var adultTracker = GetComponent<CreatureMassTracker>();
             var babyTracker = babyGo.GetComponent<CreatureMassTracker>();
 
+            // Prefer copying fully configured tracker values when the baby has one.
             if (adultTracker != null && babyTracker != null)
             {
                 adultTracker.CopyFrom(babyTracker, carryOverAsStartingMass: true);
+                return;
             }
-            else
-            {
-                var peAdult = GetComponent<PrimaryElement>();
-                var peBaby = babyGo.GetComponent<PrimaryElement>();
-                if (peAdult != null && peBaby != null)
-                    peAdult.Mass = Mathf.Max(0.001f, peBaby.Mass);
-            }
+
+            // Fallback: copy only the mass baseline if baby has no tracker.
+            var peAdult = GetComponent<PrimaryElement>();
+            var peBaby = babyGo.GetComponent<PrimaryElement>();
+            if (peAdult != null && peBaby != null)
+                peAdult.Mass = Mathf.Max(0.001f, peBaby.Mass);
         }
     }
 
-    [HarmonyPatch(typeof(FertilityMonitor.Instance), nameof(FertilityMonitor.Instance.LayEgg))] 
-    public static class Patch_Fertility_LayEgg_MassDrain 
-    { public static void Postfix(FertilityMonitor.Instance __instance) 
-        { var go = __instance.gameObject; var tracker = go.GetComponent<CreatureMassTracker>();
-            if (tracker != null) tracker.OnEggLaid_DecreaseBodyMass(); } }
-
+    [HarmonyPatch(typeof(FertilityMonitor.Instance), nameof(FertilityMonitor.Instance.LayEgg))]
+    public static class Patch_Fertility_LayEgg_MassDrain
+    {
+        public static void Postfix(FertilityMonitor.Instance __instance)
+        {
+            var go = __instance.gameObject; var tracker = go.GetComponent<CreatureMassTracker>();
+            if (tracker != null) tracker.OnEggLaid_DecreaseBodyMass();
+        }
+    }
 
 }
 

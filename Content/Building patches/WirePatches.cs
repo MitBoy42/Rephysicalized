@@ -30,4 +30,16 @@ namespace Rephysicalized.Content.Building_patches
             __result.Mass = [60f];
         }
     }
+
+    [HarmonyPatch(typeof(WireRubberConfig), nameof(WireRubberConfig.CreateBuildingDef))]
+    public static class WireRubberConfig_CreateBuildingDef_Patch
+    {
+        public static void Postfix(ref BuildingDef __result)
+        {
+            if (!Config.Instance.RephysicalizedMetalOre) return;
+
+            // WireRubber uses 2 materials (RefinedMetal, Rubber). Only adjust the first one.
+            __result.Mass = [15f, __result.Mass.Length > 1 ? __result.Mass[1] : 0f];
+        }
+    }
 }

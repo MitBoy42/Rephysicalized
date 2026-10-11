@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using Rephysicalized;
 using Rephysicalized.Chores;
@@ -10,6 +10,7 @@ using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
 using STRINGS;
+using Rephysicalized.Content.Animal_patches;
 namespace Rephysicalized
 {
 
@@ -17,7 +18,6 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(BaseBellyConfig), nameof(BaseBellyConfig.SetupDiet))]
     public static class Belly_Diet_Tuning_Patch
     {
-
         private const float CaloriesPerCycle = 1777777f;
 
         public static void Prefix(
@@ -27,20 +27,11 @@ namespace Rephysicalized
             float minPoopSizeInKg)
         {
 
-
             for (int i = 0; i < diet_infos.Count; i++)
             {
                 var info = diet_infos[i];
 
-
-
-                bool isCarrotPlant = info.consumedTags.Contains("CarrotPlant");
-                bool isBeanPlant = info.consumedTags.Contains("BeanPlant");
-                bool isCarrot = info.consumedTags.Contains(CarrotConfig.ID);
-                bool isBean = info.consumedTags.Contains("BeanPlantSeed");
-                bool isFries = info.consumedTags.Contains("FriesCarrot");
-
-                if (isCarrotPlant)
+                if (info.consumedTags.Contains("CarrotPlant"))
                 {
                     float originalCaloriesPerKg = info.caloriesPerKg > 0f ? info.caloriesPerKg : referenceCaloriesPerKg > 0f ? referenceCaloriesPerKg : CaloriesPerCycle;
                     float originalProducedConversion = info.producedConversionRate;
@@ -56,7 +47,7 @@ namespace Rephysicalized
                     continue;
                 }
 
-                if (isBeanPlant)
+                if (info.consumedTags.Contains("BeanPlant"))
                 {
                     float targetKgPerCycle = 30f;
                     info.caloriesPerKg = CaloriesPerCycle / targetKgPerCycle;
@@ -65,14 +56,14 @@ namespace Rephysicalized
                     continue;
                 }
 
-                if (isBean || isFries)
+                if (info.consumedTags.Contains("BeanPlantSeed") || info.consumedTags.Contains("FriesCarrot"))
                 {
                     info.producedConversionRate = 0f;
 
                     diet_infos[i] = info;
                     continue;
                 }
-                if (isCarrot)
+                if (info.consumedTags.Contains(CarrotConfig.ID))
                 {
                     float targetKgPerCycle = 1.778f;
                     info.caloriesPerKg = CaloriesPerCycle / targetKgPerCycle;
@@ -86,7 +77,7 @@ namespace Rephysicalized
     }
 
 
-
+    //Changing the Bammoths mass screws up its heat production, and I can't access the sim to fix it. 
     public sealed class BellyHeatOffset : KMonoBehaviour, ISim4000ms
     {
         [SerializeField] public float PowerWatts = -1274f;
@@ -141,8 +132,6 @@ namespace Rephysicalized
         }
     }
 
-
-
     // Diet tuning
     [HarmonyPatch(typeof(BaseBellyConfig), nameof(BaseBellyConfig.BaseBelly))]
     internal static class GoldBelly_SolidFuelChoreInjection
@@ -191,13 +180,10 @@ namespace Rephysicalized
 
             __result.AddOrGet<KSelectable>();
 
-
-
             var diet = BuildFueledDiet();
             var controller = __result.AddOrGet<FueledDietController>();
             ConfigureFueledDiet(controller, diet);
-            controller.RefillThreshold = 250f; // adjust as desired (kg)
-
+            controller.RefillThreshold = 250f; 
             var monitor = __result.AddOrGetDef<SolidFuelMonitor.Def>();
 
             monitor.navigatorSize = new Vector2(2f, 2f);
@@ -228,8 +214,7 @@ namespace Rephysicalized
                 fuelInputs: inputs,
                 conversions: null,
                 totalFuelCapacityKg: 500f,
-                allowBlendedInputByOutput: true
-               
+                allowBlendedInputByOutput: true 
             );
         }
 
@@ -238,160 +223,10 @@ namespace Rephysicalized
             controller.Configure(diet);
         }
     }
-    public sealed class GoldBellyCrownFuelController : KMonoBehaviour, ISim200ms
+    // GoldBelly: growth of the crown is paid for with fuel; crown mass at 100% is 250kg.
+    public sealed class GoldBellyCrownFuelController : ScaleFuelGrowthController
     {
-        [MyCmpGet] private Effects _effects;
-
-        // WellFedShearable SMI and its ScaleGrowth amount (0..max)
-        private WellFedShearable.Instance _shearSMI;
-        private AmountInstance _scaleGrowth;
-
-        // Single storage assumption (first Storage found)
-        private Storage _fuelStorage;
-
-        // Effect id used by WellFedShearable to permit growth
-        [SerializeField] private string _wellFedEffectId = "WellFed";
-
-        private float _lastScaleValue;
-        private float _scaleMax;
-
-        // Antler mass at 100% growth (kg)
-        private const float FULL_ANTLER_MASS_KG = 250f;
-
-        public override void OnSpawn()
-        {
-            base.OnSpawn();
-
-            _shearSMI = gameObject.GetSMI<WellFedShearable.Instance>();
-            if (_shearSMI != null && _shearSMI.def != null && !string.IsNullOrEmpty(_shearSMI.def.effectId))
-                _wellFedEffectId = _shearSMI.def.effectId;
-
-            if (_effects == null)
-                _effects = GetComponent<Effects>();
-
-            _scaleGrowth = Db.Get().Amounts.ScaleGrowth.Lookup(gameObject);
-
-            _fuelStorage = GetComponent<Storage>();
-
-
-            // Initialize growth tracking
-            if (_scaleGrowth != null)
-            {
-                _lastScaleValue = _scaleGrowth.value;
-                _scaleMax = _scaleGrowth.GetMax();
-                if (_scaleMax <= 0f) _scaleMax = 100f; // default safety
-            }
-        }
-
-        public void Sim200ms(float dt)
-        {
-
-
-            if (_scaleMax <= 0f) _scaleMax = _scaleGrowth.GetMax();
-            if (_scaleMax <= 0f) _scaleMax = 100f;
-
-            bool gateEffectActive = !string.IsNullOrEmpty(_wellFedEffectId) && _effects.HasEffect(_wellFedEffectId);
-            bool fullyGrown = IsFullyGrown();
-
-            // If not well-fed or already fully grown: do nothing special
-            if (fullyGrown || !gateEffectActive)
-            {
-                _lastScaleValue = _scaleGrowth.value;
-                return;
-            }
-
-            float current = _scaleGrowth.value;
-            float desiredDelta = Mathf.Max(0f, current - _lastScaleValue);
-
-            // No attempted growth since last tick
-            if (desiredDelta <= 0f)
-            {
-                // If no fuel, clamp to last known value (prevent free growth)
-                if (TotalFuelKg() <= 0.0001f)
-                {
-                    if (Mathf.Abs(_scaleGrowth.value - _lastScaleValue) > 0.0001f)
-                        _scaleGrowth.value = _lastScaleValue;
-                }
-                _lastScaleValue = _scaleGrowth.value;
-                return;
-            }
-
-            // Compute required kg for the desired growth amount
-            float pct01Delta = desiredDelta / _scaleMax;
-            float kgNeeded = Mathf.Max(0f, pct01Delta * FULL_ANTLER_MASS_KG);
-
-            if (kgNeeded <= 0f)
-            {
-                _lastScaleValue = current;
-                return;
-            }
-
-            float consumed = ConsumeFuelUpTo(kgNeeded);
-
-            if (consumed + 1e-6f >= kgNeeded)
-            {
-                // Fully paid, accept growth
-                _lastScaleValue = _scaleGrowth.value;
-            }
-            else
-            {
-                // Partial payment: clamp growth to afforded amount
-                float affordedPct01 = (FULL_ANTLER_MASS_KG > 1e-6f) ? (consumed / FULL_ANTLER_MASS_KG) : 0f;
-                float affordedDelta = affordedPct01 * _scaleMax;
-                float clampedValue = _lastScaleValue + affordedDelta;
-
-                if (clampedValue < _scaleGrowth.value - 1e-5f)
-                    _scaleGrowth.value = clampedValue;
-
-                _lastScaleValue = _scaleGrowth.value;
-            }
-        }
-
-        private bool IsFullyGrown()
-        {
-            float max = _scaleGrowth?.GetMax() ?? 0f;
-            return max > 0f && _scaleGrowth.value >= max - 0.0001f;
-        }
-
-        private float TotalFuelKg()
-        {
-            float total = 0f;
-            var items = _fuelStorage.items;
-            for (int j = items.Count - 1; j >= 0; j--)
-            {
-                var go = items[j];
-                var pe = go.GetComponent<PrimaryElement>();
-                if (pe != null) total += pe.Mass;
-            }
-            return total;
-        }
-
-        // Consume up to target kg; returns how much was actually consumed.
-        private float ConsumeFuelUpTo(float kgNeeded)
-        {
-            float remaining = Mathf.Max(0f, kgNeeded);
-            float consumed = 0f;
-
-            var items = _fuelStorage.items;
-            for (int j = items.Count - 1; j >= 0 && remaining > 0f; j--)
-            {
-                var go = items[j];
-                var pe = go.GetComponent<PrimaryElement>();
-                if (pe == null || pe.Mass <= 0f) continue;
-
-                float take = Mathf.Min(remaining, pe.Mass);
-                pe.Mass -= take;
-                remaining -= take;
-                consumed += take;
-
-                if (pe.Mass <= 0.0001f)
-                {
-                    Util.KDestroyGameObject(go);
-                }
-            }
-
-            return consumed;
-        }
+        protected override float FullScaleMassKg => 250f;
     }
 
 

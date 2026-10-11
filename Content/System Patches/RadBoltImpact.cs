@@ -37,8 +37,27 @@ namespace Rephysicalized
     // Generic utilities for HEP solid impacts
     internal static class HEP_Impact_Util
     {
+        // Returns the available mass on the impacted cell/building that can be removed/emitted.
+        // For buildings, mass lives on the PrimaryElement.
+        internal static bool TryGetSolidAvailableMassAtCell(int cell, out float availableKg)
+        {
+            availableKg = 0f;
+            if (!TryGetSolidAtCell(cell, out _, out PrimaryElement buildingPE, out _))
+                return false;
+
+            if (buildingPE != null)
+            {
+                availableKg = buildingPE.Mass;
+                return true;
+            }
+
+            availableKg = Grid.Mass[cell];
+            return true;
+        }
+
         internal static void LaunchNearbyStuff(int cell)
         {
+
             if (!Grid.IsValidCell(cell))
                 return;
 
@@ -207,7 +226,11 @@ namespace Rephysicalized
             if (!HEP_Impact_Util.TryGetSolidAtCell(cell, out var elem, out _, out _))
                 return;
 
-            var cfg = RadBoltImpactList.FindMatch(elem);
+            string elemTag = elem.CreateTag().ToString();
+            // RadBoltImpactList stores affectedElements as tag strings.
+            var cfg = RadBoltImpactList.FindMatch(elemTag);
+
+
             if (cfg == null || cfg == null)
                 return; // no custom FX -> let vanilla stand
 
@@ -239,84 +262,79 @@ namespace Rephysicalized
     {
         public static bool Prefix(HighEnergyParticle.StatesInstance smi)
         {
-            var hep = smi.master;
-            if (hep == null) return true;
-            if (hep.collision != HighEnergyParticle.CollisionType.Solid) return true;
-
-            int cell = Grid.PosToCell(hep.gameObject);
-            if (!HEP_Impact_Util.TryGetSolidAtCell(cell, out var solidElem, out var buildingPE, out _))
+            HighEnergyParticle hep = smi.master;
+            if ((UnityEngine.Object)hep == (UnityEngine.Object)null || hep.collision != HighEnergyParticle.CollisionType.Solid)
                 return true;
+            int cell = Grid.PosToCell(hep.gameObject);
+            SimHashes solidElem;
+            if (!HEP_Impact_Util.TryGetSolidAtCell(cell, out solidElem, out PrimaryElement _, out GameObject _))
+                return true;
+            string solidTag = solidElem.CreateTag().ToString();
+            RadBoltImpactList.HEPImpactConfig match = RadBoltImpactList.FindMatch(solidTag);
 
-            var cfg = RadBoltImpactList.FindMatch(solidElem);
-            if (cfg == null)
-                return true; // not handled -> vanilla
-
-            if (cfg.launchNearby)
+            if (match == null)
+                return true;
+            if (match.launchNearby)
                 HEP_Impact_Util.LaunchNearbyStuff(cell);
-
-            hep.emitter.emitRadiusX = 6;
-            hep.emitter.emitRadiusY = 6;
-            hep.emitter.emitRads = (float)((hep.payload * 0.5f) * 1400.0f / 9.0f);
+            hep.emitter.emitRadiusX = (short)6;
+            hep.emitter.emitRadiusY = (short)6;
+            hep.emitter.emitRads = (float)((double)hep.payload * 0.5 * 1400.0 / 9.0);
             hep.emitter.Refresh();
+            float num1 = hep.payload * (1f / 1000f);
+            float num2 = num1 * Mathf.Max(0.0f, match.emissionMultiplier) * Config.Instance.FissionMult; ;
+            float removeKg = num1 * Mathf.Max(0.0f, match.removalMultiplier) * Config.Instance.FissionMult; ;
 
-            float payloadKg = hep.payload * 0.001f;
-            float emitKg = payloadKg * Mathf.Max(0f, cfg.emissionMultiplier);
-            float removeKg = payloadKg * Mathf.Max(0f, cfg.removalMultiplier);
+            // Clamp emitted mass so it can't exceed the mass that can actually be depleted from the cell.
+            float availableKg;
+            if (!HEP_Impact_Util.TryGetSolidAvailableMassAtCell(cell, out availableKg))
+                availableKg = 0f;
+            float clampedRemovedKg = Mathf.Min(removeKg, availableKg);
+            float clampedEmittedKg = Mathf.Min(num2, clampedRemovedKg);
 
-            if (emitKg > 0f)
+            if ((double)clampedEmittedKg > 0.0)
             {
-                // Use emittedElements from the matched config; no fallback to single-element
-                var map = cfg.emittedElementIds;
 
-                if (map != null && map.Count > 0)
+                Dictionary<string, float> emittedElementIds = match.emittedElements;
+                if (emittedElementIds != null && emittedElementIds.Count > 0)
                 {
-                    // Normalize fractions
-                    float totalFraction = 0f;
-                    foreach (var kv in map) totalFraction += kv.Value;
-                    if (totalFraction <= 0f) totalFraction = 1f;
-
-                    Vector3 spawnPos = Grid.CellToPosCCC(cell, Grid.SceneLayer.Ore);
-
-                    foreach (var kv in map)
+                    float num3 = 0.0f;
+                    foreach (KeyValuePair<string, float> keyValuePair in emittedElementIds)
+                        num3 += keyValuePair.Value;
+                    if ((double)num3 <= 0.0)
+                        num3 = 1f;
+                    Vector3 posCcc = Grid.CellToPosCCC(cell, Grid.SceneLayer.Ore);
+                    foreach (KeyValuePair<string, float> keyValuePair in emittedElementIds)
                     {
-                        var elemIdString = kv.Key;
-                        var frac = kv.Value;
-                        // elemIdString is SimHashes.<X>.CreateTag().ToString()
-                        if (string.IsNullOrEmpty(elemIdString)) continue;
-                        SimHashes elemHash;
-                        if (!Enum.TryParse<SimHashes>(elemIdString, true, out elemHash))
-                            continue;
-                        var outElem = ElementLoader.FindElementByHash(elemHash);
+                        string key = keyValuePair.Key;
+                        float num4 = keyValuePair.Value;
+                        SimHashes result;
+            
 
-                        if (outElem == null) continue;
-                        float portion = emitKg * (frac / totalFraction);
-                        if (portion <= 0f) continue;
-                        float spawnTempK =  cfg.spawnTempTargetK;
-                        outElem.substance.SpawnResource(spawnPos, portion, spawnTempK, byte.MaxValue, 0);
+                        // Fallback: allow pure tag strings in emittedElements that are not SimHashes.
+                        if (!string.IsNullOrEmpty(key))
+                        {
+                            Element elementByTag = ElementLoader.FindElementByTag((Tag)key);
+                            if (elementByTag != null)
+                            {
+                                float mass = clampedEmittedKg * (num4 / num3);
+                                if ((double)mass > 0.0)
+                                {
+                                    float spawnTempTargetK = match.spawnTempTargetK;
+                                    elementByTag.substance.SpawnResource(posCcc, mass, spawnTempTargetK, byte.MaxValue, 0);
+                                }
+                            }
+                        }
+
                     }
                 }
             }
-
-            if (removeKg > 0f)
+            if ((double)removeKg > 0.0)
                 HEP_Impact_Util.RemoveSolidMassAtCell(cell, removeKg);
-
-            float deltaK = Mathf.Clamp(hep.payload * cfg.tempDeltaPerPayload, cfg.tempDeltaMin, cfg.tempDeltaMax);
+            float deltaK = Mathf.Clamp(hep.payload * match.tempDeltaPerPayload, match.tempDeltaMin, match.tempDeltaMax);
             HEP_Impact_Util.IncreaseSolidTemperatureAtCell(cell, deltaK);
-
-            smi.Schedule(1f, _ => UnityEngine.Object.Destroy(hep.gameObject), null);
-
+            smi.Schedule(1f, (System.Action<object>)(_ => UnityEngine.Object.Destroy((UnityEngine.Object)hep.gameObject)), (object)null);
             return false;
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
 

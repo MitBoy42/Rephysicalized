@@ -38,67 +38,11 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 	</PropertyGroup>
 
-		<ItemGroup>
-		  <Compile Remove="Content\ModDb\**" />
-		  <Compile Remove="Content\System Patches\**" />
-		  <EmbeddedResource Remove="Content\ModDb\**" />
-		  <EmbeddedResource Remove="Content\System Patches\**" />
-		  <None Remove="Content\ModDb\**" />
-		  <None Remove="Content\System Patches\**" />
-		</ItemGroup>
-
 	<ItemGroup>
 		<ProjectReference Include="..\UtilLibs\UtilLibs.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <RefAssemblies Remove="Content\System Patches\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <RefAssemblies Remove="Content\ModDb\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Compile Include="Content\ModDb\Mod Integration.cs" />
-	  <Compile Include="Content\ModDb\ModTagUiSprites.cs" />
-	  <Compile Include="Content\ModDb\RonivansIntegrationBoilers.cs" />
-	  <Compile Include="Content\ModDb\RonivansIntegrationChemical.cs" />
-	  <Compile Include="Content\ModDb\RonivansIntegrationGenerators.cs" />
-	  <Compile Include="Content\ModDb\RonivansIntegrationIndustrialOverhaul.cs" />
-	  <Compile Include="Content\ModDb\RonivansIntegrationMetallurgy.cs" />
-	  <Compile Include="Content\System Patches\CorrosiveLiquidScalding.cs" />
-	  <Compile Include="Content\System Patches\ElectricityPatches\BatteryPatches.cs" />
-	  <Compile Include="Content\System Patches\ElectricityPatches\BatteryWaterDamage.cs" />
-	  <Compile Include="Content\System Patches\ElectricityPatches\ElectroBankPatches.cs" />
-	  <Compile Include="Content\System Patches\ElectricityPatches\PowerTransformerPatches.cs" />
-	  <Compile Include="Content\System Patches\ElectricityPatches\WireCapacity.cs" />
-	  <Compile Include="Content\System Patches\ElectricityPatches\WireCapacityUI.cs" />
-	  <Compile Include="Content\System Patches\ElectricityPatches\ZapComponent.cs" />
-	  <Compile Include="Content\System Patches\EnviromentPreparation.cs" />
-	  <Compile Include="Content\System Patches\EnviromentPreparationList.cs" />
-	  <Compile Include="Content\System Patches\EnviromentPreparationWidget.cs" />
-	  <Compile Include="Content\System Patches\Fixing Componets\BuildingFoundtationTemperaturExchangee.cs" />
-	  <Compile Include="Content\System Patches\Fixing Componets\LightsIntoHVAC.cs" />
-	  <Compile Include="Content\System Patches\Fixing Componets\MeshTileDestructionRefund.cs" />
-	  <Compile Include="Content\System Patches\Fixing Componets\WorldGenPatches.cs" />
-	  <Compile Include="Content\System Patches\Fixing Componets\WorldSetpieces.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\DualGasElementConsumer.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\ElementTileMaker.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\FarmTileChecker.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\FuelFabricator.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\OxidizerLowStatus.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\RephysicalizedConduitConsumer.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\RephysicalizedMetalDictionary.cs" />
-	  <Compile Include="Content\System Patches\Helper Components\WorldElementDropper.cs" />
-	  <Compile Include="Content\System Patches\NuclearWasteCorrosion.cs" />
-	  <Compile Include="Content\System Patches\OreDissolves.cs" />
-	  <Compile Include="Content\System Patches\OreDissolvesList.cs" />
-	  <Compile Include="Content\System Patches\OreDissolvesWidget.cs" />
-	  <Compile Include="Content\System Patches\RadBoltImpact.cs" />
-	  <Compile Include="Content\System Patches\RadBoltImpactList.cs" />
-	  <Compile Include="Content\System Patches\RadBoltImpactWidget.cs" />
-	  <Compile Include="Content\System Patches\StorageCapacity.cs" />
-	  <Compile Include="Content\System Patches\TunedUpCrudCreation.cs" />
+	  <Compile Remove="Content\System Patches\WireCapacityUI.cs" />
 	</ItemGroup>
 </Project>

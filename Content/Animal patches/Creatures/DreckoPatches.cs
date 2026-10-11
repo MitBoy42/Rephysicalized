@@ -85,7 +85,6 @@ namespace Rephysicalized.Content.Animal_patches
         [HarmonyPatch(typeof(DreckoConfig), nameof(DreckoConfig.CreateDrecko))]
         private static class DreckoConfig_CreateDrecko_Postfix
         {
-            // Do NOT add parameters that don't exist on the original method; we only need __result.
             public static void Postfix(ref GameObject __result)
             {
                 ApplyDiet(__result);

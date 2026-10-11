@@ -20,12 +20,22 @@ namespace Rephysicalized.ModElements
 
         public static ElementInfo CrudByproduct = ElementInfo.Solid("CrudByproduct", UIUtils.rgb(80, 60, 60));
 
+        public static ElementInfo Silicon = ElementInfo.Solid("SiliconRP", UIUtils.rgb(100, 100, 160));
+        public static ElementInfo MoltenSilicon = ElementInfo.Liquid("MoltenSiliconRP", UIUtils.rgb(110, 110, 170));
+        public static ElementInfo SiliconGas = ElementInfo.Gas("SiliconGasRP", UIUtils.rgb(120, 120, 180));
+
+        public static ElementInfo PlantFiberRP = ElementInfo.Solid("PlantFiberRP", "plant_matter_kanim", UIUtils.rgb(120, 180, 120));
+
         public static void RegisterSubstances(List<Substance> list)
         {
             var newElements = new HashSet<Substance>()
             {
                 AshByproduct.CreateSubstance(),
                 CrudByproduct.CreateSubstance(),
+                Silicon.CreateSubstance(),
+                MoltenSilicon.CreateSubstance(),
+                SiliconGas.CreateSubstance(),
+                PlantFiberRP.CreateSubstance(),
             };
             list.AddRange(newElements);
 
@@ -35,7 +45,10 @@ namespace Rephysicalized.ModElements
             return new[]
             {
                 SgtElementUtil.CopyElementAudioConfig(SimHashes.Sand, AshByproduct),
+                 
                         SgtElementUtil.CopyElementAudioConfig(SimHashes.IgneousRock, CrudByproduct),
+                             SgtElementUtil.CopyElementAudioConfig(SimHashes.Glass, Silicon),
+                             SgtElementUtil.CopyElementAudioConfig(SimHashes.Algae, PlantFiberRP),
             };
 
         }
@@ -50,10 +63,18 @@ namespace Rephysicalized.ModElements
            
                 }
             }
-        
 
 
-        // Add debug logging only; no functional changes.
+        public static void AddElementOverheatModifier(SimHashes element, float degreeIncrease)
+        {
+            var elementMaterial = ElementLoader.FindElementByHash(element);
+            if (elementMaterial == null)
+                return;
+            var attributeModifiers = Db.Get().BuildingAttributes;
+            AttributeModifier overheatModifier = new AttributeModifier(attributeModifiers.OverheatTemperature.Id, degreeIncrease, elementMaterial.name);
+            elementMaterial.attributeModifiers.Add(overheatModifier);
+        }
+
         public static void AddElementDecorModifier(SimHashes element, float decorBonusMultiplier)
         {
 
@@ -74,24 +95,22 @@ namespace Rephysicalized.ModElements
                 false,  // readOnly
                 true    // uiOnly
             );
-
-         
-
-            try
-            {
+           
                 elementMaterial.attributeModifiers.Add(decorModifier);
-            
-            }
-            catch (System.Exception ex)
-            {
-                throw;
-            }
-        }
+      
+        } 
 
         internal static void ConfigureElements()
         {
             AddElementDecorModifier(ModElementRegistration.CrudByproduct, -0.8f);
-            AddElementDecorModifier(SimHashes.Lime, 0.3f);
+            AddElementOverheatModifier(ModElementRegistration.Silicon, 50f);
+            AddElementDecorModifier(ModElementRegistration.Silicon, 0.2f);
+            AddElementDecorModifier(SimHashes.Lime, 0.4f);
+
+            ElementLoader.FindElementByHash(ModElementRegistration.Silicon).name = STRINGS.ELEMENTS.SILICONRP.NAME;
+            var silicon = ElementLoader.FindElementByHash(ModElementRegistration.Silicon);
+            silicon.nameUpperCase = silicon.name.ToUpperInvariant();
+            silicon.tag = TagManager.Create("SiliconRP", silicon.name);
         }
     }
 }   

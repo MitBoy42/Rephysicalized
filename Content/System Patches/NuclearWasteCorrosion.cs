@@ -1,14 +1,14 @@
 ﻿using Database;
+using ElementData;
 using HarmonyLib;
 using Klei.AI;
 using STRINGS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Reflection;
-
 using UnityEngine;
 using UnityEngine;
 using UtilLibs;
@@ -16,7 +16,12 @@ using static ElementLoader;
 
 namespace Rephysicalized
 {
-
+    // Public strings the UI (or other mods) can call into
+    public static class CorrosiveWasteStrings
+    {
+        // As requested: a public static LocString used for corrosion damage source/poptext
+        public static LocString CORROSIVE_ELEMENT = (LocString)"corrosive element";
+    }
 
     // Global manager that scans for high-mass nuclear waste and corrodes neighboring solids
     public sealed class NuclearWasteCorrosionManager : KMonoBehaviour, ISim1000ms
@@ -147,8 +152,8 @@ namespace Rephysicalized
                         var damageInfo = new BuildingHP.DamageSourceInfo
                         {
                             damage = BuildingHpDamagePerTick,
-                            source = STRINGS.ELEMENTS.CORROSIVE.NAME,
-                            popString = STRINGS.ELEMENTS.CORROSIVE.NAME,
+                            source = (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT,
+                            popString = (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT,
                             // Optional: reuse Overheatable's small smoke effect
                             fullDamageEffectName = "smoke_damage_kanim"
                         };
@@ -172,8 +177,8 @@ namespace Rephysicalized
                 cell,
                 amount,
                 fromCell,
-               STRINGS.ELEMENTS.CORROSIVE.NAME,
-               STRINGS.ELEMENTS.CORROSIVE.NAME
+                (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT,
+                (string)CorrosiveWasteStrings.CORROSIVE_ELEMENT
             );
         }
     }
@@ -215,63 +220,7 @@ namespace Rephysicalized
         }
     }
 
-    // Adds an additional scalding source: standing in Nuclear Waste (> 100 kg) counts as scalding.
-    // This does NOT replace the vanilla temperature-based check; it augments it.
-    [HarmonyPatch(typeof(ScaldingMonitor.Instance), nameof(ScaldingMonitor.Instance.IsScalding))]
-    internal static class NuclearWasteScaldingAugmentPatch
-    {
-        // Threshold in kilograms
-        private const float WasteMassThresholdKg = 20f;
-
-        [HarmonyPostfix]
-        private static void Postfix(ScaldingMonitor.Instance __instance, ref bool __result)
-        {
-            try
-            {
-                // If already scalding by temperature, keep it
-                if (__result)
-                    return;
-
-                // Otherwise, add nuclear waste condition
-                if (IsOnHighMassNuclearWaste(__instance))
-                    __result = true;
-            }
-            catch (Exception e)
-            {
-           //     Debug.LogWarning($"[Rephysicalized] NuclearWasteScaldingAugmentPatch failed: {e}");
-                // On failure, leave original result unchanged
-            }
-        }
-
-        private static bool IsOnHighMassNuclearWaste(ScaldingMonitor.Instance smi)
-        {
-            if (smi == null || smi.gameObject == null)
-                return false;
-
-            int rootCell = Grid.PosToCell(smi.gameObject);
-            if (!Grid.IsValidCell(rootCell))
-                return false;
-
-            // Prefer OccupyArea if present (covers all cells for tall/wide creatures)
-            var occupyArea = smi.gameObject.GetComponent<OccupyArea>();
-            if (occupyArea != null && occupyArea.OccupiedCellsOffsets != null && occupyArea.OccupiedCellsOffsets.Length > 0)
-            {
-                for (int i = 0; i < occupyArea.OccupiedCellsOffsets.Length; i++)
-                {
-                    int c = Grid.OffsetCell(rootCell, occupyArea.OccupiedCellsOffsets[i]);
-                    if (!Grid.IsValidCell(c))
-                        continue;
-
-                    if (Grid.Element[c].id == SimHashes.NuclearWaste && Grid.Mass[c] > WasteMassThresholdKg)
-                        return true;
-                }
-                return false;
-            }
-
-            // Fallback: check just the root cell
-            return Grid.Element[rootCell].id == SimHashes.NuclearWaste && Grid.Mass[rootCell] > WasteMassThresholdKg;
-        }
-    }
+  
 
 
 } 

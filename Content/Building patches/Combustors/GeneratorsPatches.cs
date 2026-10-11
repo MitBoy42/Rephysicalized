@@ -9,9 +9,6 @@ using System.Reflection.Emit;
 using TUNING;
 using UnityEngine;
 using UtilLibs.BuildingPortUtils;
-using HarmonyLib;
-using System.Collections.Generic;
-using UtilLibs;
 
 namespace Rephysicalized
 {
@@ -299,13 +296,9 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(MethaneGeneratorConfig), "DoPostConfigureComplete")]
     public static class MethaneGenerator_OxygenConsumerAndFormulaPatch
     {
-      
         public static readonly ConduitPortInfo OXYGEN_GAS_PORT = new ConduitPortInfo(ConduitType.Gas, new CellOffset(-1, 2));
-        [HarmonyPriority(Priority.LowerThanNormal)]
-
         public static void Postfix(GameObject go)
         {
-
             // Ensure storage uses StandardSealedStorage modifiers (like AirFilter)
             var storage = go.GetComponent<Storage>();
             if (storage != null)
@@ -357,11 +350,18 @@ namespace Rephysicalized
                     new EnergyGenerator.OutputItem(SimHashes.CarbonDioxide, 0.07f, true, new CellOffset(0, 2), 383.15f)
                 };
             }
-
+          
 
             ConduitDispenser conduitDispenser = go.AddOrGet<ConduitDispenser>();
+            conduitDispenser.conduitType = ConduitType.Gas;
+            conduitDispenser.invertElementFilter = true;
+            conduitDispenser.elementFilter = new SimHashes[4]
+            {
+      SimHashes.Methane,
+      SimHashes.Syngas,
+           SimHashes.Oxygen,
+      SimHashes.ContaminatedOxygen,     };
 
-            conduitDispenser.elementFilter = conduitDispenser.elementFilter.Append(SimHashes.Oxygen).Append(SimHashes.ContaminatedOxygen);
         }
 
         // Handles network registration of the Methane Generator's Oxygen secondary gas input
@@ -403,7 +403,7 @@ namespace Rephysicalized
                 const string key = "STRINGS.BUILDINGS.PREFABS.PETROLEUMGENERATOR.EFFECT";
 
                 // Append gas input functionality to the description
-                Strings.Add(key, Strings.Get(key) + "\n\n <b>REPHYSICALIZED: Requires Oxidizer gas input pipe</b>");
+                Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Requires Oxidizer gas input pipe</b>");
             }
         }
 

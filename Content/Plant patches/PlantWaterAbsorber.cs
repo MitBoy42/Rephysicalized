@@ -22,6 +22,24 @@ namespace Rephysicalized.Content.Plant_patches
         }
     }
 
+    // Consumer is disabled on prefab; it will be wired and enabled when planted via Irrigation SetStorage.
+    [HarmonyPatch(typeof(ColdWheatConfig), nameof(ColdWheatConfig.CreatePrefab))]
+    internal static class ColdWheatAbsorber_Patch
+    {
+        private static void Postfix(ref GameObject __result)
+        {
+            var consumer = __result.AddComponent<PassiveElementConsumer>();
+            consumer.elementToConsume = SimHashes.Water;
+            consumer.consumptionRate = 0.5f;
+            consumer.consumptionRadius = 1;
+            consumer.showDescriptor = false;
+            consumer.showInStatusPanel = false;
+            consumer.capacityKG = 100f;
+            consumer.storeOnConsume = true;
+            consumer.enabled = false;
+        }
+    }
+
     [HarmonyPatch(typeof(CarrotPlantConfig), nameof(CarrotPlantConfig.CreatePrefab))]
     internal static class CarrotPlantAbsorber_Patch
     {
@@ -207,9 +225,58 @@ namespace Rephysicalized.Content.Plant_patches
             consumer.capacityKG = 100f;
             consumer.storeOnConsume = true;
             consumer.enabled = false;
+
+        }
+    }
+    [HarmonyPatch(typeof(TubeWormConfig), nameof(TubeWormConfig.CreatePrefab))]
+    internal static class TubeWormAbsorber_Patch
+    {
+        private static void Postfix(ref GameObject __result)
+        {
+            var consumer = __result.AddComponent<PassiveElementConsumer>();
+            consumer.elementToConsume = SimHashes.MurkyBrine;
+            consumer.consumptionRate = 0.5f;
+            consumer.consumptionRadius = 2;
+            consumer.showDescriptor = false;
+            consumer.showInStatusPanel = false;
+            consumer.capacityKG = 100f;
+            consumer.storeOnConsume = true;
+            consumer.enabled = false;
+        }
+    }
+    [HarmonyPatch(typeof(OxyCoralConfig), nameof(OxyCoralConfig.CreatePrefab))]
+    internal static class OxyCoralAbsorber_Patch
+    {
+        private static void Postfix(ref GameObject __result)
+        {
+            var consumer = __result.AddComponent<PassiveElementConsumer>();
+            consumer.elementToConsume = SimHashes.SaltWater;
+            consumer.consumptionRate = 0.5f;
+            consumer.consumptionRadius = 2;
+            consumer.showDescriptor = false;
+            consumer.showInStatusPanel = false;
+            consumer.capacityKG = 100f;
+            consumer.storeOnConsume = true;
+            consumer.enabled = false;
         }
     }
 
+    [HarmonyPatch(typeof(SeaTreeRootConfig), nameof(SeaTreeRootConfig.CreatePrefab))]
+    internal static class SeaTreeRootAbsorber_Patch
+    {
+        private static void Postfix(ref GameObject __result)
+        {
+            var consumer = __result.AddComponent<PassiveElementConsumer>();
+            consumer.elementToConsume = SimHashes.DirtyWater;
+            consumer.consumptionRate = 0.5f;
+            consumer.consumptionRadius = 2;
+            consumer.showDescriptor = false;
+            consumer.showInStatusPanel = false;
+            consumer.capacityKG = 100f;
+            consumer.storeOnConsume = true;
+            consumer.enabled = false;
+        }
+    }
 
     internal static class LiquidConsumerWireUtil
     {
@@ -234,8 +301,6 @@ namespace Rephysicalized.Content.Plant_patches
                 c.storage = plotStorage;
                 c.showDescriptor = false;
                 c.showInStatusPanel = false;
-
-                // Ensure consumption is not gated by building states
             
                 c.isRequired = false;
 
@@ -274,8 +339,9 @@ namespace Rephysicalized.Content.Plant_patches
     /// <summary>
     /// Enforces a per-plant cap for a liquid PassiveElementConsumer when storing into plot storage,
     /// by toggling the consumer on/off based on the element mass in the plot storage.
+
     /// </summary>
-    public sealed class LiquidPECStorageLimiter : KMonoBehaviour, ISim1000ms
+    public sealed class LiquidPECStorageLimiter : KMonoBehaviour, ISim4000ms
     {
         public PassiveElementConsumer Consumer { get; private set; }
         private Storage _plotStorage;
@@ -300,7 +366,7 @@ namespace Rephysicalized.Content.Plant_patches
             EvaluateAndToggle();
         }
 
-        public void Sim1000ms(float dt)
+        public void Sim4000ms(float dt)
         {
             EvaluateAndToggle();
         }

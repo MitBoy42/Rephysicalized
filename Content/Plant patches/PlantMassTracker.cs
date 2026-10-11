@@ -1,11 +1,12 @@
-﻿using System;
+using HarmonyLib;
+using Klei.AI;
+using KSerialization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using HarmonyLib;
-using KSerialization;
-using Klei.AI;
 using UnityEngine;
+using static STRINGS.BUILDINGS.PREFABS;
 
 namespace Rephysicalized
 {
@@ -47,28 +48,23 @@ namespace Rephysicalized
         private static bool _installed;
         private static readonly HashSet<string> PlotPrefabIds = new HashSet<string>(StringComparer.Ordinal)
         {
-            "PlanterBox", "FarmTile", "HydroponicFarm"
+            "PlanterBox", "FarmTile", "HydroponicFarm", "WideFarmTile" , "LargeBackWallFarm"
         };
         public static void Install()
         {
             if (_installed) return;
             _installed = true;
-            Assets.RegisterOnAddPrefab(OnAddPrefab);
+            // no-op: PlotMassStore persistence removed
         }
 
-        private static void OnAddPrefab(KPrefabID kpid)
-        {
-            if (kpid == null) return;
-            string id = kpid.PrefabID().Name;
-            if (PlotPrefabIds.Contains(id))
-                kpid.gameObject.AddOrGet<PlotMassStore>();
-        }
     }
 
     public static class PlantMassTrackerRegistry
     {
         private static readonly Dictionary<string, PlantMassTrackerConfig> _configs =
             new Dictionary<string, PlantMassTrackerConfig>(StringComparer.Ordinal);
+        private static readonly Dictionary<Storage, HashSet<PlantMassTrackerComponent>> _storageTrackers =
+            new Dictionary<Storage, HashSet<PlantMassTrackerComponent>>();
 
         public static bool IsRegisteredPlant(string plantPrefabId) =>
             !string.IsNullOrWhiteSpace(plantPrefabId) && _configs.ContainsKey(plantPrefabId);
@@ -99,6 +95,20 @@ namespace Rephysicalized
         internal static bool TryGetConfig(string prefabId, out PlantMassTrackerConfig config) =>
             _configs.TryGetValue(prefabId, out config);
 
+        internal static PlantMassTrackerComponent EnsureTracker(GameObject plant)
+        {
+            if (plant == null)
+                return null;
+
+            var kpid = plant.GetComponent<KPrefabID>();
+            if (kpid == null || !TryGetConfig(kpid.PrefabID().Name, out var config))
+                return null;
+
+            var tracker = plant.AddOrGet<PlantMassTrackerComponent>();
+            tracker.InitializeFromConfig(config);
+            return tracker;
+        }
+
         // Strongly-typed hooks call into this to wire storages to trackers
         internal static void OnMonitorSetStorage(GameObject plant, Storage storage, IEnumerable<Tag> consumedTags)
         {
@@ -116,6 +126,39 @@ namespace Rephysicalized
             }
 
             tracker.RegisterMonitorStorage(storage, consumedTags ?? Enumerable.Empty<Tag>());
+        }
+
+        internal static void RegisterStorageTracker(Storage storage, PlantMassTrackerComponent tracker)
+        {
+            if (storage == null || tracker == null)
+                return;
+
+            if (!_storageTrackers.TryGetValue(storage, out var trackers))
+            {
+                trackers = new HashSet<PlantMassTrackerComponent>();
+                _storageTrackers[storage] = trackers;
+            }
+
+            trackers.Add(tracker);
+        }
+
+        internal static void UnregisterStorageTracker(Storage storage, PlantMassTrackerComponent tracker)
+        {
+            if (storage == null || tracker == null || !_storageTrackers.TryGetValue(storage, out var trackers))
+                return;
+
+            trackers.Remove(tracker);
+            if (trackers.Count == 0)
+                _storageTrackers.Remove(storage);
+        }
+
+        internal static void NotifyPlantStorageConsumed(Storage storage, List<PlantElementAbsorber.Planner.ConsumeCommand> consumeCommands)
+        {
+            if (storage == null || consumeCommands == null || !_storageTrackers.TryGetValue(storage, out var trackers))
+                return;
+
+            foreach (var tracker in trackers)
+                tracker?.AddConsumedStorageMass(storage, consumeCommands);
         }
 
         // New: id-based notify that matches updated game signatures
@@ -142,63 +185,7 @@ namespace Rephysicalized
     }
 
     [SerializationConfig(MemberSerialization.OptIn)]
-    public sealed class PlotMassStore : KMonoBehaviour
-    {
-        [Serialize] public float mass;
-        public void Set(float kg) => mass = kg;
-        public float Get() => mass;
-    }
 
-    internal static class PlantMassTrackerTeardown
-    {
-        private static readonly HashSet<Storage> SuppressedStorages = new HashSet<Storage>();
-
-        public static void SuppressStoragesFrom(GameObject plotGo)
-        {
-            if (plotGo == null) return;
-            var own = plotGo.GetComponents<Storage>();
-            for (int i = 0; i < own.Length; i++)
-            {
-                var s = own[i];
-                if (s == null) continue;
-                SuppressedStorages.Add(s);
-            }
-        }
-
-        public static void ClearSuppressedFor(GameObject plotGo)
-        {
-            if (plotGo == null) return;
-            var own = plotGo.GetComponents<Storage>();
-            for (int i = 0; i < own.Length; i++)
-            {
-                var s = own[i];
-                if (s == null) continue;
-                SuppressedStorages.Remove(s);
-            }
-        }
-
-        public static bool IsSuppressed(Storage s) => s != null && SuppressedStorages.Contains(s);
-    }
-
-    [HarmonyPatch(typeof(PlantablePlot), "OnSpawn")]
-    internal static class PlantablePlot_OnSpawn_Patch
-    {
-        private static void Postfix(PlantablePlot __instance)
-        {
-            if (__instance == null) return;
-            __instance.gameObject.AddOrGet<PlotMassStore>();
-        }
-    }
-
-    [HarmonyPatch(typeof(PlantablePlot), "OnCleanUp")]
-    internal static class PlantablePlot_OnCleanUp_Patch
-    {
-        private static void Prefix(PlantablePlot __instance)
-        {
-            if (__instance == null) return;
-            PlantMassTrackerTeardown.ClearSuppressedFor(__instance.gameObject);
-        }
-    }
 
     [HarmonyPatch(typeof(FertilizationMonitor.Instance), nameof(FertilizationMonitor.Instance.SetStorage))]
     internal static class FertilizationMonitor_Instance_SetStorage_Patch
@@ -236,57 +223,15 @@ namespace Rephysicalized
         }
     }
 
-    [HarmonyPatch(typeof(Deconstructable), "OnCompleteWork")]
-    internal static class PlotDeconstructionDetachPatch
+    [HarmonyPatch(typeof(PlantElementAbsorber), nameof(PlantElementAbsorber.PlanConsume), new Type[] { typeof(float), typeof(List<PlantElementAbsorber.Planner.ConsumeCommand>) })]
+    internal static class PlantElementAbsorber_PlanConsume_PlantMassTracker_Patch
     {
-        public static void Prefix(Deconstructable __instance, WorkerBase worker)
+        private static void Postfix(ref PlantElementAbsorber __instance, List<PlantElementAbsorber.Planner.ConsumeCommand> consumeCommands, bool __result)
         {
+            if (!__result || consumeCommands == null)
+                return;
 
-            if (__instance == null) return;
-
-            var go = __instance.gameObject;
-            if (go == null) return;
-
-            var plot = go.GetComponent<PlantablePlot>();
-            if (plot == null) return;
-
-            PlantMassTrackerTeardown.SuppressStoragesFrom(go);
-
-            var plotStore = go.GetComponent<PlotMassStore>();
-            if (plotStore == null) return;
-
-            var trackers = UnityEngine.Object.FindObjectsByType<PlantMassTrackerComponent>(FindObjectsSortMode.None);
-
-            for (int i = 0; i < trackers.Length; i++)
-            {
-                var t = trackers[i];
-                if (t == null) continue;
-
-                PlotMassStore theirStore = null;
-                try
-                {
-                    theirStore = Traverse.Create(t).Field<PlotMassStore>("_plotStore").Value;
-                }
-                catch { }
-
-                if (theirStore != null && ReferenceEquals(theirStore, plotStore))
-                {
-                    t.BeginFinalTeardown();
-                }
-            }
-
-
-        }
-
-        public static void Postfix(Deconstructable __instance, WorkerBase worker)
-        {
-            var go = __instance?.gameObject;
-            if (go == null) return;
-
-            var plot = go.GetComponent<PlantablePlot>();
-            if (plot == null) return;
-
-            PlantMassTrackerTeardown.ClearSuppressedFor(go);
+            PlantMassTrackerRegistry.NotifyPlantStorageConsumed(__instance.storage, consumeCommands);
         }
     }
 
@@ -304,13 +249,16 @@ namespace Rephysicalized
     }
 
     // Optional component: attach to a plant prefab to customize what the PlantMassTracker
+    // spawns on harvest or uproot. If not present on a plant, PMT uses its base config yields.
     [SerializationConfig(MemberSerialization.OptIn)]
     public sealed class PlantMassTrackerYieldModifier : KMonoBehaviour
     {
         // If true, replace the base yields for harvest with 'harvestYields'.
+        // If false, 'harvestYields' are added to the base yields.
         [Serialize] public bool overrideHarvestYields = false;
 
         // If true, replace the base yields for dig with 'digYields'.
+        // If false, 'digYields' are added to the base yields.
         [Serialize] public bool overrideDigYields = false;
 
         // Extra/override yields when the plant is harvested.
@@ -319,5 +267,5 @@ namespace Rephysicalized
         // Extra/override yields when the plant is uprooted.
         [Serialize] public List<MaterialYield> digYields = new List<MaterialYield>();
     }
-
+ 
 }

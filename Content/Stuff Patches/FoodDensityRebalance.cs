@@ -26,6 +26,15 @@ namespace Rephysicalized
             { "FriesCarrot".ToTag(), 6f },
             { "MushBar".ToTag(), 5f },
             { "FriedMushBar".ToTag(), 5f },
+          { "JawboFillet".ToTag(), 0.5f },
+       { "PrehistoricPacuFillet".ToTag(), 0.5f },
+       //One only affects  food and the other affects recipes
+
+
+
+
+
+
         };
 
         // Crops with configs (skip others)
@@ -41,7 +50,8 @@ namespace Rephysicalized
         internal static readonly Tag CookingStation = TagManager.Create("CookingStation");
         internal static readonly Tag GourmetCookingStation = TagManager.Create("GourmetCookingStation");
         internal static readonly Tag Smoker = TagManager.Create("Smoker");
-        internal static readonly Tag Deepfryer = TagManager.Create("Deepfryer"); 
+        internal static readonly Tag Deepfryer = TagManager.Create("Deepfryer");
+        internal static readonly Tag SushiBar = TagManager.Create("SushiBar");
     }
 
     internal static class CropValAccess
@@ -179,8 +189,12 @@ namespace Rephysicalized
     // Recipe scaler with robust timing and diagnostics
     internal static class MultiFoodRecipeScaler
     {
+        // Include fabricator in the key so multi-pass initialization doesn't re-apply for the same recipe.
         private static readonly HashSet<string> ProcessedRecipeIds = new HashSet<string>(StringComparer.Ordinal);
+
+        private static readonly HashSet<string> ProcessedResultSignatures = new HashSet<string>(StringComparer.Ordinal);
         private static FieldInfo _fiId;
+
 
         private static string GetRecipeId(ComplexRecipe r)
         {
@@ -203,18 +217,7 @@ namespace Rephysicalized
         public static void ScaleForFabricator(Tag fabricatorTag, string fabricatorNameForLog)
         {
             var mgr = ComplexRecipeManager.Get();
-            if (mgr == null)
-            {
-                Debug.LogWarning($"[FoodRebalance] Manager null; skip {fabricatorNameForLog}");
-                return;
-            }
-
             var recipes = GetRecipesForFabricator(mgr, fabricatorTag) ?? GetAllRecipes(mgr);
-            if (recipes == null)
-            {
-                Debug.LogWarning("[FoodRebalance] No recipes found; aborting for " + fabricatorNameForLog);
-                return;
-            }
 
             int seen = 0, matched = 0, changedCount = 0, changedIngredients = 0, changedResults = 0;
 
@@ -231,9 +234,13 @@ namespace Rephysicalized
 
                 matched++;
 
-                var rid = GetRecipeId(recipe) ?? "<unknown>";
-                if (ProcessedRecipeIds.Contains(rid))
+                // Key includes fabricator to avoid cross-fabricator collisions and ensure multi-pass init doesn't re-apply for same fabricator.
+                // Always use the recipe object identity to guarantee a stable, per-object key across initialization passes and
+                // avoid double-scaling caused by inconsistent reflected ids.
+                var processedKey = fabricatorTag + ":" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(recipe).ToString();
+                if (ProcessedRecipeIds.Contains(processedKey))
                     continue;
+
 
                 bool changed = false;
 
@@ -253,6 +260,7 @@ namespace Rephysicalized
                             ings[i] = ing;
                             changed = true;
                             changedIngredients++;
+                         
                             continue;
                         }
 
@@ -272,6 +280,7 @@ namespace Rephysicalized
                                 ings[i] = ing;
                                 changed = true;
                                 changedIngredients++;
+                                
                             }
                         }
                     }
@@ -281,32 +290,49 @@ namespace Rephysicalized
                 var res = recipe.results;
                 if (res != null && res.Length > 0)
                 {
+                    // Build a signature for current result materials so variants that produce the same outputs
+                    // are recognized and result-scaling is only applied once. Use material-only signature because
+                    // some builds share result object instances or amounts may already be mutated by earlier passes.
+                    string resultSignature = fabricatorTag + ":" + string.Join("|", res.Select(rr => rr.material.ToString().ToUpperInvariant()));
+                 
+                    bool alreadyProcessedResults = ProcessedResultSignatures.Contains(resultSignature);
+                  
+
+                    bool resultsChanged = false;
                     for (int i = 0; i < res.Length; i++)
                     {
                         var r = res[i];
-                        if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(r.material, out var mul) && mul > 0f)
+                        if (!alreadyProcessedResults && FoodDensityRebalance.IngredientMultiplier.TryGetValue(r.material, out var mul) && mul > 0f)
                         {
                             float old = r.amount;
                             r.amount = old * mul;
                             res[i] = r;
                             changed = true;
+                            resultsChanged = true;
                             changedResults++;
+                          
                         }
+                    }
+
+                    if (resultsChanged)
+                    {
+                        ProcessedResultSignatures.Add(resultSignature);
+                    
                     }
                 }
 
-                // Apply modifications if any
                 if (changed)
                 {
                     if (ings != null) recipe.ingredients = ings;
                     if (res != null) recipe.results = res;
 
-                    ProcessedRecipeIds.Add(rid);
+                    ProcessedRecipeIds.Add(processedKey);
                     changedCount++;
+              
+
                 }
             }
-
-        }
+                  }
 
         // Prefer manager API if present: GetRecipesForFabricator(Tag)
         private static IEnumerable<ComplexRecipe> GetRecipesForFabricator(ComplexRecipeManager mgr, Tag fabricatorTag)
@@ -373,14 +399,14 @@ namespace Rephysicalized
         }
     }
 
-    [HarmonyPatch(typeof(MicrobeMusherConfig), "ConfigureRecipes")]
-    public static class MicrobeMusherConfig_ConfigureRecipes_MultiFoodPatch
-    {
-        public static void Postfix()
-        {
-            MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.MicrobeMusher, "MicrobeMusher");
-        }
-    }
+    //[HarmonyPatch(typeof(MicrobeMusherConfig), "ConfigureRecipes")]
+    //public static class MicrobeMusherConfig_ConfigureRecipes_MultiFoodPatch
+    //{
+    //    public static void Postfix()
+    //    {
+    //        MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.MicrobeMusher, "MicrobeMusher");
+    //    }
+    //}
 
     [HarmonyPatch(typeof(GourmetCookingStationConfig), "ConfigureRecipes")]
     public static class GourmetCookingStationConfig_ConfigureRecipes_MultiFoodPatch
@@ -421,6 +447,7 @@ namespace Rephysicalized
             MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.GourmetCookingStation, "GourmetCookingStation (final)");
             MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.Smoker, "Smoker (final)");
             MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.Deepfryer, "Deepfryer (final)");
+            MultiFoodRecipeScaler.ScaleForFabricator(FoodDensityRebalance.SushiBar, "SushiBar (final)");
         }
     }
 }

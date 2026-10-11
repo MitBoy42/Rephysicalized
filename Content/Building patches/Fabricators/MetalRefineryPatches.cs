@@ -1,93 +1,100 @@
-﻿using System;
-using System.Collections.Generic;
-using HarmonyLib;
+﻿using HarmonyLib;
+using PeterHan.PLib.Options;
+using Rephysicalized.Content.System_Patches.Helper_Components;
 using Rephysicalized.ModElements;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Rephysicalized.Content.BuildingPatches
 {
-    // Consolidated recipe rewrite logic for Metal Refinery outputs.
     internal static class MetalRefinery_CinnabarSplit_RecipeCtorPatches
     {
         private const float InputKg = 100f;
         private const float Epsilon = 0.001f;
 
-        [HarmonyPatch(typeof(ComplexRecipe), MethodType.Constructor, new Type[] { typeof(string), typeof(ComplexRecipe.RecipeElement[]), typeof(ComplexRecipe.RecipeElement[]) })]
+        private static void ApplyAllRewrites(
+          ComplexRecipe recipe,
+          string id,
+          ComplexRecipe.RecipeElement[] ingredients,
+          ComplexRecipe.RecipeElement[] results)
+        {
+            if (recipe == null || !SingletonOptions<Config>.Instance.RephysicalizedMetalOre || ingredients == null || ingredients.Length != 1)
+                return;
+            ComplexRecipe.RecipeElement ingredient = ingredients[0];
+            (Tag, float)[] outputs;
+            if (!MetalRefinery_CinnabarSplit_RecipeCtorPatches.TryGetMetalDictionaryOutputs(ingredient.material, out outputs))
+                return;
+            MetalRefinery_CinnabarSplit_RecipeCtorPatches.TryRewriteRecipe(recipe, id, ingredients, results, ingredient.material, outputs);
+        }
+
+        private static bool TryGetMetalDictionaryOutputs(
+          Tag ingredientTag,
+          out (Tag tag, float amount)[] outputs)
+        {
+            outputs = ((Tag, float)[])null;
+            List<Tuple<string, float>> tupleList;
+            if (ingredientTag == (Tag)(string)null || !RephysicalizedMetalDictionary.MetalOresAdditionalOutputs.TryGetValue(ingredientTag.ToString(), out tupleList))
+                return false;
+            outputs = new (Tag, float)[tupleList.Count];
+            for (int index = 0; index < tupleList.Count; ++index)
+            {
+                Tuple<string, float> tuple = tupleList[index];
+                string first = tuple.first;
+                float second = tuple.second;
+                Tag tag = TagManager.Create(first);
+                outputs[index] = (tag, second * 100f);
+            }
+            return (uint)outputs.Length > 0U;
+        }
+
+        private static void TryRewriteRecipe(
+          ComplexRecipe recipe,
+          string id,
+          ComplexRecipe.RecipeElement[] ingredients,
+          ComplexRecipe.RecipeElement[] results,
+          Tag targetIngredientTag,
+          (Tag tag, float amount)[] outputs)
+        {
+            if (string.IsNullOrEmpty(id) || !id.StartsWith("MetalRefinery", StringComparison.Ordinal) || ingredients == null || ingredients.Length != 1)
+                return;
+            ComplexRecipe.RecipeElement ingredient = ingredients[0];
+            if (ingredient.material != targetIngredientTag || (double)Mathf.Abs(ingredient.amount - 100f) > 1.0 / 1000.0)
+                return;
+            ComplexRecipe.RecipeElement.TemperatureOperation temperatureOperation = ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature;
+            if (results != null && (uint)results.Length > 0U)
+                temperatureOperation = results[0].temperatureOperation;
+            ComplexRecipe.RecipeElement[] recipeElementArray = new ComplexRecipe.RecipeElement[outputs.Length];
+            for (int index = 0; index < outputs.Length; ++index)
+                recipeElementArray[index] = new ComplexRecipe.RecipeElement(outputs[index].tag, outputs[index].amount, temperatureOperation);
+            recipe.results = recipeElementArray;
+        }
+
+        [HarmonyPatch(typeof(ComplexRecipe), MethodType.Constructor, new System.Type[] { typeof(string), typeof(ComplexRecipe.RecipeElement[]), typeof(ComplexRecipe.RecipeElement[]) })]
         private static class CtorPatch_NoDlc
         {
-            public static void Postfix(ComplexRecipe __instance, string id, ComplexRecipe.RecipeElement[] ingredients, ComplexRecipe.RecipeElement[] results)
+            public static void Postfix(
+              ComplexRecipe __instance,
+              string id,
+              ComplexRecipe.RecipeElement[] ingredients,
+              ComplexRecipe.RecipeElement[] results)
             {
-                ApplyAllRewrites(__instance, id, ingredients, results);
+                MetalRefinery_CinnabarSplit_RecipeCtorPatches.ApplyAllRewrites(__instance, id, ingredients, results);
             }
         }
 
-        [HarmonyPatch(typeof(ComplexRecipe), MethodType.Constructor, new Type[] { typeof(string), typeof(ComplexRecipe.RecipeElement[]), typeof(ComplexRecipe.RecipeElement[]), typeof(string[]) })]
+        [HarmonyPatch(typeof(ComplexRecipe), MethodType.Constructor, new System.Type[] { typeof(string), typeof(ComplexRecipe.RecipeElement[]), typeof(ComplexRecipe.RecipeElement[]), typeof(string[]) })]
         private static class CtorPatch_WithDlc
         {
-            public static void Postfix(ComplexRecipe __instance, string id, ComplexRecipe.RecipeElement[] ingredients, ComplexRecipe.RecipeElement[] results, string[] requiredDlcIds)
+            public static void Postfix(
+              ComplexRecipe __instance,
+              string id,
+              ComplexRecipe.RecipeElement[] ingredients,
+              ComplexRecipe.RecipeElement[] results,
+              string[] requiredDlcIds)
             {
-                ApplyAllRewrites(__instance, id, ingredients, results);
+                MetalRefinery_CinnabarSplit_RecipeCtorPatches.ApplyAllRewrites(__instance, id, ingredients, results);
             }
-        }
-
-        private static void ApplyAllRewrites(ComplexRecipe recipe, string id, ComplexRecipe.RecipeElement[] ingredients, ComplexRecipe.RecipeElement[] results)
-        {
-            if (recipe == null) return;
-            if (!Config.Instance.RephysicalizedMetalOre) return;
-            if (ingredients == null || ingredients.Length != 1)
-                return;
-
-            var ing = ingredients[0];
-            if (!TryGetMetalDictionaryOutputs(ing.material, out var outputs))
-                return;
-
-            TryRewriteRecipe(recipe, id, ingredients, results, ing.material, outputs);
-
-        }
-
-        private static bool TryGetMetalDictionaryOutputs(Tag ingredientTag, out (Tag tag, float amount)[] outputs)
-        {
-            outputs = null;
-            if (ingredientTag == null) return false;
-
-            if (!Rephysicalized.Content.System_Patches.Helper_Components.RephysicalizedMetalDictionary.MetalOresAdditionalOutputs.TryGetValue(ingredientTag.ToString(), out var dictOutputs))
-                return false;
-
-            outputs = new (Tag tag, float amount)[dictOutputs.Count];
-            for (int i = 0; i < dictOutputs.Count; i++)
-            {
-                var output = dictOutputs[i];
-                var outputTagString = output.first;
-                var ratio = output.second;
-
-                var outputTag = TagManager.Create(outputTagString);
-                outputs[i] = (outputTag, ratio * 100f);
-            }
-
-
-
-            return outputs.Length > 0;
-        }
-
-        private static void TryRewriteRecipe(ComplexRecipe recipe, string id, ComplexRecipe.RecipeElement[] ingredients, ComplexRecipe.RecipeElement[] results, Tag targetIngredientTag, (Tag tag, float amount)[] outputs)
-        {
-
-            if (string.IsNullOrEmpty(id) || !id.StartsWith(MetalRefineryConfig.ID, StringComparison.Ordinal)) return;
-            if (ingredients == null || ingredients.Length != 1) return;
-            var ing = ingredients[0];
-            if (ing.material != targetIngredientTag) return;
-            if (Mathf.Abs(ing.amount - InputKg) > Epsilon) return;
-
-            var tempOp = ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature;
-            if (results != null && results.Length > 0) tempOp = results[0].temperatureOperation;
-
-            var newResults = new ComplexRecipe.RecipeElement[outputs.Length];
-            for (int i = 0; i < outputs.Length; i++)
-            {
-                newResults[i] = new ComplexRecipe.RecipeElement(outputs[i].tag, outputs[i].amount, tempOp);
-            }
-
-            recipe.results = newResults;
         }
     }
 }

@@ -53,152 +53,95 @@ namespace Rephysicalized.Content.ModDb
                 Debug.Log($"[Rephysicalized] Exception patching BasicOilRefinery: {e.Message}");
             }
 
-            // Patch PlasmaFurnace ConfigureBuildingTemplate to tweak the ports directly
             try
             {
-                var plasmaType = Type.GetType("Metallurgy.Buildings.Metallurgy_PlasmaFurnaceConfig, RonivansLegacy_ChemicalProcessing")
-                              ?? AccessTools.TypeByName("Metallurgy.Buildings.Metallurgy_PlasmaFurnaceConfig");
-                if (plasmaType == null)
+                var targetType = Type.GetType("Dupes_Industrial_Overhaul.Chemical_Processing.Buildings.Chemical_GlassFoundryConfig, RonivansLegacy_ChemicalProcessing")
+                              ?? AccessTools.TypeByName("Dupes_Industrial_Overhaul.Chemical_Processing.Buildings.Chemical_GlassFoundryConfig");
+                if (targetType == null)
                 {
-                    Debug.Log("[Rephysicalized] PlasmaFurnace type not found; skipping patch.");
+                    Debug.Log("[Rephysicalized] Glass Foundry type not found; skipping patch.");
                 }
                 else
                 {
-                    var method = AccessTools.Method(plasmaType, "ConfigureBuildingTemplate", new Type[] { typeof(GameObject), typeof(Tag) })
-                              ?? AccessTools.Method(plasmaType, "ConfigureBuildingTemplate");
+                    var method = AccessTools.Method(targetType, "ConfigureBuildingTemplate", new Type[] { typeof(GameObject), typeof(Tag) })
+                              ?? AccessTools.Method(targetType, "ConfigureBuildingTemplate");
                     if (method == null)
-                        Debug.Log("[Rephysicalized] PlasmaFurnace.ConfigureBuildingTemplate method not found; skipping.");
+                        Debug.Log("[Rephysicalized] GlassFoundry.ConfigureBuildingTemplate method not found; skipping patch.");
                     else
                     {
-                        var harmony = Rephysicalized.Mod.HarmonyInstance ?? new Harmony("Rephysicalized.Ronivans.PlasmaFurnace");
-                        var postfix = new HarmonyMethod(AccessTools.Method(typeof(RonivansIntegrationMetallurgy), nameof(PlasmaFurnace_ConfigurePatch)));
+                        var harmony = Rephysicalized.Mod.HarmonyInstance ?? new Harmony("Rephysicalized.Ronivans.GlassFoundry");
+                        var postfix = new HarmonyMethod(AccessTools.Method(typeof(RonivansIntegrationMetallurgy), nameof(GlassFoundry_ConfigureBuildingTemplate_Patch)));
                         harmony.Patch(method, postfix: postfix);
-                        Debug.Log("[Rephysicalized] Applied PlasmaFurnace ConfigureBuildingTemplate postfix patch.");
+                        Debug.Log("[Rephysicalized] Patched Glass Foundry ConfigureBuildingTemplate.");
                     }
                 }
             }
             catch (Exception e)
             {
-                Debug.Log($"[Rephysicalized] Exception while patching PlasmaFurnace: {e.Message}");
-            } }
-
-        // Postfix for PlasmaFurnace.ConfigureBuildingTemplate - add additional allowed tags to its ports
-        private static void PlasmaFurnace_ConfigurePatch(GameObject go, Tag prefab_tag)
-        {
-           
-            if (go == null) return;
-                // Find waste output port dispenser and optional exhausts by type name
-                var dispensers = go.GetComponents<Component>();
-                foreach (var c in dispensers)
-                {
-                    var t = c.GetType();
-                    if (t.Name == "PipedConduitDispenser")
-                    {
-                        // elementFilter or tagFilter
-                        var fi = t.GetField("elementFilter", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (fi != null)
-                        {
-                            var valObj = fi.GetValue(c);
-                            var adds = new[] { SimHashes.LiquidOxygen.CreateTag(), SimHashes.Water.CreateTag(), SimHashes.LiquidSulfur.CreateTag() };
-
-                            // If the field stores Tag[]
-                            if (valObj is Tag[] existingTags)
-                            {
-                                var list = existingTags.ToList();
-                                foreach (var a in adds) if (!list.Contains(a)) list.Add(a);
-                                fi.SetValue(c, list.ToArray());
-                            }
-                            else if (valObj is SimHashes[] existingSim)
-                            {
-                                // convert adds (Tags) to SimHashes where possible and merge
-                                var sims = existingSim.ToList();
-                                foreach (var a in adds)
-                                {
-                                    var sh = TagToSimHash(a);
-                                    if (sh.HasValue && !sims.Contains(sh.Value)) sims.Add(sh.Value);
-                                }
-                                fi.SetValue(c, sims.ToArray());
-                            }
-                            else if (valObj == null)
-                            {
-                                var fieldType = fi.FieldType;
-                                if (fieldType == typeof(Tag[]))
-                                {
-                                    fi.SetValue(c, adds.ToArray());
-                                }
-                                else if (fieldType == typeof(SimHashes[]))
-                                {
-                                    var sims = new List<SimHashes>();
-                                    foreach (var a in adds)
-                                    {
-                                        var sh = TagToSimHash(a);
-                                        if (sh.HasValue && !sims.Contains(sh.Value)) sims.Add(sh.Value);
-                                    }
-                                    fi.SetValue(c, sims.ToArray());
-                                }
-                            }
-                        }
-                        var fi2 = t.GetField("tagFilter", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (fi2 != null)
-                        {
-                            var valObj = fi2.GetValue(c);
-                            var adds = new[] { SimHashes.LiquidOxygen.CreateTag(), SimHashes.Water.CreateTag(), SimHashes.LiquidSulfur.CreateTag() };
-                            if (valObj is Tag[] existingTags2)
-                            {
-                                var list = existingTags2.ToList();
-                                foreach (var a in adds) if (!list.Contains(a)) list.Add(a);
-                                fi2.SetValue(c, list.ToArray());
-                            }
-                            else if (valObj is SimHashes[] existingSim2)
-                            {
-                                var sims = existingSim2.ToList();
-                                foreach (var a in adds)
-                                {
-                                    var sh = TagToSimHash(a);
-                                    if (sh.HasValue && !sims.Contains(sh.Value)) sims.Add(sh.Value);
-                                }
-                                fi2.SetValue(c, sims.ToArray());
-                            }
-                            else if (valObj == null)
-                            {
-                                var fieldType2 = fi2.FieldType;
-                                if (fieldType2 == typeof(Tag[]))
-                                {
-                                    fi2.SetValue(c, adds.ToArray());
-                                }
-                                else if (fieldType2 == typeof(SimHashes[]))
-                                {
-                                    var sims = new List<SimHashes>();
-                                    foreach (var a in adds)
-                                    {
-                                        var sh = TagToSimHash(a);
-                                        if (sh.HasValue && !sims.Contains(sh.Value)) sims.Add(sh.Value);
-                                    }
-                                    fi2.SetValue(c, sims.ToArray());
-                                }
-                            }
-                        }
-                    }
-
-                    if (t.Name == "PipedOptionalExhaust")
-                    {
-                        var fi = t.GetField("elementTag", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (fi != null)
-                        {
-                            var tagObj = fi.GetValue(c);
-                            if (tagObj is Tag tag)
-                            {
-                                // no-op; optional exhausts handle elementTag singularly
-                            }
-                            else
-                            {
-                                // do nothing
-                            }
-                        }
-                    }
-                }
+                Debug.Log($"[Rephysicalized] Exception patching Glass Foundry: {e.Message}");
             }
-       
+ }
+
+
+
+        private static void GlassFoundry_ConfigureBuildingTemplate_Patch(GameObject go, Tag prefab_tag)
+        {
+            if (go == null) return;
+
+            var fabricator = go.GetComponent<ComplexFabricator>();
+            if (fabricator == null) return;
+
+            var dropper = go.AddOrGet<WorldElementDropper>();
+            dropper.DropSolids = true;
+            dropper.DropLiquids = false;
+            dropper.DropGases = false;
+            dropper.TargetStorage = fabricator.outStorage;
+
+            GlassFoundry_AddSiliconExhaust(go);
+            GlassFoundry_AddSiliconRecipe();
+        }
+
+        private static void GlassFoundry_AddSiliconExhaust(GameObject go)
+        {
+            var exhaustType = AccessTools.TypeByName("RonivansLegacy_ChemicalProcessing.Content.Scripts.PipedOptionalExhaust");
+            var dispenserType = AccessTools.TypeByName("PipedConduitDispenser");
+            var dispenser = dispenserType == null ? null : go.GetComponent(dispenserType);
+            if (exhaustType == null || dispenser == null)
+                return;
+
+            var exhaust = go.AddComponent(exhaustType);
+            AccessTools.Field(exhaustType, "dispenser")?.SetValue(exhaust, dispenser);
+            AccessTools.Field(exhaustType, "elementTag")?.SetValue(exhaust, ModElementRegistration.MoltenSilicon.Tag);
+            AccessTools.Field(exhaustType, "capacity")?.SetValue(exhaust, 100f);
+            AccessTools.Field(exhaustType, "emissionRate")?.SetValue(exhaust, 50f);
+        }
+
+        private static void GlassFoundry_AddSiliconRecipe()
+        {
+            var inputs = new ComplexRecipe.RecipeElement[2]
+            {
+                new ComplexRecipe.RecipeElement(new Tag[4] { SimHashes.Granite.CreateTag(), SimHashes.Basalt.CreateTag(), SimHashes.IgneousRock.CreateTag(), SimHashes.CrushedRock.CreateTag() }, 100f),
+                new ComplexRecipe.RecipeElement(new Tag[3] { SimHashes.Carbon.CreateTag(), SimHashes.WoodLog.CreateTag(), SimHashes.FabricatedWood.CreateTag() }, 50f)
+            };
+            var outputs = new ComplexRecipe.RecipeElement[2]
+            {
+                new ComplexRecipe.RecipeElement(ModElementRegistration.MoltenSilicon.Tag, 50f, ComplexRecipe.RecipeElement.TemperatureOperation.Melted),
+                new ComplexRecipe.RecipeElement(SimHashes.CarbonDioxide.CreateTag(), 100f, ComplexRecipe.RecipeElement.TemperatureOperation.Heated, true),
+          
+            };
+
+            string recipeID = ComplexRecipeManager.MakeRecipeID("Chemical_GlassFoundry", inputs, outputs);
+            if (ComplexRecipeManager.Get().GetRecipe(recipeID) != null)
+                return;
+
+            new ComplexRecipe(recipeID, inputs, outputs)
+            {
+                time = 60f,
+                nameDisplay = ComplexRecipe.RecipeNameDisplay.IngredientToResult,
+                description = STRINGS.BUILDINGS.GLASSFORGE.SILICON,
+                fabricators = new List<Tag> { TagManager.Create("Chemical_GlassFoundry") }
+            };
+        }
 
         private static void BasicOilRefinery_NaphthaOutputPatch(GameObject go, Tag prefab_tag)
         {
@@ -280,6 +223,35 @@ namespace Rephysicalized.Content.ModDb
 
     }
 
+    [HarmonyPatch(typeof(ComplexFabricator), "SpawnOrderProduct")]
+    public static class RonivansGlassFoundry_CarbonDioxideTemperature
+    {
+        public static void Postfix(ComplexFabricator __instance, List<GameObject> __result)
+        {
+            if (__instance.PrefabID().Name != "Chemical_GlassFoundry")
+                return;
+
+            bool hasCarbonDioxide = false;
+            foreach (var product in __result)
+            {
+                var primaryElement = product.GetComponent<PrimaryElement>();
+                if (primaryElement != null && primaryElement.Element.id == SimHashes.CarbonDioxide)
+                {
+                    primaryElement.Temperature = 1873f;
+                    hasCarbonDioxide = true;
+                }
+            }
+
+            if (hasCarbonDioxide && __instance.outStorage != null)
+            {
+                var carbonDioxideTag = SimHashes.CarbonDioxide.CreateTag();
+                var amount = __instance.outStorage.GetAmountAvailable(carbonDioxideTag);
+                if (amount > 0f)
+                    __instance.outStorage.DropSome(carbonDioxideTag, amount, ventGas: true);
+            }
+        }
+    }
+
     public static class FabricatorHelpers
     {
         public static float GetSumIngredients(ComplexFabricator fabricator)
@@ -338,11 +310,12 @@ namespace Rephysicalized.Content.ModDb
     }
 
 
+
     [HarmonyPatch(typeof(ComplexRecipe))]
 
     [HarmonyPatch(MethodType.Constructor)]
     [HarmonyPatch(new[] { typeof(string), typeof(ComplexRecipe.RecipeElement[]), typeof(ComplexRecipe.RecipeElement[]) })]
-    public static class ComplexRecipe_GlassForgeResult_Postfix
+    public static class ComplexRecipe_GlassFoundryResult_Postfix
     {
         static void Postfix(ComplexRecipe __instance)
         {
@@ -369,47 +342,9 @@ namespace Rephysicalized.Content.ModDb
         }
 
 
-        private static void GlassFoundryPostfix()
-        {
-            // GlassFoundry ConfigureBuildingTemplate postfix - identical to GlassForge
-            try
-            {
-                var targetType = Type.GetType("Dupes_Industrial_Overhaul.Chemical_Processing.Buildings.Chemical_GlassFoundryConfig, RonivansLegacy_ChemicalProcessing");
-                var method = AccessTools.Method(targetType, "ConfigureBuildingTemplate");
-                var harmony = Rephysicalized.Mod.HarmonyInstance ?? new Harmony("Rephysicalized.Ronivans.GlassFoundry");
-                var postfix = new HarmonyMethod(typeof(RonivansIntegrationMetallurgy).GetMethod(nameof(Chemical_GlassFoundryConfigPatch), BindingFlags.Static | BindingFlags.NonPublic));
-                harmony.Patch(method, postfix: postfix);
-            }
-            catch { }
-        }
-
-        private static SimHashes? TagToSimHash(Tag t)
-        {
-            try
-            {
-                // Tag name may be element name; attempt to map via SimHashes parse
-                var name = t.ToString() ?? string.Empty;
-                foreach (SimHashes sh in Enum.GetValues(typeof(SimHashes)))
-                {
-                    if (sh.ToString().Equals(name, StringComparison.OrdinalIgnoreCase))
-                        return sh;
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        private static void Chemical_GlassFoundryConfigPatch(GameObject go, Tag prefab_tag)
-        {
-            var dropper = go.AddComponent<ElementTileMaker>();
-            dropper.emitTag = ModElementRegistration.CrudByproduct.Tag;
-            dropper.emitMass = 200f;
-            dropper.emitOffset = new Vector3(0f, 0f);
-            dropper.MakeTiles = false;
-        }
     }
 
-
+  
 }
 
 

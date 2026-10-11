@@ -11,13 +11,17 @@ using Rephysicalized.ModElements;
 
 namespace Rephysicalized.Content.Stuff_Patches
 {
-    //Industrial 
-    [HarmonyPatch(typeof(PlantFiberConfig), nameof(PlantFiberConfig.CreatePrefab))]
-    public static class PantFiberPatch
+    internal class PlantFiber : IOreConfig
     {
-        private static void Postfix(GameObject __result)
+        public SimHashes ElementID => ModElementRegistration.PlantFiberRP;
+
+        public GameObject CreatePrefab()
         {
-            var comp = __result.AddComponent<EnviromenmentalPreparation>();
+            GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(this.ElementID);
+
+            var comp = OreEntity.AddComponent<EnviromenmentalPreparation>();
+
+    
 
             comp.temperature = 273.15f + 20f;
             comp.ID = "FabricatedWood";
@@ -26,11 +30,11 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.triggeringElements.Add(SimHashes.NaturalResin);
             comp.triggeringElements.Add(SimHashes.Resin);
             comp.massConversionRatio = 1f / 0.9f;
-            comp.pressureThreshold = 4000f;
+            comp.pressureThreshold = 2000f;
             comp.elementConsumedRatio = 0.1f;
             comp.time = 40;
 
-            var degradation = __result.AddComponent<EnviromenmentalPreparation>();
+            var degradation = OreEntity.AddComponent<EnviromenmentalPreparation>();
 
             degradation.temperature = 273.15f + 60f;
             degradation.ID = "Peat";
@@ -43,7 +47,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             degradation.pressureThreshold = 200f;
             degradation.time = 600;
 
-            var dissolution = __result.AddComponent<EnviromenmentalPreparation>();
+            var dissolution = OreEntity.AddComponent<EnviromenmentalPreparation>();
 
             dissolution.temperature = 273.15f + 20f;
             dissolution.ID = "Dirt";
@@ -55,8 +59,58 @@ namespace Rephysicalized.Content.Stuff_Patches
             dissolution.elementConsumedRatio = 0.9f;
             dissolution.pressureThreshold = 200f;
             dissolution.time = 600;
+        
+
+            return OreEntity;
         }
     }
+
+    ////Industrial 
+    //[HarmonyPatch(typeof(PlantFiberConfig), nameof(PlantFiberConfig.CreatePrefab))]
+    //public static class PantFiberPatch
+    //{
+    //    private static void Postfix(GameObject __result)
+    //    {
+    //        var comp = __result.AddComponent<EnviromenmentalPreparation>();
+
+    //        comp.temperature = 273.15f + 20f;
+    //        comp.ID = "FabricatedWood";
+    //        comp.triggeringElements = comp.triggeringElements ?? new List<SimHashes>();
+    //        comp.triggeringElements.Clear();
+    //        comp.triggeringElements.Add(SimHashes.NaturalResin);
+    //        comp.triggeringElements.Add(SimHashes.Resin);
+    //        comp.massConversionRatio = 1f / 0.9f;
+    //        comp.pressureThreshold = 4000f;
+    //        comp.elementConsumedRatio = 0.1f;
+    //        comp.time = 40;
+
+    //        var degradation = __result.AddComponent<EnviromenmentalPreparation>();
+
+    //        degradation.temperature = 273.15f + 60f;
+    //        degradation.ID = "Peat";
+    //        degradation.triggeringElements = degradation.triggeringElements ?? new List<SimHashes>();
+    //        degradation.triggeringElements.Clear();
+
+    //        degradation.triggeringElements.Add(SimHashes.DirtyWater);
+    //        degradation.massConversionRatio = 1 / 0.6f;
+    //        degradation.elementConsumedRatio = 0.4f;
+    //        degradation.pressureThreshold = 200f;
+    //        degradation.time = 600;
+
+    //        var dissolution = __result.AddComponent<EnviromenmentalPreparation>();
+
+    //        dissolution.temperature = 273.15f + 20f;
+    //        dissolution.ID = "Dirt";
+    //        dissolution.triggeringElements = dissolution.triggeringElements ?? new List<SimHashes>();
+    //        dissolution.triggeringElements.Clear();
+
+    //        dissolution.triggeringElements.Add(SimHashes.Water);
+    //        dissolution.massConversionRatio = 1 / 0.9f;
+    //        dissolution.elementConsumedRatio = 0.9f;
+    //        dissolution.pressureThreshold = 200f;
+    //        dissolution.time = 600;
+    //    }
+    //}
     [HarmonyPatch(typeof(CrabWoodShellConfig), nameof(CrabWoodShellConfig.CreatePrefab))]
     public static class CrabWoodShell_CreatePrefab_Patch
     {
@@ -81,7 +135,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.temperature = 0f;
             comp.ID = "Lime";
             comp.massConversionRatio = 1f;
-            comp.pressureThreshold = 4000f;
+            comp.pressureThreshold = 2000f;
             comp.time = 40;
         }
 
@@ -101,7 +155,36 @@ namespace Rephysicalized.Content.Stuff_Patches
         }
 
     }
+    [HarmonyPatch(typeof(SnailShellConfig), nameof(SnailShellConfig.CreatePrefab))]
+    public static class SnailShell_CreatePrefab_Patch
+    {
+        private static void Postfix(GameObject __result)
+        {
+            var comp = __result.AddComponent<EnviromenmentalPreparation>();
 
+            comp.temperature = 0f;
+            comp.ID = "Lime";
+            comp.massConversionRatio = 1f;
+            comp.pressureThreshold = 2000f;
+            comp.time = 40;
+        }
+
+    }
+    [HarmonyPatch(typeof(SnailIronShellConfig), nameof(SnailIronShellConfig.CreatePrefab))]
+    public static class SnailIronShellConfig_Patch
+    {
+        private static void Postfix(GameObject __result)
+        {
+            var comp = __result.AddComponent<EnviromenmentalPreparation>();
+
+            comp.temperature = 0f;
+            comp.ID = "GoldAmalgam";
+            comp.massConversionRatio = 1f;
+            comp.pressureThreshold = 2000f;
+            comp.time = 40;
+        }
+
+    }
     [HarmonyPatch(typeof(GoldBellyCrownConfig), nameof(GoldBellyCrownConfig.CreatePrefab))]
     public static class GoldBellyCrownConfig_CreatePrefab_Patch
     {
@@ -112,7 +195,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.temperature = 0f;
             comp.ID = "GoldAmalgam";
             comp.massConversionRatio = 1f;
-            comp.pressureThreshold = 4000f;
+            comp.pressureThreshold = 2000f;
             comp.time = 40;
         }
 
@@ -157,32 +240,35 @@ namespace Rephysicalized.Content.Stuff_Patches
 
     }
 
-    //internal class DiamondDebris : IOreConfig
-    //{
-    //    public SimHashes ElementID => SimHashes.RefinedCarbon;
+    internal class SulfurDebris : IOreConfig
+    {
+        public SimHashes ElementID => SimHashes.Sulfur;
 
-    //    public GameObject CreatePrefab()
-    //    {
-    //        GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(this.ElementID);
+        public GameObject CreatePrefab()
+        {
+            GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(this.ElementID);
 
-    //        var comp = OreEntity.AddComponent<EnviromenmentalPreparation>();
+            var comp = OreEntity.AddComponent<EnviromenmentalPreparation>();
 
-    //        comp.temperature = 3500f + 273.15f;
-    //        comp.ID = "Diamond";
-    //        comp.massConversionRatio = 2f;
-    //        comp.pressureThreshold = 4000f;
-    //        comp.triggeringElements = comp.triggeringElements ?? new List<SimHashes>();
-    //        comp.triggeringElements.Clear();
-    //        comp.triggeringElements.Add(SimHashes.MoltenCarbon);
-    //        comp.elementConsumedRatio = 0.5f;
-    //        comp.time = 80;
+            comp.temperature = 90f + 273.15f;
+            comp.ID = "Rubber";
+            comp.massConversionRatio = 10f;
+            comp.pressureThreshold = 2000f;
+            comp.triggeringElements = comp.triggeringElements ?? new List<SimHashes>();
+            comp.triggeringElements.Clear();
+            comp.triggeringElements.Add(SimHashes.Latex);
+            comp.elementConsumedRatio = 0.9f;
+            comp.time = 160;
 
 
-    //        return OreEntity;
-    //    }
-    //}
+            return OreEntity;
+        }
+    }
 
-     
+
+
+
+
 
     //Foods
 
@@ -520,7 +606,7 @@ namespace Rephysicalized.Content.Stuff_Patches
         public static void CookedFishConfigPrefab_Postfix(ref GameObject __result)
         {
             var comp = __result.AddComponent<EnviromenmentalPreparation>();
-            comp.temperature = 273.15f + 80f;
+            comp.temperature = 273.15f + 100f;
             comp.ID = "AshByproduct";
             comp.massConversionRatio = 1f;
         }
@@ -556,7 +642,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.triggeringElements.Clear();
             comp.triggeringElements.Add(SimHashes.CarbonDioxide);
             comp.ID = "SmokedFish";
-            comp.massConversionRatio = 4f / 6f;
+            comp.massConversionRatio = 4f / 6f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier["JawboFillet".ToTag()]; ;
             comp.pressureThreshold = 4f;
             comp.time = 600;
 
