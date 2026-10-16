@@ -163,7 +163,39 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(ElectricalUtilityNetwork), "UpdateOverloadTime")]
     internal static class ElectricalUtilityNetwork_UpdateOverloadTime_Postfix
     {
+        // Looked up once, not on every call (this postfix runs for every circuit every 200 ms).
+        private static readonly System.Reflection.FieldInfo wireGroupsField = typeof(ElectricalUtilityNetwork)
+            .GetField("wireGroups", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
+        // Every wire ZapComponent this postfix has started. Wires only ever get a ZapComponent from
+        // the StartZapping below, so stopping these is the same as calling GetComponent<ZapComponent>()
+        // on every wire of the network, which cost ~7.6 ms per 200 ms tick on a 27 MB save.
+        private static readonly HashSet<ZapComponent> zapping = new HashSet<ZapComponent>();
+        private static readonly List<ZapComponent> stopped = new List<ZapComponent>();
+
+        private static void StopZappingOn(ElectricalUtilityNetwork network)
+        {
+            if (zapping.Count == 0)
+                return;
+            var allWires = network.allWires;
+            foreach (var zap in zapping)
+            {
+                if (zap == null)
+                {
+                    stopped.Add(zap);
+                    continue;
+                }
+                var wire = zap.GetComponent<Wire>();
+                if (wire != null && allWires != null && allWires.Contains(wire))
+                {
+                    zap.StopZapping();
+                    stopped.Add(zap);
+                }
+            }
+            foreach (var zap in stopped)
+                zapping.Remove(zap);
+            stopped.Clear();
+        }
 
         public static void Postfix(ElectricalUtilityNetwork __instance, float dt, float watts_used, List<WireUtilityNetworkLink>[] bridgeGroups)
         {
@@ -173,8 +205,6 @@ namespace Rephysicalized
                 // AND there is at least one wire/link in that rating group.
                 bool isOverloadedCondition = false;
 
-                var wireGroupsField = typeof(ElectricalUtilityNetwork)
-                    .GetField("wireGroups", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var wireGroups = wireGroupsField?.GetValue(__instance) as List<Wire>[];
 
                 for (int rating = 0; rating < 6 && !isOverloadedCondition; rating++)
@@ -194,18 +224,7 @@ namespace Rephysicalized
                 // Extra condition: if vanilla overload condition is false, stop zapping instantly.
                 if (!isOverloadedCondition)
                 {
-                    var allWires = __instance.allWires;
-                    if (allWires != null)
-                    {
-                        for (int i = 0; i < allWires.Count; i++)
-                        {
-                            var w = allWires[i];
-                            if (w == null) continue;
-                            var go = w.gameObject;
-                            if (go == null) continue;
-                            go.GetComponent<ZapComponent>()?.StopZapping();
-                        }
-                    }
+                    StopZappingOn(__instance);
                     return;
                 }
 
@@ -213,18 +232,7 @@ namespace Rephysicalized
                 if (targetOverloadedWire == null)
                 {
                     // Vanilla hasn't selected a target yet.
-                    var allWires = __instance.allWires;
-                    if (allWires != null)
-                    {
-                        for (int i = 0; i < allWires.Count; i++)
-                        {
-                            var w = allWires[i];
-                            if (w == null) continue;
-                            var go = w.gameObject;
-                            if (go == null) continue;
-                            go.GetComponent<ZapComponent>()?.StopZapping();
-                        }
-                    }
+                    StopZappingOn(__instance);
                     return;
                 }
 
@@ -244,6 +252,7 @@ namespace Rephysicalized
                 zap.DAMAGE_RATE = 2f;
                 zap.enabled = true;
                 zap.StartZapping();
+                zapping.Add(zap);
 
             }
             catch (Exception e)

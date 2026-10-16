@@ -129,20 +129,31 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(RequireInputs), "CheckRequirements")]
     public static class RequireInputs_CheckRequirements_SkipOnPolymerizer
     {
+        // CheckRequirements runs ~600 times a frame on a large base; the answer for one instance
+        // never changes (its components are fixed at spawn), so it is computed once per instance.
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<RequireInputs, object> skip =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<RequireInputs, object>();
+        private static readonly object Skip = new object(), Run = new object();
+
         public static bool Prefix(RequireInputs __instance)
         {
             if (__instance == null)
                 return true;
 
-            var poly = __instance.GetComponent<Polymerizer>();
+            return skip.GetValue(__instance, Decide) != Skip;
+        }
+
+        private static object Decide(RequireInputs instance)
+        {
+            var poly = instance.GetComponent<Polymerizer>();
             if (poly == null)
-                return true;
+                return Run;
 
             // Skip for Ronivans CustomPolymerizer
             if (poly.GetType().FullName.Contains("CustomPolymerizer"))
-                return true;
+                return Run;
 
-            return false;
+            return Skip;
         }
     }
 
