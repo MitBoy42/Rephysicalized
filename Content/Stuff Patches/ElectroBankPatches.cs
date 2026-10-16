@@ -93,6 +93,56 @@ namespace Rephysicalized
             __result.AddComponent<ElectrobankWaterZapPatch>();
         }
     }
+
+    [HarmonyPatch(typeof(DisposableElectrobankConfig), "CreateDisposableElectrobank")]
+    internal static class DisposableElectrobankConfig_CreateDisposableElectrobank_Capacity_Patch
+    {
+        private static void Postfix(GameObject __result, string id, SimHashes element)
+        {
+            if (__result == null || id != DisposableElectrobankConfig.ID_METAL_ORE)
+                return;
+            if (!Config.Instance.ElectrobankCapacity)
+                return;
+
+
+            var electrobank = __result.GetComponent<Electrobank>();
+            if (electrobank == null)
+                return;
+
+            float multiplier = WireCapacitySettings.GetMultiplier(element);
+            if (multiplier <= 0f)
+                multiplier = 1f;
+
+            electrobank.charge = ElectrobankConfig.POWER_CAPACITY * ((2f * multiplier) - 1f);
+        }
+    }
+
+    [HarmonyPatch(typeof(Electrobank), nameof(Electrobank.OnSpawn))]
+    internal static class Electrobank_OnSpawn_DisposableMetalCapacity_Patch
+    {
+        private static void Postfix(Electrobank __instance)
+        {
+            if (__instance == null || !Mathf.Approximately(__instance.Charge, ElectrobankConfig.POWER_CAPACITY))
+                return;
+            if (!Config.Instance.ElectrobankCapacity)
+                return;
+
+            var prefabId = __instance.GetComponent<KPrefabID>();
+            if (prefabId == null || prefabId.PrefabTag != (Tag)DisposableElectrobankConfig.ID_METAL_ORE)
+                return;
+
+            var primaryElement = __instance.GetComponent<PrimaryElement>();
+            SimHashes elementId = primaryElement != null && primaryElement.ElementID != SimHashes.Creature
+                ? primaryElement.ElementID
+                : SimHashes.Cuprite;
+            float multiplier = WireCapacitySettings.GetMultiplier(elementId);
+            if (multiplier <= 0f)
+                multiplier = 1f;
+
+            __instance.charge = ElectrobankConfig.POWER_CAPACITY *  multiplier;
+        }
+    }
+
     // Disposable Electrobank behavior:
     // - On empty, drop from storage and replace with:
     //    * DepletedUranium if uranium ore disposable
@@ -135,7 +185,7 @@ namespace Rephysicalized
                 else if (kpid.PrefabTag == rawMetalTag)
                 {
                     // Raw metal disposable -> its primary element (e.g., IronOre, CopperOre, etc.)
-                    outHash = SimHashes.IgneousRock;
+                    outHash = ModElementRegistration.CrudByproduct;
                     handled = true;
                 }
 
@@ -164,10 +214,8 @@ namespace Rephysicalized
                     );
                 }
 
-                // Destroy the depleted battery object
                 Util.KDestroyGameObject(go);
 
-                // We handled the behavior; skip the original OnEmpty
                 return false;
             
           
@@ -192,7 +240,7 @@ namespace Rephysicalized
                 float mass = pe.Mass;
                 float temp = pe.Temperature;
 
-                pe.SetElement(SimHashes.IgneousRock);
+                pe.SetElement(SimHashes.Cuprite);
 
                 // Preserve existing mass/temperature
                 pe.Mass = mass;
@@ -229,25 +277,5 @@ namespace Rephysicalized
         }
     }
 
-    // Additional patch: Force raw metal disposable base element to CrudByproduct at creation
-    [HarmonyPatch(typeof(DisposableElectrobankConfig), "CreateDisposableElectrobank")]
-    internal static class DisposableElectrobankConfig_CreateDisposableElectrobank_RawMetalBaseElement_Patch
-    {
-        private static void Postfix(GameObject __result, string id)
-        {
-            if (__result == null) return;
-            if (id != DisposableElectrobankConfig.ID_METAL_ORE) return;  // "DisposableElectrobank_RawMetal"
-
-            var pe = __result.GetComponent<PrimaryElement>();
-            if (pe == null) return;
-
-            float mass = pe.Mass;
-            float temp = pe.Temperature;
-
-            pe.SetElement(SimHashes.IgneousRock);
-
-            pe.Mass = mass;
-            pe.Temperature = temp;
-        }
-    }
+ 
 }

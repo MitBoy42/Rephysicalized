@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using HarmonyLib;
+
 using Rephysicalized;
 using Rephysicalized.Content.System_Patches;
 using Rephysicalized.ModElements;
@@ -14,7 +14,6 @@ using YamlDotNet.Core;
 
 namespace Rephysicalized
 {
-
 
 
 
@@ -131,45 +130,7 @@ namespace Rephysicalized
         }
     }
 
-    // OxyliteRefineryConfig: Patch to add additional output of GoldAmalgam
-    [HarmonyPatch(typeof(OxyliteRefineryConfig), "ConfigureBuildingTemplate")]
-public static class OxyliteRefineryConfig_GoldAmalgamOutputPatch
-{
-    public static void Postfix(GameObject go, Tag prefab_tag)
-    {
-        // Ensure ElementConverter exists, or add if missing
-        var elementConverter = go.GetComponent<ElementConverter>();
-        if (elementConverter == null)
-        {
-            elementConverter = go.AddComponent<ElementConverter>();
-            elementConverter.consumedElements = new ElementConverter.ConsumedElement[0];
-        }
-
-        var outputs = elementConverter.outputElements?.ToList() ?? new List<ElementConverter.OutputElement>();
-
-        // Add GoldAmalgam output
-        outputs.Add(new ElementConverter.OutputElement(
-            0.003f,    
-           SimHashes.GoldAmalgam, 
-            1.0f,       
-            storeOutput: true, 
-            outputElementOffsety: 1f
-        ));
-
-        elementConverter.outputElements = outputs.ToArray();
-
-        // Ensure ElementDropper exists and is set up to drop GoldAmalgam
-        var elementDropper = go.GetComponent<ElementDropper>();
-        if (elementDropper == null)
-        {
-            elementDropper = go.AddComponent<ElementDropper>();
-        }
-        elementDropper.emitTag = new Tag("GoldAmalgam");
-        elementDropper.emitMass = 5f;
-        elementDropper.emitOffset = new Vector3(0.0f, 0.0f, 0.0f);
-    }
-}
-
+ 
 //Bleach Stone Hopper 
 [HarmonyPatch(typeof(ChlorinatorConfig), nameof(ChlorinatorConfig.ConfigureRecipes))]
 public class ChlorinatorConfig_ConfigureRecipes_Patch

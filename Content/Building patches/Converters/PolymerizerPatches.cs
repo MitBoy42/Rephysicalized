@@ -32,8 +32,8 @@ namespace Rephysicalized
             // Replace vanilla ConduitConsumer with RephysicalizedConduitConsumer
             var original = go.GetComponent<ConduitConsumer>();
 
-                UnityEngine.Object.DestroyImmediate(original);
-            
+            UnityEngine.Object.DestroyImmediate(original);
+
             var polymerizer = go.GetComponent<Polymerizer>();
             // keep vanilla emission disabled; we'll handle multiple exhausts via our helper component
             polymerizer.exhaustElement = SimHashes.Vacuum;
@@ -129,20 +129,31 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(RequireInputs), "CheckRequirements")]
     public static class RequireInputs_CheckRequirements_SkipOnPolymerizer
     {
+        // CheckRequirements runs ~600 times a frame on a large base; the answer for one instance
+        // never changes (its components are fixed at spawn), so it is computed once per instance.
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<RequireInputs, object> skip =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<RequireInputs, object>();
+        private static readonly object Skip = new object(), Run = new object();
+
         public static bool Prefix(RequireInputs __instance)
         {
             if (__instance == null)
                 return true;
 
-            var poly = __instance.GetComponent<Polymerizer>();
+            return skip.GetValue(__instance, Decide) != Skip;
+        }
+
+        private static object Decide(RequireInputs instance)
+        {
+            var poly = instance.GetComponent<Polymerizer>();
             if (poly == null)
-                return true;
+                return Run;
 
             // Skip for Ronivans CustomPolymerizer
             if (poly.GetType().FullName.Contains("CustomPolymerizer"))
-                return true;
+                return Run;
 
-            return false;
+            return Skip;
         }
     }
 
@@ -302,46 +313,46 @@ namespace Rephysicalized
         public static void Postfix(Polymerizer __instance, PrimaryElement primary_elem)
 
         {
-       
-                if (__instance == null) return;
-                var exhaustComp = __instance.GetComponent<RephysicalizedPolymerizerExhaust>();
-                if (exhaustComp == null || exhaustComp.exhaustElements == null || exhaustComp.exhaustElements.Length == 0)
-                    return;
 
-                // Compute spawn position same as original TryEmit
-                var rot = __instance.GetComponent<Rotatable>();
-                Vector3 vector3 = rot != null ? (rot.transform.GetPosition() + rot.GetRotatedOffset(__instance.emitOffset)) : __instance.transform.GetPosition();
-                int cell = Grid.PosToCell(vector3);
-                if (Grid.Solid[cell] && rot != null)
-                    vector3 += rot.GetRotatedOffset(Vector3.left);
+            if (__instance == null) return;
+            var exhaustComp = __instance.GetComponent<RephysicalizedPolymerizerExhaust>();
+            if (exhaustComp == null || exhaustComp.exhaustElements == null || exhaustComp.exhaustElements.Length == 0)
+                return;
 
-                // For each configured exhaust element, find stored primary element in storage and emit its mass
-                var storage = __instance.GetComponent<Storage>();
-                if (storage == null) return;
+            // Compute spawn position same as original TryEmit
+            var rot = __instance.GetComponent<Rotatable>();
+            Vector3 vector3 = rot != null ? (rot.transform.GetPosition() + rot.GetRotatedOffset(__instance.emitOffset)) : __instance.transform.GetPosition();
+            int cell = Grid.PosToCell(vector3);
+            if (Grid.Solid[cell] && rot != null)
+                vector3 += rot.GetRotatedOffset(Vector3.left);
 
-                // The vanilla polymerizer emits exhaust only when a polypropylene chunk is emitted.
-                // Ensure we only perform exhaust emission if primary_elem mass met the emit threshold and a chunk was actually dropped.
-                if (primary_elem == null) return;
-                if (primary_elem.Mass < __instance.emitMass) return;
+            // For each configured exhaust element, find stored primary element in storage and emit its mass
+            var storage = __instance.GetComponent<Storage>();
+            if (storage == null) return;
 
-                for (int i = 0; i < exhaustComp.exhaustElements.Length; i++)
-                {
-                    var hash = exhaustComp.exhaustElements[i];
-                    var pe = storage.FindPrimaryElement(hash);
-                    if (pe == null || pe.Mass <= 0f)
-                        continue;
+            // The vanilla polymerizer emits exhaust only when a polypropylene chunk is emitted.
+            // Ensure we only perform exhaust emission if primary_elem mass met the emit threshold and a chunk was actually dropped.
+            if (primary_elem == null) return;
+            if (primary_elem.Mass < __instance.emitMass) return;
 
-                    SimMessages.AddRemoveSubstance(Grid.PosToCell(vector3), pe.ElementID, (CellAddRemoveSubstanceEvent)null, pe.Mass, pe.Temperature, pe.DiseaseIdx, pe.DiseaseCount);
-                    pe.Mass = 0.0f;
-                    try { pe.ModifyDiseaseCount(int.MinValue, "Polymerizer.Exhaust"); } catch { }
+            for (int i = 0; i < exhaustComp.exhaustElements.Length; i++)
+            {
+                var hash = exhaustComp.exhaustElements[i];
+                var pe = storage.FindPrimaryElement(hash);
+                if (pe == null || pe.Mass <= 0f)
+                    continue;
 
-                    // only one exhaust per emission, break to avoid repeated/continuous emissions
-                    break;
-                }
+                SimMessages.AddRemoveSubstance(Grid.PosToCell(vector3), pe.ElementID, (CellAddRemoveSubstanceEvent)null, pe.Mass, pe.Temperature, pe.DiseaseIdx, pe.DiseaseCount);
+                pe.Mass = 0.0f;
+                try { pe.ModifyDiseaseCount(int.MinValue, "Polymerizer.Exhaust"); } catch { }
+
+                // only one exhaust per emission, break to avoid repeated/continuous emissions
+                break;
             }
-            
-         
-        
+        }
+
+
+
     }
 
     // Component to hold multiple exhaust SimHashes
@@ -370,9 +381,8 @@ namespace Rephysicalized
                 return;
 
             const float finite = 1.666667f;
-                consumer.capacityKG = finite;
-                consumer.consumptionRate = finite;
+            consumer.capacityKG = finite;
+            consumer.consumptionRate = finite;
         }
     }
 }
-

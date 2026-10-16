@@ -83,16 +83,11 @@ namespace Rephysicalized
 
 
 
-        [Option("STRINGS.MODCONFIG.IRRADIATEDCRITTERS.NAME", "STRINGS.MODCONFIG.IRRADIATEDCRITTERS.TOOLTIP", null)]
-        [JsonProperty]
-        public bool IrradiatedCritters { get; set; }
         //[Option("STRINGS.MODCONFIG.SILICON.NAME", "STRINGS.MODCONFIG.SILICON.TOOLTIP", null)]
         //[JsonProperty]
         //public bool Silicon { get; set; }
 
-        //[Option("STRINGS.MODCONFIG.WATTAGECAPACITY.NAME", "STRINGS.MODCONFIG.WATTAGECAPACITY.TOOLTIP", null)]
-        //[JsonProperty]
-        //public bool WattageCapacity { get; set; }
+ 
 
 
         [Option("STRINGS.MODCONFIG.CHEMISTRIER.SWEETLES.NAME", "STRINGS.MODCONFIG.CHEMISTRIER.SWEETLES.TOOLTIP", "STRINGS.MODCONFIG.CHEMISTRIER.NAME")]
@@ -118,6 +113,8 @@ namespace Rephysicalized
         [JsonProperty]
         public bool ChemistrierSnailIron { get; set; }
 
+        //Fission 
+
         [Option("STRINGS.MODCONFIG.FISSION.STRENGHT.NAME", "STRINGS.MODCONFIG.FISSION.STRENGHT.TOOLTIP", "STRINGS.MODCONFIG.FISSION.NAME")]
         [JsonProperty]
         [Limit(0.5f, 5f)]
@@ -133,6 +130,11 @@ namespace Rephysicalized
         [JsonProperty]
         public bool GoldToIridium { get; set; }
 
+        //Radiation Ranching
+
+        [Option("STRINGS.MODCONFIG.IRRADIATEDCRITTERS.NAME", "STRINGS.MODCONFIG.IRRADIATEDCRITTERS.TOOLTIP", "STRINGS.MODCONFIG.RADIATIONRANCHING.NAME")]
+        [JsonProperty]
+        public bool IrradiatedCritters { get; set; }
 
         [Option("STRINGS.MODCONFIG.RADIATIONRANCHING.MILDTHRESHOLD.NAME", "STRINGS.MODCONFIG.RADIATIONRANCHING.MILDTHRESHOLD.TOOLTIP", "STRINGS.MODCONFIG.RADIATIONRANCHING.NAME")]
         [JsonProperty]
@@ -163,8 +165,23 @@ namespace Rephysicalized
         [JsonProperty]
         [Limit(1f, 6f)]
         public float HighMetabolism { get; set; }
+       
+        //Wattage capacity
 
+        [Option("STRINGS.MODCONFIG.WATTAGECAPACITY.WIRES.NAME", "STRINGS.MODCONFIG.WATTAGECAPACITY.WIRES.TOOLTIP", "STRINGS.MODCONFIG.WATTAGECAPACITY.NAME")]
+        [JsonProperty]
 
+        public bool WireCapacity { get; set; }
+
+        [Option("STRINGS.MODCONFIG.WATTAGECAPACITY.CHARGERS.NAME", "STRINGS.MODCONFIG.WATTAGECAPACITY.CHARGERS.TOOLTIP", "STRINGS.MODCONFIG.WATTAGECAPACITY.NAME")]
+        [JsonProperty]
+
+        public bool ChargerSpeed { get; set; }
+
+        [Option("STRINGS.MODCONFIG.WATTAGECAPACITY.ELECTROBANKS.NAME", "STRINGS.MODCONFIG.WATTAGECAPACITY.ELECTROBANKS.TOOLTIP", "STRINGS.MODCONFIG.WATTAGECAPACITY.NAME")]
+        [JsonProperty]
+
+        public bool ElectrobankCapacity { get; set; }
 
         public Config()
         {
@@ -203,8 +220,11 @@ namespace Rephysicalized
             MildMetabolsim = 2f;
             HighMetabolism = 3f;
 
+            WireCapacity = true;
+            ChargerSpeed = true;
+            ElectrobankCapacity = true;
+
             //  this.Silicon = true;
-            // this.WattageCapacity = true;
         }
     }
 }

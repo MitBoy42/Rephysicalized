@@ -6,13 +6,46 @@ using System.Threading.Tasks;
 using HarmonyLib;
 using UnityEngine;
 using KSerialization;
-using System.Collections.Generic;
-using UnityEngine;
+
 
 namespace Rephysicalized.Content.Building_patches
 {
 internal class RadiationLightPatches
     {
+        private const float BaseRadiationRate = 240f;
+
+        private static void UpdateRadiationRate(RadiationLight light, bool isEmitting)
+        {
+            var emitter = light.GetComponent<RadiationEmitter>();
+            if (emitter == null)
+                return;
+
+            var converters = light.GetComponents<ElementConverter>();
+            bool enrichedIsConverting = isEmitting && converters.Length > 1 && converters[1].CanConvertAtAll();
+            emitter.emitRads = enrichedIsConverting ? BaseRadiationRate * 2f : BaseRadiationRate;
+            emitter.Refresh();
+        }
+
+        [HarmonyPatch(typeof(RadiationLight.States), nameof(RadiationLight.States.InitializeStates))]
+        public static class RadiationLightStates_InitializeStates_Patch
+        {
+            public static void Postfix(RadiationLight.States __instance)
+            {
+                __instance.ready.on.EventHandler(
+                    GameHashes.OnStorageChange,
+                    (RadiationLight.StatesInstance smi) => UpdateRadiationRate(smi.master, true));
+            }
+        }
+
+        [HarmonyPatch(typeof(RadiationLight.StatesInstance), nameof(RadiationLight.StatesInstance.ToggleEmitter))]
+        public static class RadiationLightStatesInstance_ToggleEmitter_Patch
+        {
+            public static void Postfix(RadiationLight.StatesInstance __instance, bool on)
+            {
+                UpdateRadiationRate(__instance.master, on);
+            }
+        }
+
         [HarmonyPatch(typeof(RadiationLightConfig), nameof(RadiationLightConfig.ConfigureBuildingTemplate))]
         public static class RadiationLightConfig_ConfigureBuildingTemplate_Patch
         {
@@ -56,11 +89,6 @@ internal class RadiationLightPatches
                     new ElementConverter.OutputElement(0.008333334f, SimHashes.DepletedUranium, 0.0f, storeOutput: true, diseaseWeight: 0.5f)
                 };
 
-                // Add controller for toggling converters, operational, and radiation strength
-                var controller = go.AddOrGet<RadiationLightConvertersController>();
-                controller.oreConverter = oreConverter;
-                controller.enrichedConverter = enrichedConverter;
-
                 // Sync vanilla radiation emitter
                 var radiationEmitter = go.AddOrGet<RadiationEmitter>();
                 radiationEmitter.emitType = RadiationEmitter.RadiationEmitterType.Constant;
@@ -88,60 +116,6 @@ internal class RadiationLightPatches
                 }
                 __result = false;
                 return false;
-            }
-        }
-
-        public sealed class RadiationLightConvertersController : KMonoBehaviour, ISim200ms
-        {
-            [SerializeField] public ElementConverter oreConverter;
-            [SerializeField] public ElementConverter enrichedConverter;
-
-            [MyCmpGet] private Operational operational;
-            [MyCmpGet] private RadiationEmitter radiationEmitter;
-
-            private float stopGraceTimer;
-            private const float StopGraceSeconds = 0.2f;
-
-            public void Sim200ms(float dt)
-            {
-                if (oreConverter == null || enrichedConverter == null || radiationEmitter == null)
-                    return;
-
-                // Check readiness
-                bool oreHasEnough = oreConverter.HasEnoughMassToStartConverting();
-                bool enrichedHasEnough = enrichedConverter.HasEnoughMassToStartConverting();
-
-                bool oreCanConvert = oreConverter.CanConvertAtAll();
-                bool enrichedCanConvert = enrichedConverter.CanConvertAtAll();
-
-                bool anyHasEnough = oreHasEnough || enrichedHasEnough;
-                bool anyCanConvert = oreCanConvert || enrichedCanConvert;
-
-                // Operational flag
-                if (anyHasEnough)
-                {
-                    stopGraceTimer = 0f;
-                    operational?.SetActive(true);
-                }
-                else if (!anyCanConvert)
-                {
-                    stopGraceTimer += 0.2f;
-                    if (stopGraceTimer >= StopGraceSeconds)
-                        operational?.SetActive(false);
-                }
-                else
-                {
-                    stopGraceTimer = 0f;
-                }
-
-                // Toggle converters
-                oreConverter.enabled = oreHasEnough || oreCanConvert;
-                enrichedConverter.enabled = enrichedHasEnough || enrichedCanConvert;
-
-                // Double radiation if enriched is active/preferred
-                bool usingEnriched = enrichedHasEnough || (enrichedCanConvert && !oreHasEnough);
-                radiationEmitter.emitRads = usingEnriched ? 720f : 240f;
-                radiationEmitter.Refresh();
             }
         }
 
@@ -178,21 +152,35 @@ internal class RadiationLightPatches
             {
                 var options = new FewOptionSideScreen.IFewOptionSideScreen.Option[2];
                 options[0] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
-                    UraniumOreTag, UraniumOreTag.ProperName(), Def.GetUISprite(UraniumOreTag), "Deliver Uranium Ore");
+                    UraniumOreTag, UraniumOreTag.ProperName(), Def.GetUISprite(UraniumOreTag), STRINGS.BUILDINGS.RADIATIONLIGHT.ORE);
                 options[1] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
-                    EnrichedUraniumTag, EnrichedUraniumTag.ProperName(), Def.GetUISprite(EnrichedUraniumTag), "Deliver Enriched Uranium");
+                    EnrichedUraniumTag, EnrichedUraniumTag.ProperName(), Def.GetUISprite(EnrichedUraniumTag), STRINGS.BUILDINGS.RADIATIONLIGHT.ENRICHED);
                 return options;
             }
 
             public void OnOptionSelected(FewOptionSideScreen.IFewOptionSideScreen.Option option)
             {
-                if (!option.tag.IsValid || option.tag == selectedDeliveryTag)
+                if ((option.tag != UraniumOreTag && option.tag != EnrichedUraniumTag) || option.tag == selectedDeliveryTag)
                     return;
+
+                DropStoredFuel(option.tag == UraniumOreTag ? EnrichedUraniumTag : UraniumOreTag);
                 selectedDeliveryTag = option.tag;
                 ApplySelection();
             }
 
             public Tag GetSelectedOption() => selectedDeliveryTag;
+
+            private void DropStoredFuel(Tag tag)
+            {
+                if (storage == null)
+                    storage = GetComponent<Storage>();
+                if (storage == null)
+                    return;
+
+                GameObject item;
+                while ((item = storage.FindFirst(tag)) != null)
+                    storage.Drop(item, true);
+            }
 
             private void ApplySelection()
             {

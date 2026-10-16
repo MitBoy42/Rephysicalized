@@ -44,7 +44,7 @@ namespace Rephysicalized
             float mult = WireCapacitySettings.GetMultiplier(elementId);
             if (mult <= 0f) mult = 1f;
 
-            battery.capacity = baseCap * mult;
+            battery.capacity = baseCap * ((2f * mult) - 1f);
         }
 
         // Helper to gate only specific battery prefabs

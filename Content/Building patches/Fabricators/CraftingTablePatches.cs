@@ -28,7 +28,7 @@ namespace Rephysicalized
             {
                 var unifiedInput = new ComplexRecipe.RecipeElement[]
                 {
-                    new ComplexRecipe.RecipeElement(allMetalTags, 200f*Config.Instance.MetalElectroBankCost, ComplexRecipe.RecipeElement.TemperatureOperation.Heated, "", inheritElement: false)
+                    new ComplexRecipe.RecipeElement(allMetalTags, 200f*Config.Instance.MetalElectroBankCost, ComplexRecipe.RecipeElement.TemperatureOperation.Heated, "", inheritElement: true)
                 };
 
                 var unifiedOutputs = new List<ComplexRecipe.RecipeElement>(electrobankResult)

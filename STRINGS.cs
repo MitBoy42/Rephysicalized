@@ -73,6 +73,10 @@ namespace Rephysicalized
 
         public class BUILDINGS
         {
+            public class DAMAGESOURCES
+            {
+                public static LocString CIRCUIT_OVERLOADED = (LocString)"an overloaded circuit";
+            }
             public class PREFABS
             {
                 public class WATERCOOLER
@@ -142,6 +146,13 @@ namespace Rephysicalized
                 public static LocString KELP = "Deliver Seakomb Leafs";
                 public static LocString NORI = "Deliver Nori";
             }
+            public class RADIATIONLIGHT
+            {
+                public static LocString ORE = "Deliver Uranium Ore";
+
+                public static LocString ENRICHED = "Deliver Enriched Uranium";
+
+            }
             public class WOODMAKER
             {
                 public static LocString LATEX = "Extracts Latex from Gum Wood while keeping it intact. For the most part.";
@@ -174,12 +185,12 @@ namespace Rephysicalized
         public static partial class MATERIAL_MODIFIERS
         {
          
-            public static LocString WATTAGE = (LocString)(UI.FormatAsLink("Battery Capacity", "POWER") + ": {0}");
+            public static LocString WATTAGE = (LocString)(UI.FormatAsLink("Wattage Capacity", "POWER") + ": {0}");
 
             public static partial class TOOLTIP
             {
                
-                public static LocString WATTAGE = (LocString)("Making batteries with this material will modify their " + UI.PRE_KEYWORD + "Max Wattage" + UI.PST_KEYWORD + " by {0}.");
+                public static LocString WATTAGE = (LocString)("Making batteris or wires with this material will modify their " + UI.PRE_KEYWORD + "Max Wattage" + UI.PST_KEYWORD + " by {0}." + "Power bank chargers and discharges are also affected.");
             }
 
             public static LocString CAPACITY = (LocString)(UI.FormatAsLink("Storage Capacity", "POWER") + ": {0}");
@@ -553,7 +564,30 @@ namespace Rephysicalized
                 }
 
             }
-                public class EROSION
+            public class WATTAGECAPACITY
+            {
+                public static LocString NAME = "Wattage Capacity";
+
+
+                public class WIRES
+                {
+                    public static LocString NAME = "Wires";
+                    public static LocString TOOLTIP = "If enabled, wires will have a max wattage capacity modifier based on the material they are made of.";
+                }
+              
+                public class ELECTROBANKS
+                {
+                    public static LocString NAME = "Metal Power Banks";
+                    public static LocString TOOLTIP = "If enabled, metal power banks will have a battery capacity modifier based on the material they are made of.";
+                }
+
+                public class CHARGERS
+                {
+                    public static LocString NAME = "Chargers and Dischargers";
+                    public static LocString TOOLTIP = "If enabled, Power Bank Chargers' and Discharges' speed will be affected by the material they are made of.";
+                }
+            }
+            public class EROSION
             {
                 public static LocString NAME = "Erosion";
                 public static LocString TOOLTIP = "Wild plants will consume mass from natural tiles they are planted on over time, until the tile breaks.";

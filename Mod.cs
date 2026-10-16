@@ -24,6 +24,7 @@ namespace Rephysicalized
             Rephysicalized.Content.System_Patches.Helper_Components.RephysicalizedMetalDictionary.RegisterToPRegistry();
 
             SgtLogger.LogVersion(this, harmony);
+
         }
 
 
