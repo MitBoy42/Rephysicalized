@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using UnityEngine;
 
@@ -87,16 +88,28 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(ConduitConsumer), "ConduitUpdate")]
     public static class ConduitConsumer_ConduitUpdate_BlockOnPolymerizer
     {
+        // The answer for a consumer never changes after spawn (its components are set at config time), and
+        // working it out costs up to three GetComponent calls and a type-name search on every ConduitUpdate.
+        private static readonly ConditionalWeakTable<ConduitConsumer, object> runOriginal = new ConditionalWeakTable<ConduitConsumer, object>();
+        private static readonly ConditionalWeakTable<ConduitConsumer, object>.CreateValueCallback decide = RunOriginal;
+
         public static bool Prefix(ConduitConsumer __instance, float dt)
         {
-            if (__instance == null || __instance.GetComponent<RephysicalizedConduitConsumer>() != null)
+            if (__instance == null)
+                return true;
+            return (bool)runOriginal.GetValue(__instance, decide);
+        }
+
+        private static object RunOriginal(ConduitConsumer consumer)
+        {
+            if (consumer.GetComponent<RephysicalizedConduitConsumer>() != null)
                 return true;
 
             // Skip for Ronivans CustomPolymerizer
-            if (__instance.GetComponent<Polymerizer>()?.GetType().FullName.Contains("CustomPolymerizer") == true)
+            if (consumer.GetComponent<Polymerizer>()?.GetType().FullName.Contains("CustomPolymerizer") == true)
                 return true;
 
-            if (__instance.GetComponent<Polymerizer>() != null)
+            if (consumer.GetComponent<Polymerizer>() != null)
             {
                 return false; // skip original for vanilla
             }
