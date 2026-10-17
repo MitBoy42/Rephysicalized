@@ -218,16 +218,44 @@ namespace Rephysicalized.Patches
     })]
     public static class FixedCapturePoint_CanCapturableBeCapturedAtCapturePoint_MassGate_Patch
     {
+        // FindFixedCapturable tests every capturable against every capture point (FixedCapturePoint.cs:260/270),
+        // ~465 calls/frame on a big ranch save, and each call did two GetComponent lookups. Both components are
+        // cached per instance. Only a found filter is cached, because the side screen can add one at runtime
+        // (CapacityControlSideScreen.SetTarget below); a destroyed component fails the Unity null check and is
+        // looked up again.
+        private sealed class Ref<T> where T : Component { public T value; }
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturePoint.Instance, Ref<Rephysicalized.CritterMassFilter>> filters =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturePoint.Instance, Ref<Rephysicalized.CritterMassFilter>>();
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturableMonitor.Instance, Ref<PrimaryElement>> elements =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturableMonitor.Instance, Ref<PrimaryElement>>();
+
+        private static Rephysicalized.CritterMassFilter FilterOf(FixedCapturePoint.Instance capture_point)
+        {
+            var cached = filters.GetOrCreateValue(capture_point);
+            if (cached.value == null)
+                cached.value = capture_point.gameObject?.GetComponent<Rephysicalized.CritterMassFilter>();
+            return cached.value;
+        }
+
+        private static PrimaryElement ElementOf(FixedCapturableMonitor.Instance capturable)
+        {
+            var cached = elements.GetOrCreateValue(capturable);
+            if (cached.value == null)
+                cached.value = capturable.gameObject?.GetComponent<PrimaryElement>();
+            return cached.value;
+        }
+
         public static bool Prefix(FixedCapturableMonitor.Instance capturable, FixedCapturePoint.Instance capture_point, CavityInfo capture_cavity_info, int capture_cell, ref bool __result)
         {
             try
             {
                 if (capturable == null || capture_point == null) return true;
 
-                var filter = capture_point.gameObject?.GetComponent<Rephysicalized.CritterMassFilter>();
+                var filter = FilterOf(capture_point);
                 if (filter == null) return true;
 
-                var mass = capturable.gameObject?.GetComponent<PrimaryElement>()?.Mass ?? 0f;
+                var pe = ElementOf(capturable);
+                var mass = pe != null ? pe.Mass : 0f;
                 if (mass > 0f && !filter.IsWithin(mass))
                 {
                     __result = false;
