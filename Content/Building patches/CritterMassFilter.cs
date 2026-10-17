@@ -239,59 +239,6 @@ namespace Rephysicalized.Patches
         }
     }
 
-    [HarmonyPatch]
-    public static class FixedCapturePoint_CanCapture_Generic_MassGate_Patch
-    {
-        private static MethodBase s_target;
-
-        [HarmonyPrepare]
-        public static bool Prepare()
-        {
-            try
-            {
-                var instanceType = typeof(FixedCapturePoint).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
-                    .FirstOrDefault(t => t.Name.EndsWith("Instance"));
-                if (instanceType == null) return false;
-                s_target = AccessTools.Method(instanceType, "CanCapturableBeCapturedAtCapturePoint");
-                return s_target != null;
-            }
-            catch { return false; }
-        }
-
-        [HarmonyTargetMethod] public static MethodBase TargetMethod() => s_target;
-
-        public static bool Prefix(ref bool __result, object[] __args)
-        {
-            try
-            {
-                if (__args == null || __args.Length < 2) return true;
-
-                var capturable = __args[0];
-                var capturePoint = __args[1];
-
-                GameObject capGO = (capturePoint as KMonoBehaviour)?.gameObject
-                                   ?? capturePoint?.GetType().GetProperty("gameObject", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(capturePoint, null) as GameObject;
-                if (capGO == null) return true;
-
-                var filter = capGO.GetComponent<Rephysicalized.CritterMassFilter>();
-                if (filter == null) return true;
-
-                GameObject critterGO = (capturable as KMonoBehaviour)?.gameObject
-                                       ?? capturable?.GetType().GetProperty("gameObject", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(capturable, null) as GameObject;
-                if (critterGO == null) return true;
-
-                var mass = critterGO.GetComponent<PrimaryElement>()?.Mass ?? 0f;
-                if (mass > 0f && !filter.IsWithin(mass))
-                {
-                    __result = false;
-                    return false;
-                }
-            }
-            catch { }
-            return true;
-        }
-    }
-
     [HarmonyPatch(typeof(FixedCapturableMonitor.Instance), "ShouldGoGetCaptured")]
     public static class FixedCapturableMonitor_ShouldGoGetCaptured_MassGate_Patch
     {
