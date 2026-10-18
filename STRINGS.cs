@@ -38,6 +38,7 @@ namespace Rephysicalized
                 }
 
 
+
             }
             public class MODIFIERS
 
@@ -121,6 +122,7 @@ namespace Rephysicalized
                 public static LocString TABLESALT = "Extracts Table Salt from Salty Sticks";
 
             }
+
             public class SLUDGEPRESS
             {
                 public static LocString MUCUS = "Separates Water and Slime in Mucin. If Mucin is too cold, the Ice will clog the press.";
@@ -151,6 +153,40 @@ namespace Rephysicalized
                 public static LocString ORE = "Deliver Uranium Ore";
 
                 public static LocString ENRICHED = "Deliver Enriched Uranium";
+
+            }
+            public class ARCADECABINET
+            {
+                public static LocString BOOSTBUTTON = "Boost";
+                public static LocString BOOSTBUTTONDESC = "Deliver Databanks to get a temporary gaming experience boost";
+                public static LocString BOOSTBUTTONOFF = "Disable Boost";
+                public static LocString BOOSTBUTTONDESCOFF = "Disables Delivery of Databanks";
+                public static LocString BOOST = "Boosted";
+                public static LocString BOOSTNDESC = "Temporarily upgraded the game to KOMET KABLAM-O! ULTRA DELUXE EDITION";
+
+
+
+            }
+            public class PHONOBOX
+            {
+                public static LocString BOOSTBUTTON = "Boost";
+                public static LocString BOOSTBUTTONDESC = "Deliver Databanks to get a temporary dance experience boost";
+                public static LocString BOOSTBUTTONOFF = "Disable Boost";
+                public static LocString BOOSTBUTTONDESCOFF = "Disables Delivery of Databanks";
+                public static LocString BOOST = "Boosted";
+                public static LocString BOOSTNDESC = "Temporarily upgraded the Jukebot to be more dazzling";
+
+
+            }
+            public class MISSIONCONTROLSTASTION
+            {
+                public static LocString BOOSTBUTTON = "Boost";
+                public static LocString BOOSTBUTTONDESC = "Deliver Databanks to get a temporary boost to the staton's radius and efficiency";
+                public static LocString BOOSTBUTTONOFF = "Disable Boost";
+                public static LocString BOOSTBUTTONDESCOFF = "Disables Delivery of Databanks";
+                public static LocString BOOST = "Boosted";
+                public static LocString BOOSTNDESC = "Temporarily upgraded the Station to increase its range and rocket speed boost.";
+
 
             }
             public class WOODMAKER
@@ -363,6 +399,17 @@ namespace Rephysicalized
                 public static LocString NAME = "Extra Hydrated: Nectar";
                 public static LocString TOOLTIP = "Duplicant drank refreshing but fatty Nectar.";
             }
+            public class PLAYEDBOOSTEDARCADE
+            {
+                public static LocString NAME = (LocString)"Played ULtra Deluxe Limited Video Games";
+                public static LocString TOOLTIP = (LocString)"This Duplicant recently played an Ultra Deluxe Limited Video Game Edition.";
+            }
+            public class BOOSTEDDANCED
+            {
+                public static LocString NAME = (LocString)"Recently Danced with Style";
+                public static LocString TOOLTIP = (LocString) "This Duplicant had a chance to cut loose on a boosted dance floor!";
+            }
+
 
             internal static class STATS
             {

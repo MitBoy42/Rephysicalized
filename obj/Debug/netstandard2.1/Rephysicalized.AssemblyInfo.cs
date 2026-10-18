@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright ©Sgt_Imalas 2026")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c5ea975b8c80f1f618430a7c6044d09f3367d1be")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a2eae098076f8218355697beedfca3fc464a2af5")]
 [assembly: System.Reflection.AssemblyProductAttribute("Rephysicalized")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Rephysicalized")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

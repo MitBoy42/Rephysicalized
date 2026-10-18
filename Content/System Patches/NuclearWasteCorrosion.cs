@@ -24,7 +24,7 @@ namespace Rephysicalized
     }
 
     // Global manager that scans for high-mass nuclear waste and corrodes neighboring solids
-    public sealed class NuclearWasteCorrosionManager : KMonoBehaviour, ISim1000ms
+    public sealed class NuclearWasteCorrosionManager : KMonoBehaviour, ISim4000ms
     {
         // Config
         public static float MassThresholdKg = 100f;      // Cells with >= this mass of Nuclear Waste will corrode neighbors
@@ -57,7 +57,7 @@ namespace Rephysicalized
         }
 
         // Runs every ~1000ms on the Sim thread scheduler
-        public void Sim1000ms(float dt)
+        public void Sim4000ms(float dt)
         {
             if (nuclearWaste == null)
                 return;

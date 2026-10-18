@@ -29,10 +29,14 @@ namespace Rephysicalized
         public class KAnimGroupFile_Load_Patch
         {
             private const string MILKSEPARATOR_NAPHTHA = "anim_interacts_milk_separator_naphtha_kanim";
+ 
             public static void Prefix(KAnimGroupFile __instance)
             {
                 InjectionMethods.RegisterCustomInteractAnim(__instance, MILKSEPARATOR_NAPHTHA);
+       
             }
+
+       
         }
     } 
 }
