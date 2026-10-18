@@ -350,6 +350,44 @@ namespace Rephysicalized
         }
 
 
+        // The amounts and monitors these helpers read, looked up once per creature. CreatureMassTracker and
+        // ScaleMassTransferDriver call them every second for every creature, and each call did up to two
+        // Amount.Lookup and three GetSMI searches. Def state machines and amounts exist from prefab init
+        // (KPrefabID.OnPrefabInit -> CreateSMIS), so "this creature has none" does not change later; a morph or
+        // a newborn is a new GameObject and gets its own entry. A cached SMI that has stopped (death, cleanup)
+        // is never read: it is looked up again, which is what the uncached code did on every call.
+        private sealed class MassLookups
+        {
+            public AmountInstance scaleAmt, elemAmt;
+            public ScaleGrowthMonitor.Instance sgm;
+            public WellFedShearable.Instance wfs;
+            public MilkProductionMonitor.Instance milk;
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameObject, MassLookups> massLookups =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<GameObject, MassLookups>();
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameObject, MassLookups>.CreateValueCallback resolveLookups = ResolveLookups;
+
+        private static MassLookups ResolveLookups(GameObject go)
+        {
+            var db = Db.Get();
+            return new MassLookups
+            {
+                scaleAmt = db?.Amounts?.ScaleGrowth?.Lookup(go),
+                elemAmt = db?.Amounts?.ElementGrowth?.Lookup(go),
+                sgm = go.GetSMI<ScaleGrowthMonitor.Instance>(),
+                wfs = go.GetSMI<WellFedShearable.Instance>(),
+                milk = go.GetSMI<MilkProductionMonitor.Instance>(),
+            };
+        }
+
+        private static T Live<T>(GameObject go, ref T cached) where T : StateMachine.Instance
+        {
+            if (cached != null && cached.IsNullOrStopped())
+                cached = go.GetSMI<T>();
+            return cached;
+        }
+
         // Compute scale mass from monitors (ScaleGrowth/ElementGrowth + ScaleGrowthMonitor or WellFedShearable)
         internal static float ComputeScaleMassKgFromMonitors(GameObject go)
         {
@@ -361,7 +399,9 @@ namespace Rephysicalized
         // Compute milk mass from MilkProductionMonitor (kg). If no monitor or zero, returns 0.
         internal static float ComputeMilkMassKgFromMilkMonitor(GameObject go)
         {
-            var milkSmi = go != null ? go.GetSMI<MilkProductionMonitor.Instance>() : null;
+            if (go == null) return 0f;
+            var lookups = massLookups.GetValue(go, resolveLookups);
+            var milkSmi = Live(go, ref lookups.milk);
             if (milkSmi == null) return 0f;
 
             // MilkAmount is already in kg (MilkPercentage/100 * Capacity)
@@ -376,16 +416,16 @@ namespace Rephysicalized
             dropMass = 0f;
             percent01 = 0f;
             if (go == null) return false;
+            var lookups = massLookups.GetValue(go, resolveLookups);
 
             // Percent: prefer ScaleGrowth, else ElementGrowth
             float pct01 = 0f;
-            var db = Db.Get();
-            var scaleAmt = db?.Amounts?.ScaleGrowth?.Lookup(go);
+            var scaleAmt = lookups.scaleAmt;
             if (scaleAmt != null)
                 pct01 = Mathf.Clamp01(scaleAmt.value / 100f);
             else
             {
-                var elemAmt = db?.Amounts?.ElementGrowth?.Lookup(go);
+                var elemAmt = lookups.elemAmt;
                 if (elemAmt != null)
                     pct01 = Mathf.Clamp01(elemAmt.value / 100f);
             }
@@ -397,7 +437,7 @@ namespace Rephysicalized
             Tag tag = Tag.Invalid;
             float fullMass = 0f;
 
-            var sgm = go.GetSMI<ScaleGrowthMonitor.Instance>();
+            var sgm = Live(go, ref lookups.sgm);
             if (sgm?.def != null)
             {
                 tag = sgm.def.itemDroppedOnShear;
@@ -405,7 +445,7 @@ namespace Rephysicalized
             }
             else
             {
-                var wfs = go.GetSMI<WellFedShearable.Instance>();
+                var wfs = Live(go, ref lookups.wfs);
                 if (wfs?.def != null)
                 {
                     tag = wfs.def.itemDroppedOnShear;

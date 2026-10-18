@@ -218,69 +218,44 @@ namespace Rephysicalized.Patches
     })]
     public static class FixedCapturePoint_CanCapturableBeCapturedAtCapturePoint_MassGate_Patch
     {
+        // FindFixedCapturable tests every capturable against every capture point (FixedCapturePoint.cs:260/270),
+        // ~465 calls/frame on a big ranch save, and each call did two GetComponent lookups. Both components are
+        // cached per instance. Only a found filter is cached, because the side screen can add one at runtime
+        // (CapacityControlSideScreen.SetTarget below); a destroyed component fails the Unity null check and is
+        // looked up again.
+        private sealed class Ref<T> where T : Component { public T value; }
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturePoint.Instance, Ref<Rephysicalized.CritterMassFilter>> filters =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturePoint.Instance, Ref<Rephysicalized.CritterMassFilter>>();
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturableMonitor.Instance, Ref<PrimaryElement>> elements =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<FixedCapturableMonitor.Instance, Ref<PrimaryElement>>();
+
+        private static Rephysicalized.CritterMassFilter FilterOf(FixedCapturePoint.Instance capture_point)
+        {
+            var cached = filters.GetOrCreateValue(capture_point);
+            if (cached.value == null)
+                cached.value = capture_point.gameObject?.GetComponent<Rephysicalized.CritterMassFilter>();
+            return cached.value;
+        }
+
+        private static PrimaryElement ElementOf(FixedCapturableMonitor.Instance capturable)
+        {
+            var cached = elements.GetOrCreateValue(capturable);
+            if (cached.value == null)
+                cached.value = capturable.gameObject?.GetComponent<PrimaryElement>();
+            return cached.value;
+        }
+
         public static bool Prefix(FixedCapturableMonitor.Instance capturable, FixedCapturePoint.Instance capture_point, CavityInfo capture_cavity_info, int capture_cell, ref bool __result)
         {
             try
             {
                 if (capturable == null || capture_point == null) return true;
 
-                var filter = capture_point.gameObject?.GetComponent<Rephysicalized.CritterMassFilter>();
+                var filter = FilterOf(capture_point);
                 if (filter == null) return true;
 
-                var mass = capturable.gameObject?.GetComponent<PrimaryElement>()?.Mass ?? 0f;
-                if (mass > 0f && !filter.IsWithin(mass))
-                {
-                    __result = false;
-                    return false;
-                }
-            }
-            catch { }
-            return true;
-        }
-    }
-
-    [HarmonyPatch]
-    public static class FixedCapturePoint_CanCapture_Generic_MassGate_Patch
-    {
-        private static MethodBase s_target;
-
-        [HarmonyPrepare]
-        public static bool Prepare()
-        {
-            try
-            {
-                var instanceType = typeof(FixedCapturePoint).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
-                    .FirstOrDefault(t => t.Name.EndsWith("Instance"));
-                if (instanceType == null) return false;
-                s_target = AccessTools.Method(instanceType, "CanCapturableBeCapturedAtCapturePoint");
-                return s_target != null;
-            }
-            catch { return false; }
-        }
-
-        [HarmonyTargetMethod] public static MethodBase TargetMethod() => s_target;
-
-        public static bool Prefix(ref bool __result, object[] __args)
-        {
-            try
-            {
-                if (__args == null || __args.Length < 2) return true;
-
-                var capturable = __args[0];
-                var capturePoint = __args[1];
-
-                GameObject capGO = (capturePoint as KMonoBehaviour)?.gameObject
-                                   ?? capturePoint?.GetType().GetProperty("gameObject", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(capturePoint, null) as GameObject;
-                if (capGO == null) return true;
-
-                var filter = capGO.GetComponent<Rephysicalized.CritterMassFilter>();
-                if (filter == null) return true;
-
-                GameObject critterGO = (capturable as KMonoBehaviour)?.gameObject
-                                       ?? capturable?.GetType().GetProperty("gameObject", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(capturable, null) as GameObject;
-                if (critterGO == null) return true;
-
-                var mass = critterGO.GetComponent<PrimaryElement>()?.Mass ?? 0f;
+                var pe = ElementOf(capturable);
+                var mass = pe != null ? pe.Mass : 0f;
                 if (mass > 0f && !filter.IsWithin(mass))
                 {
                     __result = false;

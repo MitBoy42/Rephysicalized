@@ -43,12 +43,9 @@ namespace Rephysicalized
                     __instance.storage.AddLiquid(output.element, num1, root_pe.Temperature, byte.MaxValue, 0, true);
                 else // SOLIDS
                 {
-                    GameObject go = elementByHash.substance.SpawnResource(Vector3.zero, num1, root_pe.Temperature, byte.MaxValue, 0);
-                    if (go != null)
-                    {
-                        go.SetActive(false);
-                        __instance.storage.Store(go, true);
-                    }
+                    // AddOre merges into the stored chunk of this element and only spawns when there is none;
+                    // spawning a resource GameObject on every Emit cost ~0.1 ms per call.
+                    __instance.storage.AddOre(output.element, num1, root_pe.Temperature, byte.MaxValue, 0, true);
                 }
                 return false; // skip original
             }
