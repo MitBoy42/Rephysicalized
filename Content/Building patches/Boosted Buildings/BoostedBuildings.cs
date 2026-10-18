@@ -34,16 +34,16 @@ namespace Rephysicalized.Content.Building_patches.Boosted_Buildings
         [Serialize]
         private bool deliverItems;
 
-        private Tag itemTag;
-        private float requiredAmount;
-        private float deliveryCapacity;
-        private float refillMass;
+        public Tag itemTag;
+        public float requiredAmount;
+        public float deliveryCapacity;
+        public float refillMass;
         private KAnimFile[] normalAnimations;
-        private KAnimFile[] boostedAnimations;
-        private LocString enableButtonText;
-        private LocString enableButtonTooltip;
-        private LocString disableButtonText;
-        private LocString disableButtonTooltip;
+        public KAnimFile[] boostedAnimations;
+        public LocString enableButtonText;
+        public LocString enableButtonTooltip;
+        public LocString disableButtonText;
+        public LocString disableButtonTooltip;
 
         public bool HasRequiredItems => storage.GetAmountAvailable(itemTag) >= requiredAmount;
 
@@ -80,11 +80,11 @@ namespace Rephysicalized.Content.Building_patches.Boosted_Buildings
             base.OnSpawn();
             normalAnimations = GetComponent<Building>().Def.AnimFiles;
             manualDelivery.SetStorage(storage);
+            smi.StartSM();
+            smi.sm.hasRequiredItems.Set(HasRequiredItems, smi);
             SetItemDelivery(deliverItems);
             Subscribe((int)GameHashes.OnStorageChange, OnStorageChanged);
             Subscribe((int)GameHashes.RefreshUserMenu, OnRefreshUserMenu);
-            smi.StartSM();
-            smi.sm.hasRequiredItems.Set(HasRequiredItems, smi);
         }
 
         public bool TryConsumeRequiredItems()

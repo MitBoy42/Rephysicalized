@@ -628,6 +628,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.massConversionRatio = 4f / 6f;
             comp.pressureThreshold = 4f;
             comp.time = 600;
+            comp.elementConsumedRatio = 0.2f;
 
         }
         [HarmonyPatch(typeof(PrehistoricPacuFilletConfig), nameof(PrehistoricPacuFilletConfig.CreatePrefab))]
@@ -645,6 +646,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.massConversionRatio = 4f / 6f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier["JawboFillet".ToTag()]; ;
             comp.pressureThreshold = 4f;
             comp.time = 600;
+            comp.elementConsumedRatio = 0.2f;
 
         }
     
@@ -663,6 +665,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.massConversionRatio = 4f/7f;
             comp.pressureThreshold = 4f;
             comp.time = 600;
+            comp.elementConsumedRatio = 0.2f;
 
         }
         [HarmonyPatch(typeof(HardSkinBerryConfig), nameof(HardSkinBerryConfig.CreatePrefab))]
@@ -680,6 +683,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.massConversionRatio = 4f / 7f;
             comp.pressureThreshold = 4f;
             comp.time = 600;
+            comp.elementConsumedRatio = 0.2f;
 
         }
         [HarmonyPatch(typeof(WormBasicFruitConfig), nameof(WormBasicFruitConfig.CreatePrefab))]
@@ -696,6 +700,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.massConversionRatio = 4f / 7f;
             comp.pressureThreshold = 4f;
             comp.time = 600;
+            comp.elementConsumedRatio = 0.2f;
 
         }
 
@@ -714,6 +719,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.massConversionRatio = 3.2f / 6f;
             comp.pressureThreshold = 4f;
             comp.time = 600;
+            comp.elementConsumedRatio = 0.2f; 
 
         }
     }

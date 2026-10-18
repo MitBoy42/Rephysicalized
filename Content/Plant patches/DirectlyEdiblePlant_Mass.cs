@@ -46,7 +46,7 @@ namespace Rephysicalized
                 new SwapConfig("KelpPlant", 1f, 1f / 100f),
                new SwapConfig("GasGrass", 1f, 1f / 200f),
                new SwapConfig("PlanktonCoral", 1f, 1f / 80f),
-               new SwapConfig("SeaLettuce", 1f, 1f / 120f),
+               new SwapConfig("SeaLettuce", 1f, 1f / 240f),
               new SwapConfig("TubeWorm", 1f, 1f /400f),
                       new SwapConfig("DewPalm", 1f, 1f /500f),
             };

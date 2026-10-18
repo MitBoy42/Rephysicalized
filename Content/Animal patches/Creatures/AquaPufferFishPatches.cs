@@ -30,13 +30,10 @@ namespace Rephysicalized.Content.Animal_patches.Aqua_Creatures
         {
             if (prefab == null) return;
 
-            float kgConsumedPerDay = 34f;
-            float kgPoopPerDay = 30f;
-            // Separate pickupable (phosphorite) vs plant-growth (plankton coral)
-   
+     
 
-            float caloriesPerKg = CaloriesPerDay / Mathf.Max(kgConsumedPerDay, 0.0001f);
-            float producedPerKg = kgPoopPerDay / Mathf.Max(kgConsumedPerDay, 0.0001f);
+            float caloriesPerKg = CaloriesPerDay / 34f;
+            float producedPerKg = 30f /34f;
 
             var itemInfo = new Diet.Info(
                 consumed_tags: new HashSet<Tag> { "Lettuce" },
@@ -55,7 +52,8 @@ namespace Rephysicalized.Content.Animal_patches.Aqua_Creatures
                 consumed_tags: new HashSet<Tag> { "SeaLettuce" },
                 produced_element: SimHashes.Oxygen.CreateTag(),
                 calories_per_kg: caloriesPerKg*8,
-                produced_conversion_rate: producedPerKg,
+                produced_conversion_rate: 30f / 34f,
+
                 disease_id: null,
                 disease_per_kg_produced: 0f,
                 produce_solid_tile: false,
@@ -64,8 +62,20 @@ namespace Rephysicalized.Content.Animal_patches.Aqua_Creatures
                 eat_anims: null
             );
 
+            var plantFiberInfo = new Diet.Info(
+                consumed_tags: new HashSet<Tag> { "PlantFiber" },
+                produced_element: SimHashes.Oxygen.CreateTag(),
+                calories_per_kg: caloriesPerKg*8,
+                produced_conversion_rate: 30f / 34f,
+                disease_id: null,
+                disease_per_kg_produced: 0f,
+                produce_solid_tile: false,
+                emmit_disease_on_cell: false,
+                eat_anims: null
+            );
+
             // Build combined diet like vanilla: both pickupable and plant-growth infos
-            var diet = new Diet(new Diet.Info[] { itemInfo, plantInfo });
+            var diet = new Diet(new Diet.Info[] { itemInfo, plantInfo, plantFiberInfo });
 
             var cals = prefab.AddOrGetDef<CreatureCalorieMonitor.Def>();
             cals.diet = diet;

@@ -32,7 +32,7 @@ namespace Rephysicalized.Content.Plant_patches.AquaPlants
                     new PlantElementAbsorber.ConsumeInfo
                     {
                         tag = SimHashes.Sulfur.CreateTag(),
-                        massConsumptionRate = 0.8f
+                        massConsumptionRate = 0.08f
                     }
                 });
 
