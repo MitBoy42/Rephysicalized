@@ -15,7 +15,9 @@ namespace Rephysicalized.Content.Animal_patches
 
         private static void EnsureEffect()
         {
-      
+            if (fishMilkHappinessEffect != null)
+                return;
+
             fishMilkHappinessEffect = new Effect(
                 STRINGS.STATUSITEMS.INFISHMILK.NAME,
                  STRINGS.STATUSITEMS.INFISHMILK.NAME,

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using UnityEngine;
 
@@ -87,16 +88,28 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(ConduitConsumer), "ConduitUpdate")]
     public static class ConduitConsumer_ConduitUpdate_BlockOnPolymerizer
     {
+        // The answer for a consumer never changes after spawn (its components are set at config time), and
+        // working it out costs up to three GetComponent calls and a type-name search on every ConduitUpdate.
+        private static readonly ConditionalWeakTable<ConduitConsumer, object> runOriginal = new ConditionalWeakTable<ConduitConsumer, object>();
+        private static readonly ConditionalWeakTable<ConduitConsumer, object>.CreateValueCallback decide = RunOriginal;
+
         public static bool Prefix(ConduitConsumer __instance, float dt)
         {
-            if (__instance == null || __instance.GetComponent<RephysicalizedConduitConsumer>() != null)
+            if (__instance == null)
+                return true;
+            return (bool)runOriginal.GetValue(__instance, decide);
+        }
+
+        private static object RunOriginal(ConduitConsumer consumer)
+        {
+            if (consumer.GetComponent<RephysicalizedConduitConsumer>() != null)
                 return true;
 
             // Skip for Ronivans CustomPolymerizer
-            if (__instance.GetComponent<Polymerizer>()?.GetType().FullName.Contains("CustomPolymerizer") == true)
+            if (consumer.GetComponent<Polymerizer>()?.GetType().FullName.Contains("CustomPolymerizer") == true)
                 return true;
 
-            if (__instance.GetComponent<Polymerizer>() != null)
+            if (consumer.GetComponent<Polymerizer>() != null)
             {
                 return false; // skip original for vanilla
             }
@@ -129,20 +142,31 @@ namespace Rephysicalized
     [HarmonyPatch(typeof(RequireInputs), "CheckRequirements")]
     public static class RequireInputs_CheckRequirements_SkipOnPolymerizer
     {
+        // CheckRequirements runs ~600 times a frame on a large base; the answer for one instance
+        // never changes (its components are fixed at spawn), so it is computed once per instance.
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<RequireInputs, object> skip =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<RequireInputs, object>();
+        private static readonly object Skip = new object(), Run = new object();
+
         public static bool Prefix(RequireInputs __instance)
         {
             if (__instance == null)
                 return true;
 
-            var poly = __instance.GetComponent<Polymerizer>();
+            return skip.GetValue(__instance, Decide) != Skip;
+        }
+
+        private static object Decide(RequireInputs instance)
+        {
+            var poly = instance.GetComponent<Polymerizer>();
             if (poly == null)
-                return true;
+                return Run;
 
             // Skip for Ronivans CustomPolymerizer
             if (poly.GetType().FullName.Contains("CustomPolymerizer"))
-                return true;
+                return Run;
 
-            return false;
+            return Skip;
         }
     }
 

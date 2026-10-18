@@ -21,6 +21,7 @@ namespace Rephysicalized
 
          private Storage Storage => this.storage;
         private Operational operational;
+        private static readonly List<int> radialCells = new List<int>();
 
         public override void OnSpawn()
         {
@@ -38,7 +39,8 @@ namespace Rephysicalized
         private void ConsumeBreathableGases()
         {
             int cell = Grid.PosToCell(transform.GetPosition() + sampleCellOffset);
-            List<int> cells = new List<int>();
+            // One list for every consumer (Sim200ms runs on the main thread); GetRadialCells clears it.
+            List<int> cells = radialCells;
             GridUtil.GetRadialCells(cell, consumptionRadius, cells);
             float totalConsumed = 0f;
             foreach (int c in cells)
@@ -47,7 +49,8 @@ namespace Rephysicalized
                 if (element.HasTag(ModTags.OxidizerGas) && Grid.Mass[c] > 0f)
                 {
                     SimHashes gas = element.id;
-                    float available = this.storage != null ? this.storage.GetMassAvailable(gas.CreateTag()) : 0f;
+                    // element.tag is the tag CreateTag would rebuild (ElementLoader), without an Enum.ToString per cell.
+                    float available = this.storage != null ? this.storage.GetMassAvailable(element.tag) : 0f;
                     float toConsume = Mathf.Min(consumptionRate * Time.deltaTime, Grid.Mass[c], capacityKG - available);
                     if (toConsume > 0f)
                     {

@@ -32,6 +32,10 @@ private KBatchedAnimController beamFX;
 
 public void StartZapping()
     {
+        // Already zapping: BatteryWaterDamage and ElectroBankPatches call this every second while in water,
+        // and a restart destroys and rebuilds all three beam GameObjects (MakeBeam) each time.
+        if (isActive)
+            return;
         if (DEBUG_ZAP) Debug.Log($"[{gameObject.name}] Zap START isActive=true");
         isActive = true;
 
@@ -104,8 +108,9 @@ public void StopZapping()
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
 
-        // Keep target + visuals responsive even if Sim1000ms isn't called.
-        if (target == null || IsTargetInvalid())
+        // Re-pick only when the current target was lost; with no target at all, Sim1000ms searches once a
+        // second instead of every frame (PickNewTarget walks every Health in the world).
+        if (target != null && IsTargetInvalid())
         {
             previousTarget = target;
             PickNewTarget();
