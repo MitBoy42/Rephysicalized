@@ -234,7 +234,6 @@ SeaHorseMilkMassGate.DrainSeahorseStorageMass(creatureStorage, SeaHorseMilkMassG
                 new FuelInput(SimHashes.Mud.CreateTag()),
                 new FuelInput(SimHashes.ToxicSand.CreateTag()),
                 new FuelInput(SimHashes.ToxicMud.CreateTag()),
-                new FuelInput(SimHashes.Dirt.CreateTag()),
                 new FuelInput(SimHashes.Gunk.CreateTag()),
                 new FuelInput(SimHashes.Peat.CreateTag()),
                 new FuelInput(SimHashes.Sucrose.CreateTag()),

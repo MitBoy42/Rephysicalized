@@ -4,34 +4,7 @@ using HarmonyLib;
 namespace Rephysicalized
 {
 
-    //[HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    //internal static class Registration
-    //{
-    //    private static void Postfix()
-    //    {
-    //        PlantMassTrackerRegistry.ApplyToCrop(
-    //            plantPrefabId: "ForestTreeBranch",
-    //            yields: new List<MaterialYield> { new MaterialYield("WoodLog", 1f) },
-    //            realHarvestSubtractKg: 30f);
-    //    }
-    //}
-
-    //// Register PMT for SpaceTreeBranch (drops WoodLog via PMT)
-    //[HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
-    //internal static class SpaceTreeBranch_PMT_Registration
-    //{
-    //    private static void Postfix()
-    //    {
-    //        PlantMassTrackerRegistry.ApplyToCrop(
-    //            plantPrefabId: "SpaceTreeBranch",
-    //            yields: new List<MaterialYield>
-    //            {
-    //                new MaterialYield("WoodLog", 1f)
-    //            },
-    //            realHarvestSubtractKg: 0f
-    //        );
-    //    }
-    //}
+  
 
 
     // Compact registration of all PMT crop configs in one place
@@ -70,7 +43,7 @@ namespace Rephysicalized
                 new MaterialYield("Mud", 0.99f),
                 new MaterialYield("CarbonDioxide", 0.01f)
             ),
-            new Entry("Mushroom", 1f,
+            new Entry("MushroomPlant", 1f,
                 new MaterialYield("RotPile", 0.5f),
                 new MaterialYield("CarbonDioxide", 0.5f)
             ),

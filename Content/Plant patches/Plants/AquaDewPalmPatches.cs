@@ -32,13 +32,13 @@ namespace Rephysicalized.Content.Plant_patches.AquaPlants
                     new PlantElementAbsorber.ConsumeInfo
                     {
                         tag = SimHashes.Sulfur.CreateTag(),
-                        massConsumptionRate = 0.08f
+                        massConsumptionRate = 0.09f
                     }
                 });
 
                 ExtendPlantToGasConsumer.Extend(
                     __result,
-                    new PlantGasConsumerInfo(SimHashes.CarbonDioxide.CreateTag(), 0.02f)
+                    new PlantGasConsumerInfo(SimHashes.CarbonDioxide.CreateTag(), 0.01f)
                     {
                                consumerSampleOffset = new Vector3(0f, 2f, 0f),
                         consumptionRadius = 4,

@@ -8,20 +8,18 @@ namespace Rephysicalized
 {
     internal static class BlueGrassTuning
     {
-        // Base CO2 consumption (kg/s) at 0 lux, replanted vs wild. Scaled up by light below.
+        // Base CO2 consumption (kg/s) at 0 lux. Wild-state scaling is applied by PlantGasConsumer.
         public const float BASE_DOMESTICATED = 1f / 500f; // 0.002 kg/s
-        public const float BASE_WILD = 0.0005f;
 
         public const float LUX_SATURATION = 100000f;
         public const float MAX_FACTOR = 100f; // 1x at 0 lux -> 100x at 200k lux
 
         public const float BUFFER_CAPACITY_KG = 1f;
 
-        public static float RateForLux(int lux, bool replanted)
+        public static float RateForLux(int lux)
         {
-            float baseRate = replanted ? BASE_DOMESTICATED : BASE_WILD;
             float t = Mathf.Clamp01(lux / LUX_SATURATION);
-            return baseRate * Mathf.Lerp(1f, MAX_FACTOR, t);
+            return BASE_DOMESTICATED * Mathf.Lerp(1f, MAX_FACTOR, t);
         }
 
         public static int LuxAt(GameObject go)
@@ -89,7 +87,6 @@ namespace Rephysicalized
     /// <summary>Scales the plant's CO2 consumption with the light falling on it.</summary>
     public sealed class BlueGrassLightScaler : KMonoBehaviour, ISim1000ms
     {
-        [MyCmpGet] private ReceptacleMonitor _receptacle;
         [MyCmpGet] private PlantGasConsumer _gasConsumer;
 
         private float _lastAppliedRate = -1f;
@@ -108,9 +105,7 @@ namespace Rephysicalized
             if (_gasConsumer == null)
                 return;
 
-            float rate = BlueGrassTuning.RateForLux(
-                BlueGrassTuning.LuxAt(gameObject),
-                _receptacle != null && _receptacle.Replanted);
+            float rate = BlueGrassTuning.RateForLux(BlueGrassTuning.LuxAt(gameObject));
 
             if (Mathf.Approximately(rate, _lastAppliedRate))
                 return;

@@ -25,8 +25,8 @@ namespace Rephysicalized.Content.Plant_patches
 
         /// Minimum gas (kg) that must remain in the internal storage for the plant to stay healthy.
         public float requiredMassKg = 0.02f;
-        /// <summary>How much faster the ElementConsumer draws than the plant consumes. >1 builds a buffer.</summary>
-        public float drawRateMultiplier = 2f;
+        /// <summary>Optional draw multiplier override. If unset, the PlantGasConsumer component value is used.</summary>
+        public float drawRateMultiplier;
 
         public byte consumptionRadius = 3;
         public bool showStorageInUI = true;
@@ -130,10 +130,15 @@ namespace Rephysicalized.Content.Plant_patches
     /// WiltCondition via the AtmosphereElement condition (mirrors how IrrigationMonitor reports a dry plot).
     /// The ElementConsumer is intentionally left enabled always - only the *buffer* running dry wilts the plant.
     /// </summary>
-    public sealed class PlantGasConsumer : KMonoBehaviour, ISim1000ms, IWiltCause
+    public sealed class PlantGasConsumer : KMonoBehaviour, ISim4000ms, IWiltCause
     {
+        private const float WildConsumptionMultiplier = 0.25f;
+
         [MyCmpGet]
         private PlantGasConsumerStorage storage;
+
+        [MyCmpGet]
+        private ReceptacleMonitor receptacle;
 
         [SerializeField]
         private SimHashes consumedElement = SimHashes.Void;
@@ -142,7 +147,10 @@ namespace Rephysicalized.Content.Plant_patches
         private float consumptionRatePerSecond = 0.02f;
 
         [SerializeField]
-        private float drawRateMultiplier = 0f;
+        private float baseConsumptionRatePerSecond;
+
+        [SerializeField]
+        private float drawRateMultiplier = 4f;
 
         [SerializeField]
         private float requiredMassKg = 0.05f;
@@ -174,19 +182,30 @@ namespace Rephysicalized.Content.Plant_patches
         public bool WiltsWhenGasDepleted => wiltsWhenGasDepleted;
 
         /// <summary>
-        /// Changes how fast the plant eats gas from its buffer at runtime, e.g. to scale with light.
+        /// Changes the plant's base gas consumption at runtime, e.g. to scale with light.
         ///
-        /// Also retunes the ElementConsumer that refills the buffer so the configured draw ratio is
-        /// preserved, and re-syncs it when something else (such as a vanilla replant handler) has
-        /// overwritten the consumer's rate.
+        /// Wild-state scaling is applied to this base rate, and the ElementConsumer refill rate is
+        /// retuned to preserve the configured draw ratio.
         /// </summary>
         public void SetConsumptionRate(float kgPerSecond)
         {
             if (kgPerSecond <= 0f)
                 return;
 
-            bool rateChanged = !Mathf.Approximately(kgPerSecond, consumptionRatePerSecond);
-            consumptionRatePerSecond = kgPerSecond;
+            baseConsumptionRatePerSecond = kgPerSecond;
+            ApplyEffectiveConsumptionRate();
+        }
+
+        private void ApplyEffectiveConsumptionRate()
+        {
+            if (receptacle == null)
+                receptacle = GetComponent<ReceptacleMonitor>();
+
+            bool isWild = receptacle != null && !receptacle.Replanted;
+            float effectiveRate = baseConsumptionRatePerSecond *
+                (isWild ? WildConsumptionMultiplier : 1f);
+            bool rateChanged = !Mathf.Approximately(effectiveRate, consumptionRatePerSecond);
+            consumptionRatePerSecond = effectiveRate;
 
             var consumer = GetComponent<ElementConsumer>();
             if (consumer == null)
@@ -204,8 +223,10 @@ namespace Rephysicalized.Content.Plant_patches
         internal void Configure(PlantGasConsumerInfo info)
         {
             consumedElement = ElementLoader.GetElementID(info.elementTag);
+            baseConsumptionRatePerSecond = info.massConsumptionRate;
             consumptionRatePerSecond = info.massConsumptionRate;
-            drawRateMultiplier = info.drawRateMultiplier;
+            if (info.drawRateMultiplier > 0f)
+                drawRateMultiplier = info.drawRateMultiplier;
             requiredMassKg = info.requiredMassKg;
             wiltStateString = string.IsNullOrEmpty(info.wiltStateString) ? STRINGS.STATUSITEMS.NOGAS : info.wiltStateString;
             wiltsWhenGasDepleted = info.wiltsWhenGasDepleted;
@@ -218,6 +239,9 @@ namespace Rephysicalized.Content.Plant_patches
             if (storage == null)
                 storage = GetComponent<PlantGasConsumerStorage>();
 
+            if (receptacle == null)
+                receptacle = GetComponent<ReceptacleMonitor>();
+
             var consumer = GetComponent<ElementConsumer>();
             if (consumer == null)
                 return;
@@ -225,11 +249,11 @@ namespace Rephysicalized.Content.Plant_patches
             consumedElement = consumer.elementToConsume;
 
 
-            if (drawRateMultiplier <= 0f)
-                drawRateMultiplier = 2f;
 
-            if (consumptionRatePerSecond <= 0f && consumer.consumptionRate > 0f)
-                consumptionRatePerSecond = consumer.consumptionRate;
+            if (baseConsumptionRatePerSecond <= 0f)
+                baseConsumptionRatePerSecond = consumptionRatePerSecond > 0f
+                    ? consumptionRatePerSecond
+                    : consumer.consumptionRate;
 
 
             requiredMassKg = Mathf.Clamp(requiredMassKg, 0f, Mathf.Max(0f, consumer.capacityKG * 0.5f));
@@ -239,9 +263,8 @@ namespace Rephysicalized.Content.Plant_patches
 
             consumer.storeOnConsume = true;
             consumer.storage = storage;
-            consumer.consumptionRate = consumptionRatePerSecond * drawRateMultiplier;
             consumer.EnableConsumption(true);
-            consumer.RefreshConsumptionRate();
+            ApplyEffectiveConsumptionRate();
             RegisterWithMassTracker();
         }
 
@@ -259,11 +282,12 @@ namespace Rephysicalized.Content.Plant_patches
             tracker.RegisterMonitorStorage(storage, new[] { consumedElement.CreateTag() });
         }
 
-        public void Sim1000ms(float dt)
+        public void Sim4000ms(float dt)
         {
             if (storage == null || consumedElement == SimHashes.Void)
                 return;
 
+            ApplyEffectiveConsumptionRate();
             Consume(consumptionRatePerSecond * dt);
             if (wiltsWhenGasDepleted)
                 UpdateWiltState();
