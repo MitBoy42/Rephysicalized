@@ -176,4 +176,36 @@ namespace Rephysicalized
             }
         }
     }
+
+
+    internal static class RadioactiveTempTargets
+    {
+        public static readonly Dictionary<string, Temperature.Range> Names = new Dictionary<string, Temperature.Range>
+         {
+             { "med_Radioactive", Temperature.Range.VeryVeryCold },
+             { "med_UraniumFields", Temperature.Range.VeryVeryCold },
+             { "Radioactive", Temperature.Range.VeryVeryCold },
+             { "UraniumFields", Temperature.Range.VeryVeryCold },
+             { "UraniumSprinkles", Temperature.Range.VeryVeryCold },
+            { "Frozen", Temperature.Range.VeryCold },
+            { "FrozenStrange", Temperature.Range.VeryCold },
+         };
+    }
+
+
+    [HarmonyPatch(typeof(SettingsCache), nameof(SettingsCache.LoadSubworld))]
+    public class SettingsCache_LoadSubworld_RadioactiveTemp_Patch
+    {
+        public static void Postfix(WeightedSubworldName subworldWeightedName, List<YamlIO.Error> errors)
+        {
+            string longName = subworldWeightedName.name;
+            SettingsCache.SplitNameFromPath(longName, out var path, out var name);
+            if (!SettingsCache.subworlds.TryGetValue(longName, out var subWorld))
+                return;
+            if (!RadioactiveTempTargets.Names.TryGetValue(name, out var range))
+                return;
+            subWorld.temperatureRange = range;
+        }
+    }
+
 }

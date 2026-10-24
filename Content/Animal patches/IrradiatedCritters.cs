@@ -151,7 +151,7 @@ namespace Rephysicalized.Content.System_Patches
             animController = GetComponent<KBatchedAnimController>();
             originalTint = animController.TintColour;
             smi = new IrradiatedCritters.Instance(this, new IrradiatedCritters.Def());
-            smi.OnUpdate_GetIrradiation = (dt, irradiation) => UpdateTint(irradiation, smi.def.radiationmild);
+            smi.OnUpdate_GetIrradiation = (dt, irradiation) => UpdateTint(irradiation, smi.def.radiationmild, smi.def.radiationHigh);
             smi.StartSM();
         }
 
@@ -180,11 +180,11 @@ namespace Rephysicalized.Content.System_Patches
             return irradiation <= smi.def.radiationHigh ? 0.75f : 0.5f;
         }
 
-        private void UpdateTint(float irradiation, float mildThreshold)
+        private void UpdateTint(float irradiation, float mildThreshold, float highThreshold)
         {
-            float greenAmount = irradiation <= 0f
+            float greenAmount = irradiation <= mildThreshold
                 ? 0f
-                : irradiation <= mildThreshold ? 0.25f : 0.5f;
+                : irradiation <= highThreshold ? 0.25f : 0.5f;
 
             Color tint = originalTint;
             float nonGreenMultiplier = 1f - greenAmount;

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using HarmonyLib;
 using Rephysicalized.ModElements;
 using UnityEngine;
+using STRINGS;
 
 using Rephysicalized.Content.System_Patches;
 
@@ -110,10 +111,93 @@ namespace Rephysicalized
                 return;
 
             float multiplier = WireCapacitySettings.GetMultiplier(element);
+    
+
+            electrobank.charge = ElectrobankConfig.POWER_CAPACITY * multiplier;
+        }
+    }
+
+    [HarmonyPatch(typeof(Electrobank), nameof(Electrobank.GetDescriptors))]
+    internal static class Electrobank_GetDescriptors_CapacityUI_Patch
+    {
+        private static void Postfix(Electrobank __instance, ref List<Descriptor> __result)
+        {
+            if (__instance == null || __result == null || __result.Count == 0 || !Config.Instance.ElectrobankCapacity)
+                return;
+
+            var prefabId = __instance.GetComponent<KPrefabID>();
+            if (prefabId == null || prefabId.PrefabTag != (Tag)DisposableElectrobankConfig.ID_METAL_ORE)
+                return;
+
+            var primaryElement = __instance.GetComponent<PrimaryElement>();
+            if (primaryElement == null && ElectrobankRecipePreview.SelectedElement == null)
+                return;
+
+            SimHashes elementId = ElectrobankRecipePreview.SelectedElement ?? primaryElement.ElementID;
+            float multiplier = WireCapacitySettings.GetMultiplier(elementId);
             if (multiplier <= 0f)
                 multiplier = 1f;
 
-            electrobank.charge = ElectrobankConfig.POWER_CAPACITY * ((2f * multiplier) - 1f);
+            float capacity = ElectrobankConfig.POWER_CAPACITY * multiplier;
+            float configuredCapacity = ElectrobankConfig.POWER_CAPACITY * multiplier;
+            if (ElectrobankRecipePreview.SelectedElement == null &&
+                !Mathf.Approximately(__instance.Charge, ElectrobankConfig.POWER_CAPACITY) &&
+                !Mathf.Approximately(__instance.Charge, configuredCapacity) &&
+                !Mathf.Approximately(__instance.Charge, capacity))
+                return;
+
+            string formattedCapacity = GameUtil.GetFormattedJoules(capacity);
+            var descriptor = new Descriptor();
+            descriptor.SetupDescriptor(
+                string.Format((string)global::STRINGS.UI.BUILDINGEFFECTS.ELECTROBANKS, formattedCapacity),
+                string.Format((string)global::STRINGS.UI.BUILDINGEFFECTS.TOOLTIPS.ELECTROBANKS, formattedCapacity));
+            __result[0] = descriptor;
+        }
+    }
+
+    internal static class ElectrobankRecipePreview
+    {
+        internal static SimHashes? SelectedElement;
+    }
+
+    [HarmonyPatch(typeof(SelectedRecipeQueueScreen), "RefreshIngredientDescriptors")]
+    internal static class SelectedRecipeQueueScreen_RefreshElectrobankResultDescriptors_Patch
+    {
+        private static readonly MethodInfo RefreshResultDescriptors =
+            AccessTools.Method(typeof(SelectedRecipeQueueScreen), "RefreshResultDescriptors");
+
+        private static void Postfix(SelectedRecipeQueueScreen __instance)
+        {
+            if (!Config.Instance.ElectrobankCapacity || __instance == null || RefreshResultDescriptors == null)
+                return;
+
+            RefreshResultDescriptors.Invoke(__instance, null);
+        }
+    }
+
+    [HarmonyPatch(typeof(SelectedRecipeQueueScreen), "RefreshResultDescriptors")]
+    internal static class SelectedRecipeQueueScreen_ElectrobankResultMaterial_Patch
+    {
+        private static void Prefix(SelectedRecipeQueueScreen __instance)
+        {
+            ElectrobankRecipePreview.SelectedElement = null;
+            if (__instance == null || !Config.Instance.ElectrobankCapacity)
+                return;
+
+            var selectedMaterials = Traverse.Create(__instance)
+                .Field("selectedMaterialOption")
+                .GetValue<List<Tag>>();
+            if (selectedMaterials == null || selectedMaterials.Count == 0)
+                return;
+
+            Element element = ElementLoader.GetElement(selectedMaterials[0]);
+            if (element != null)
+                ElectrobankRecipePreview.SelectedElement = element.id;
+        }
+
+        private static void Postfix()
+        {
+            ElectrobankRecipePreview.SelectedElement = null;
         }
     }
 
@@ -223,7 +307,7 @@ namespace Rephysicalized
     }
 
 
-    // Ensures any Electrobank instance defaults to IronOre if its PrimaryElement was left as Creature
+    // Ensures any Electrobank instance defaults to Cuprite if its PrimaryElement was left as Creature
     [HarmonyPatch(typeof(Electrobank), nameof(Electrobank.OnSpawn))]
     internal static class Electrobank_OnSpawn_DefaultElement_Patch
     {
