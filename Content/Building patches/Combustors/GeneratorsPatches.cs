@@ -1,10 +1,13 @@
 using HarmonyLib;
+using Klei;
+using Klei.AI;
 using Rephysicalized;
 using Rephysicalized.Content.System_Patches;
 using Rephysicalized.ModElements;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using TUNING;
 using UnityEngine;
@@ -75,7 +78,7 @@ namespace Rephysicalized
             tilemaker.storage = storage;
             if (!Config.Instance.CloggedBuildings) tilemaker.MakeTiles = false;
 
-       
+
         }
     }
 
@@ -350,7 +353,7 @@ namespace Rephysicalized
                     new EnergyGenerator.OutputItem(SimHashes.CarbonDioxide, 0.07f, true, new CellOffset(0, 2), 383.15f)
                 };
             }
-          
+
 
             ConduitDispenser conduitDispenser = go.AddOrGet<ConduitDispenser>();
             conduitDispenser.conduitType = ConduitType.Gas;
@@ -392,140 +395,238 @@ namespace Rephysicalized
     }
 
 
-        //PetroleumGeneratorConfig: Patch to add gas consumer and secondary liquid input  
+    //PetroleumGeneratorConfig: Patch to add gas consumer and secondary liquid input  
 
 
-        [HarmonyPatch(typeof(GeneratedBuildings), "LoadGeneratedBuildings")]
-        public static class PetroleumGenerator_AddToDescription
+    [HarmonyPatch(typeof(GeneratedBuildings), "LoadGeneratedBuildings")]
+    public static class PetroleumGenerator_AddToDescription
+    {
+        public static void Prefix()
         {
-            public static void Prefix()
-            {
-                const string key = "STRINGS.BUILDINGS.PREFABS.PETROLEUMGENERATOR.EFFECT";
+            const string key = "STRINGS.BUILDINGS.PREFABS.PETROLEUMGENERATOR.EFFECT";
 
-                // Append gas input functionality to the description
-                Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Requires Oxidizer gas input pipe</b>");
-            }
+            // Append gas input functionality to the description
+            Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Requires Oxidizer gas input pipe</b>");
         }
+    }
 
-        [HarmonyPatch(typeof(PetroleumGeneratorConfig), nameof(PetroleumGeneratorConfig.DoPostConfigureComplete))]
-        public static class Patch_PetroleumGeneratorConfig_GasConsumer
+    [HarmonyPatch(typeof(PetroleumGeneratorConfig), nameof(PetroleumGeneratorConfig.DoPostConfigureComplete))]
+    public static class Patch_PetroleumGeneratorConfig_GasConsumer
+    {
+        public static readonly ConduitPortInfo GAS_PORT = new ConduitPortInfo(ConduitType.Gas, new CellOffset(0, 0));
+        public static readonly ConduitPortInfo LIQUID_PORT = new ConduitPortInfo(ConduitType.Liquid, new CellOffset(-1, 0));
+
+        public static void Postfix(GameObject go)
         {
-            public static readonly ConduitPortInfo GAS_PORT = new ConduitPortInfo(ConduitType.Gas, new CellOffset(0, 0));
-            public static readonly ConduitPortInfo LIQUID_PORT = new ConduitPortInfo(ConduitType.Liquid, new CellOffset(-1, 0));
-
-            public static void Postfix(GameObject go)
-            {
-                // Attach a custom initializer that will run once the building is fully initialized
-                go.AddComponent<GasAndLiquidInitializer>();
-                var gasSecondaryInput = go.AddComponent<ConduitSecondaryInput>();
-                gasSecondaryInput.portInfo = GAS_PORT;
-                gasSecondaryInput.HasSecondaryConduitType(ConduitType.Gas);
-                go.AddOrGet<OxidizerLowStatus>();
-            }
-
-            private class GasAndLiquidInitializer : KMonoBehaviour
-            {
-                private int gasInputCell = 0;
-                private int liquidInputCell = -1;
-
-                public override void OnSpawn()
+                // Update formula early so UI/descriptors reflect oxidizer gas and adjusted amounts
+                var energyGen = go.GetComponent<EnergyGenerator>();
+                if (energyGen != null)
                 {
-                    base.OnSpawn();
-
-                    // Ensure storage is available
-                    var go = gameObject;
-                    var storage = go.GetComponent<Storage>() ?? go.AddOrGet<Storage>();
-
-                    // Update the existing liquid consumer to treat it as secondary input
-                    ConduitConsumer existingLiquidConsumer = go.GetComponent<ConduitConsumer>();
-                    existingLiquidConsumer.useSecondaryInput = true;
-                    existingLiquidConsumer.storage = storage;
-
-                    // Add Secondary Gas ConduitConsumer
-
-                    var gasConsumer = go.AddComponent<ConduitConsumer>();
-                    gasConsumer.conduitType = ConduitType.Gas;
-                    gasConsumer.capacityTag = ModTags.OxidizerGas;
-                    gasConsumer.capacityKG = 10f;
-                    gasConsumer.storage = storage;
-                    gasConsumer.forceAlwaysSatisfied = true;
-                    gasConsumer.wrongElementResult = ConduitConsumer.WrongElementResult.Dump;
-                    gasConsumer.alwaysConsume = true;
-                    gasConsumer.useSecondaryInput = true;
-
-                    // Register the gas input with its network
-                    var gasNetworkManager = Conduit.GetNetworkManager(ConduitType.Gas);
-
-                    gasInputCell = Grid.OffsetCell(Grid.PosToCell(go), GAS_PORT.offset);
-                    var gasNetworkItem = new FlowUtilityNetwork.NetworkItem(ConduitType.Gas, Endpoint.Sink, gasInputCell, go);
-                    gasNetworkManager.AddToNetworks(gasInputCell, gasNetworkItem, true);
-
-
-
-                    // Register the liquid input with its network
-                    var liquidNetworkManager = Conduit.GetNetworkManager(ConduitType.Liquid);
-
-                    liquidInputCell = Grid.OffsetCell(Grid.PosToCell(go), LIQUID_PORT.offset);
-                    var liquidNetworkItem = new FlowUtilityNetwork.NetworkItem(ConduitType.Liquid, Endpoint.Sink, liquidInputCell, go);
-                    liquidNetworkManager.AddToNetworks(liquidInputCell, liquidNetworkItem, true);
-
-
-                    // Update Energy Generator formula
-                    var energyGen = go.GetComponent<EnergyGenerator>();
-
                     energyGen.formula = new EnergyGenerator.Formula
                     {
                         inputs = new EnergyGenerator.InputItem[] {
+                            new EnergyGenerator.InputItem(GameTags.CombustibleLiquid, 1.75f, 20f),
+                            new EnergyGenerator.InputItem(ModTags.OxidizerGas, 0.25f, 20f)
+                        },
+                        outputs = new EnergyGenerator.OutputItem[] {
+                            new EnergyGenerator.OutputItem(SimHashes.CarbonDioxide, 0.5f, false, new CellOffset(0, 3), 383.15f),
+                            new EnergyGenerator.OutputItem(SimHashes.DirtyWater, 1f, false, new CellOffset(1, 1), 313.15f),
+                            new EnergyGenerator.OutputItem(ModElementRegistration.CrudByproduct, 0.5f, true, new CellOffset(-1, 0), 333.15f),
+                        }
+                    };
+                }
+
+
+            // Attach a custom initializer that will run once the building is fully initialized
+            go.AddComponent<GasAndLiquidInitializer>();
+            var gasSecondaryInput = go.AddComponent<ConduitSecondaryInput>();
+            gasSecondaryInput.portInfo = GAS_PORT;
+            gasSecondaryInput.HasSecondaryConduitType(ConduitType.Gas);
+            go.AddOrGet<OxidizerLowStatus>();
+        }
+
+        private class GasAndLiquidInitializer : KMonoBehaviour
+        {
+            private int gasInputCell = 0;
+            private int liquidInputCell = -1;
+
+            public override void OnSpawn()
+            {
+                base.OnSpawn();
+
+                // Ensure storage is available
+                var go = gameObject;
+                var storage = go.GetComponent<Storage>() ?? go.AddOrGet<Storage>();
+
+                // Update the existing liquid consumer to treat it as secondary input
+                ConduitConsumer existingLiquidConsumer = go.GetComponent<ConduitConsumer>();
+                existingLiquidConsumer.useSecondaryInput = true;
+                existingLiquidConsumer.storage = storage;
+
+                // Add Secondary Gas ConduitConsumer
+
+                var gasConsumer = go.AddComponent<ConduitConsumer>();
+                gasConsumer.conduitType = ConduitType.Gas;
+                gasConsumer.capacityTag = ModTags.OxidizerGas;
+                gasConsumer.capacityKG = 10f;
+                gasConsumer.storage = storage;
+                gasConsumer.forceAlwaysSatisfied = true;
+                gasConsumer.wrongElementResult = ConduitConsumer.WrongElementResult.Dump;
+                gasConsumer.alwaysConsume = true;
+                gasConsumer.useSecondaryInput = true;
+
+                // Register the gas input with its network
+                var gasNetworkManager = Conduit.GetNetworkManager(ConduitType.Gas);
+
+                gasInputCell = Grid.OffsetCell(Grid.PosToCell(go), GAS_PORT.offset);
+                var gasNetworkItem = new FlowUtilityNetwork.NetworkItem(ConduitType.Gas, Endpoint.Sink, gasInputCell, go);
+                gasNetworkManager.AddToNetworks(gasInputCell, gasNetworkItem, true);
+
+
+
+                // Register the liquid input with its network
+                var liquidNetworkManager = Conduit.GetNetworkManager(ConduitType.Liquid);
+
+                liquidInputCell = Grid.OffsetCell(Grid.PosToCell(go), LIQUID_PORT.offset);
+                var liquidNetworkItem = new FlowUtilityNetwork.NetworkItem(ConduitType.Liquid, Endpoint.Sink, liquidInputCell, go);
+                liquidNetworkManager.AddToNetworks(liquidInputCell, liquidNetworkItem, true);
+
+
+                // Update Energy Generator formula
+                var energyGen = go.GetComponent<EnergyGenerator>();
+
+                energyGen.formula = new EnergyGenerator.Formula
+                {
+                    inputs = new EnergyGenerator.InputItem[] {
                     new EnergyGenerator.InputItem(GameTags.CombustibleLiquid, 1.75f, 20f), // Liquid input
                     new EnergyGenerator.InputItem(ModTags.OxidizerGas, 0.25f, 20f)      // Gas input
                 },
-                        outputs = new EnergyGenerator.OutputItem[]
-                {
+                    outputs = new EnergyGenerator.OutputItem[]
+            {
                            new EnergyGenerator.OutputItem(SimHashes.CarbonDioxide, 0.5f, false, new CellOffset(0, 3), 383.15f),
         new EnergyGenerator.OutputItem(SimHashes.DirtyWater,   1f, false, new CellOffset(1, 1), 313.15f),
 
                 new EnergyGenerator.OutputItem(ModElementRegistration.CrudByproduct, 0.5f, true, new CellOffset(-1, 0), 333.15f),
-                }
-                    };
+            }
+                };
 
-                    var elementDropper = go.AddComponent<ElementDropper>();
+                var elementDropper = go.AddComponent<ElementDropper>();
 
-                    elementDropper.emitTag = new Tag("CrudByproduct");
-                    elementDropper.emitMass = 200f;
-                    elementDropper.emitOffset = new Vector3(-1.0f, 0.0f, 0.0f);
+                elementDropper.emitTag = new Tag("CrudByproduct");
+                elementDropper.emitMass = 200f;
+                elementDropper.emitOffset = new Vector3(-1.0f, 0.0f, 0.0f);
 
-                }
+            }
 
-                public override void OnCleanUp()
+            public override void OnCleanUp()
+            {
+                // Cleanup logic when the Petroleum Generator is destroyed
+                var go = gameObject;
+
+                // Unregister gas input
+                if (gasInputCell != 0)
                 {
-                    // Cleanup logic when the Petroleum Generator is destroyed
-                    var go = gameObject;
-
-                    // Unregister gas input
-                    if (gasInputCell != 0)
+                    var gasNetworkManager = Conduit.GetNetworkManager(ConduitType.Gas);
+                    if (gasNetworkManager != null)
                     {
-                        var gasNetworkManager = Conduit.GetNetworkManager(ConduitType.Gas);
-                        if (gasNetworkManager != null)
-                        {
-                            gasNetworkManager.RemoveFromNetworks(gasInputCell, go, true);
-                        }
+                        gasNetworkManager.RemoveFromNetworks(gasInputCell, go, true);
                     }
-
-                    // Unregister liquid input
-                    if (liquidInputCell != -1)
-                    {
-                        var liquidNetworkManager = Conduit.GetNetworkManager(ConduitType.Liquid);
-                        if (liquidNetworkManager != null)
-                        {
-                            liquidNetworkManager.RemoveFromNetworks(liquidInputCell, go, true);
-                        }
-                    }
-
-                    base.OnCleanUp();
                 }
+
+                // Unregister liquid input
+                if (liquidInputCell != -1)
+                {
+                    var liquidNetworkManager = Conduit.GetNetworkManager(ConduitType.Liquid);
+                    if (liquidNetworkManager != null)
+                    {
+                        liquidNetworkManager.RemoveFromNetworks(liquidInputCell, go, true);
+                    }
+                }
+
+                base.OnCleanUp();
             }
         }
-
     }
 
-    
+    // Contaminated oxygen penalty: when a generator runs on contaminated oxygen, reduce energy output by 20%
+    [HarmonyPatch(typeof(Generator), "get_WattageRating")]
+    public static class Generator_WattageRating_ContaminatedOxygenPenalty_Patch
+    {
+        private static Effect pollutedEffect;
+
+        public static void Postfix(Generator __instance, ref float __result)
+        {
+            var energyGen = __instance as EnergyGenerator;
+            if (energyGen == null)
+                return;
+
+            // Only apply to generators that consume oxidizer gas (Rephysicalized generators)
+            if (energyGen.formula.inputs == null ||
+                !energyGen.formula.inputs.Any(i => i.tag == ModTags.OxidizerGas))
+                return;
+
+            var storage = energyGen.GetComponent<Storage>();
+            if (storage == null)
+                return;
+
+            var effects = energyGen.gameObject.AddOrGet<Effects>();
+
+
+            bool isPolluted = Storage_ConsumeAndGetDisease_OxidizerTrack_Patch.LastConsumed.TryGetValue(storage, out SimHashes consumedOxidizer) && consumedOxidizer == SimHashes.ContaminatedOxygen;
+
+            // While the building is consuming contaminated oxygen instead of oxygen, output is reduced
+            if (isPolluted)
+            {
+                __result *= 0.8f;
+
+                if (pollutedEffect == null)
+                {
+                    pollutedEffect = new Effect(
+                        "PollutedOxidizer",
+                        "Contaminated Oxidizer",
+                         "This generator is currently running on unclean air, which decreases its power output",
+                        0f,
+                        true,
+                        true,
+                        true);
+                    Db.Get().effects.Add(pollutedEffect);
+                }
+
+                if (!effects.HasEffect("PollutedOxidizer"))
+                {
+                    effects.Add("PollutedOxidizer", true);
+                }
+            }
+            else if (effects.HasEffect("PollutedOxidizer"))
+            {
+                effects.Remove("PollutedOxidizer");
+            }
+        }
+    }
+
+
+
+    [HarmonyPatch]
+    public static class Storage_ConsumeAndGetDisease_OxidizerTrack_Patch
+    {
+        public static MethodBase TargetMethod()
+        {
+            return typeof(Storage).GetMethod("ConsumeAndGetDisease", new Type[] {
+                typeof(Tag), typeof(float),
+                typeof(float).MakeByRefType(),
+                typeof(SimUtil.DiseaseInfo).MakeByRefType(),
+                typeof(float).MakeByRefType(),
+                typeof(SimHashes).MakeByRefType()
+            });
+        }
+        public static readonly Dictionary<Storage, SimHashes> LastConsumed = new Dictionary<Storage, SimHashes>();
+
+        public static void Postfix(Storage __instance, Tag tag, ref SimHashes mostRelevantItemElement)
+        {
+            if (tag == ModTags.OxidizerGas)
+            {
+                LastConsumed[__instance] = mostRelevantItemElement;
+            }
+        }
+    }
+}

@@ -183,6 +183,13 @@ namespace Rephysicalized
 
         public bool ElectrobankCapacity { get; set; }
 
+        ////Rephysicalized Dupes
+
+        //[Option("STRINGS.MODCONFIG.REPHYSDUPES.MAIN.NAME", "STRINGS.MODCONFIG.REPHYSDUPES.MAIN.TOOLTIP", "STRINGS.REPHYSDUPES.NAME")]
+        //[JsonProperty]
+
+        //public bool RephysDupes { get; set; }
+
         public Config()
         {
             this.WaterGeyserOutput = 0.25f;
@@ -223,6 +230,8 @@ namespace Rephysicalized
             WireCapacity = true;
             ChargerSpeed = true;
             ElectrobankCapacity = true;
+
+            //RephysDupes = true;
 
             //  this.Silicon = true;
         }

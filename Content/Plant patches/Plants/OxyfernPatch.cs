@@ -192,6 +192,60 @@ namespace Rephysicalized
         }
     }
 
+    [AddComponentMenu("KMonoBehaviour/Rephysicalized/OxyfernCo2WiltCause")]
+    public sealed class OxyfernCo2WiltCause : KMonoBehaviour, ISim1000ms, IWiltCause
+    {
+        private const float RequiredMassKg = 0.02f;
+
+        [MyCmpGet]
+        private Storage storage;
+
+        [MyCmpGet]
+        private WiltCondition wiltCondition;
+
+        private bool? _wasStarved;
+
+        WiltCondition.Condition[] IWiltCause.Conditions =>
+            new[] { WiltCondition.Condition.AtmosphereElement };
+
+        string IWiltCause.WiltStateString => STRINGS.STATUSITEMS.NOGAS;
+
+        public float AvailableMass => storage != null ? storage.MassStored() : 0f;
+
+        public bool Starved => AvailableMass < RequiredMassKg;
+
+        public override void OnSpawn()
+        {
+            base.OnSpawn();
+            if (storage == null)
+                storage = GetComponent<Storage>();
+            if (wiltCondition == null)
+                wiltCondition = GetComponent<WiltCondition>();
+        }
+
+        public void Sim1000ms(float dt)
+        {
+            if (storage == null)
+                return;
+
+            bool starved = Starved;
+            if (_wasStarved != starved)
+            {
+                _wasStarved = starved;
+                Trigger((int)(starved ? GameHashes.WrongAtmosphere : GameHashes.CorrectAtmosphere));
+            }
+
+            // Keep the environmental CO2 consumer enabled while starved so the buffer can refill
+            // and the plant can recover instead of deadlocking in the wilted state.
+            if (starved)
+            {
+                var consumer = GetComponent<ElementConsumer>();
+                if (consumer != null)
+                    consumer.EnableConsumption(true);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(OxyfernConfig), nameof(OxyfernConfig.CreatePrefab))]
     public static class OxyfernConfig_CreatePrefab_Patch
     {
@@ -265,6 +319,7 @@ namespace Rephysicalized
 
             var go = __instance.gameObject;
             go.AddOrGet<OxyfernLightScaler>();
+            go.AddOrGet<OxyfernCo2WiltCause>();
 
             // Covers plants already placed in older saves.
             var storage = go.GetComponent<Storage>();

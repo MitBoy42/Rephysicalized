@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Rephysicalized
-{ 
+{
+
+
     [HarmonyPatch(typeof(EntityTemplates))]
     internal static class ExtendEntityToBasicPlant_SetDirtElement_Patch
     {
@@ -39,12 +41,32 @@ namespace Rephysicalized
         }
     }
 
+    // Shared floats between PlantPatches (crop yield amounts) and PlantMassTracker list
+    // (real harvest subtract kg). Keyed by the crop/output id.
+    public static class PlantPatches
+    {
+        public static readonly Dictionary<string, float> SharedYieldAndHarvestSubtractKg =
+            new Dictionary<string, float>(StringComparer.Ordinal)
+        {
+            { "DewDrip", 20f },
+            { "Kelp", 10f },
+            { "WoodLog", 30f },
+            { "OxyRock", 20f },
+            { "PlantFiber", 50f },
+            { "PalmWood", 300f },
+            { "Phosphorite", 40f },
+        };
+    }
+
+
     // Consolidated: adjust yields for specific crop IDs in one pass, no PlantFiber special case.
     [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
     internal static class Consolidated_Crop_Yield_Patch
     {
+
         private static void Postfix()
         {
+
             var crops = TUNING.CROPS.CROP_TYPES;
             if (crops == null || crops.Count == 0)
                 return;
@@ -52,16 +74,16 @@ namespace Rephysicalized
             // Target amounts per cropId; durations are preserved from existing values.
             var targetAmounts = new Dictionary<string, int>
             {
-                { DewDripConfig.ID, 20 },                  // DewDrip
+                { DewDripConfig.ID, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["DewDrip"] },                  // DewDrip
                 { "SwampLily", 10 },                       // Balm Lily (SwampLily)
-                { "Kelp", 10 },                            // Kelp
-                { SimHashes.WoodLog.ToString(), 30 },      // WoodLog
-                { SimHashes.OxyRock.ToString(), 20 },      // OxyRock
-                { "PlantFiber", 50 },
-                { "PalmWood", 300 },                        //DewPalm
-            { "PlantMeat", 1 },
-              { "Urchin", 50 },
-             { "Phosphorite", 40 }
+                { "Kelp", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["Kelp"] },                            // Kelp
+                { SimHashes.WoodLog.ToString(), (int)PlantPatches.SharedYieldAndHarvestSubtractKg["WoodLog"] },      // WoodLog
+                { SimHashes.OxyRock.ToString(), (int)PlantPatches.SharedYieldAndHarvestSubtractKg["OxyRock"] },      // OxyRock
+                { "PlantFiber", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["PlantFiber"] },                       // GasGrass
+                { "PalmWood", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["PalmWood"] },                        // DewPalm
+            { "PlantMeat", 1 }, //CritterTrapPlant
+              { "Urchin", 50 }, //UrchinPlant
+             { "Phosphorite", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["Phosphorite"] } //PlanktonCoral
             };
         
             for (int i = 0; i < crops.Count; i++)

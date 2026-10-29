@@ -1,5 +1,4 @@
-﻿﻿using Epic.OnlineServices.UserInfo;
-using JetBrains.Annotations;
+﻿
 using Rephysicalized.Content.System_Patches;
 using System;
 using System.Collections.Generic;
@@ -45,7 +44,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.07f;
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 100f;
@@ -62,7 +61,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.3f;
             oreDissolves.conversionspeed = 0.005f;
             oreDissolves.minmass = 100f;
@@ -78,7 +77,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ;
             oreDissolves.usedoreratio = 0.25f;
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 100f;
@@ -94,7 +93,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ;
             oreDissolves.usedoreratio = 0.77f;
        
             oreDissolves.conversionspeed = 0.02f;
@@ -112,7 +111,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.01f;
             oreDissolves.conversionspeed = 0.01f;
             oreDissolves.minmass = 100f;
@@ -129,7 +128,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.01f;
             oreDissolves.conversionspeed = 0.01f;
             oreDissolves.minmass = 100f;
@@ -146,7 +145,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.01f;
 
             oreDissolves.conversionspeed = 0.02f;
@@ -181,7 +180,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.2f;
 
             oreDissolves.conversionspeed = 0.02f;
@@ -200,7 +199,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.1f;
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 100f;
@@ -239,7 +238,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>();
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>();
             oreDissolves.usedoreratio = 0.5f;
             oreDissolves.conversionspeed = 0.001f;
             oreDissolves.minmass = 10f;
@@ -261,7 +260,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 0.6f;
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 10f;
@@ -280,7 +279,7 @@ namespace Rephysicalized.Content.System_Patches
                 GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             if (Config.Instance.RephysicalizedMetalOre)
             {
-                var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+                var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.8f;
                 oreDissolves.conversionspeed = 0.02f;
                 oreDissolves.minmass = 10f;
@@ -302,7 +301,7 @@ namespace Rephysicalized.Content.System_Patches
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             if (Config.Instance.RephysicalizedMetalOre)
             {
-                var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+                var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.73f;
                 oreDissolves.conversionspeed = 0.02f;
                 oreDissolves.minmass = 10f;
@@ -324,7 +323,7 @@ namespace Rephysicalized.Content.System_Patches
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             if (Config.Instance.RephysicalizedMetalOre)
             {
-                var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+                var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.71f;
                 oreDissolves.conversionspeed = 0.02f;
                 oreDissolves.minmass = 10f;
@@ -345,7 +344,7 @@ namespace Rephysicalized.Content.System_Patches
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             if (Config.Instance.RephysicalizedMetalOre)
             {
-                var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+                var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.66f;
                 oreDissolves.conversionspeed = 0.02f;
                 oreDissolves.minmass = 10f;
@@ -366,7 +365,7 @@ namespace Rephysicalized.Content.System_Patches
             if (Config.Instance.RephysicalizedMetalOre)
             {
 
-                var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+                var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
                 oreDissolves.usedoreratio = 0.6f;
 
                 oreDissolves.conversionspeed = 0.02f;
@@ -389,7 +388,7 @@ namespace Rephysicalized.Content.System_Patches
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             if (Config.Instance.RephysicalizedMetalOre)
             {
-                var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>();
+                var oreDissolves = solidOreEntity.AddComponent<OreDissolves>();
                 oreDissolves.usedoreratio = 0.6f;
                 oreDissolves.conversionspeed = 0.02f;
                 oreDissolves.minmass = 10f;
@@ -408,7 +407,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 1f;
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 100f;
@@ -424,7 +423,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 1f;
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 100f;
@@ -441,7 +440,7 @@ namespace Rephysicalized.Content.System_Patches
         public GameObject CreatePrefab()
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
-            var oreDissolves = solidOreEntity.AddOrGet<OreDissolves>(); ; ;
+            var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
             oreDissolves.usedoreratio = 1f;
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 100f;

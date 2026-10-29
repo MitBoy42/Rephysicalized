@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Rephysicalized.ModElements;
 using STRINGS;
 using System;
@@ -141,10 +141,10 @@ namespace Rephysicalized
             }
         }
 
-        private static bool RegisterCombinedRecipeForGroup(
-            Tag[] permittedInputs,
-            int powerToolsOut,
-            string recipeKeySuffix,
+    private static bool RegisterCombinedRecipeForGroup(
+    Tag[] permittedInputs,
+    int powerToolsOut,
+    string recipeKeySuffix,
             int sortOrder,
             string description)
         {
@@ -184,5 +184,84 @@ namespace Rephysicalized
             //     Debug.Log($"[BionicDecraftRecipe] Added grouped decraft recipe '{recipeKeySuffix}': any({permittedInputs.Length}) -> {powerToolsOut}x PowerStationTools");
             return true;
         }
+        }
+
+    // Prevent the inherited metal element from being applied to the Crud byproduct output,
+    // while keeping inheritance for the electrobank output.
+    [HarmonyPatch(typeof(ComplexFabricator), "SpawnOrderProduct")]
+    public static class ComplexFabricator_SpawnOrderProduct_CrudNoInherit_Patch
+    {
+        private static Element _inheritedElement;
+
+        public static void Prefix(ComplexFabricator __instance, ComplexRecipe recipe)
+        {
+            _inheritedElement = null;
+            if (recipe == null || recipe.ingredients == null)
+                return;
+
+            foreach (var ingredient in recipe.ingredients)
+            {
+                if (!ingredient.inheritElement)
+                    continue;
+
+                GameObject first = null;
+                if (ingredient.possibleMaterials != null)
+                {
+                    foreach (var mat in ingredient.possibleMaterials)
+                    {
+                        first = __instance.buildStorage.FindFirst(mat);
+                        if (first != null)
+                            break;
+                    }
+                }
+                if (first == null && ingredient.material != Tag.Invalid)
+                    first = __instance.buildStorage.FindFirst(ingredient.material);
+
+                if (first != null)
+                {
+                    var pe = first.GetComponent<PrimaryElement>();
+                    if (pe != null)
+                        _inheritedElement = pe.Element;
+                }
+                ingredient.inheritElement = false;
+            }
+        }
+
+        public static void Postfix(ComplexFabricator __instance, ComplexRecipe recipe, List<GameObject> __result)
+        {
+            if (recipe != null && recipe.ingredients != null)
+            {
+                foreach (var ingredient in recipe.ingredients)
+                    ingredient.inheritElement = true;
+            }
+
+            if (__result == null || _inheritedElement == null || recipe == null || recipe.results == null)
+                return;
+
+            var electrobankTag = "DisposableElectrobank_RawMetal".ToTag();
+            int count = Math.Min(__result.Count, recipe.results.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (recipe.results[i].material != electrobankTag)
+                    continue;
+
+                var go = __result[i];
+                if (go == null)
+                    continue;
+
+                var primaryElement = go.GetComponent<PrimaryElement>();
+                if (primaryElement == null)
+                    continue;
+
+                float mass = primaryElement.Mass;
+                float temperature = primaryElement.Temperature;
+                primaryElement.SetElement(_inheritedElement.id, false);
+                var elementField = typeof(PrimaryElement).GetField("_Element", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                elementField?.SetValue(primaryElement, null);
+                primaryElement.Mass = mass;
+                primaryElement.Temperature = temperature;
+            }
+        }
     }
+
 }

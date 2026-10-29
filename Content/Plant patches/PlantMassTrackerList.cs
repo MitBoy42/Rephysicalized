@@ -87,17 +87,17 @@ namespace Rephysicalized
                 new MaterialYield("ContaminatedOxygen", 0.02f) 
             ),
                 new Entry("GardenFoodPlant", 1f, new MaterialYield("DirtyWater", 0.5f), new MaterialYield("Shale", 0.5f)),
-                new Entry("KelpPlant", 10f, new MaterialYield("Kelp", 1f)),
+                new Entry("KelpPlant", PlantPatches.SharedYieldAndHarvestSubtractKg["Kelp"], new MaterialYield("Kelp", 1f)),
 
                 new Entry("ButterflyPlant", 0f, new MaterialYield("Shale", 1f)),
 
-                new Entry("GasGrass", 50f, new MaterialYield("PlantFiber", 1f)),
+                new Entry("GasGrass", PlantPatches.SharedYieldAndHarvestSubtractKg["PlantFiber"], new MaterialYield("PlantFiber", 1f)),
 
                 new Entry("ColdBreather", 0f, new MaterialYield("PlantFiber", 1f)),
-                new Entry("BlueGrass", 20f,
+                new Entry("BlueGrass", PlantPatches.SharedYieldAndHarvestSubtractKg["OxyRock"],
                 new MaterialYield("Oxyrock", 1f)
             ),
-                new Entry("DewDripperPlant", 20f,
+                new Entry("DewDripperPlant", PlantPatches.SharedYieldAndHarvestSubtractKg["DewDrip"],
                 new MaterialYield("DewDrip", 1f)
             ),
                         new Entry("CritterTrapPlant", 2f,
@@ -112,7 +112,7 @@ namespace Rephysicalized
              new MaterialYield("WoodLog", 0.4f)
             ),
 
-                       new Entry("ForestTreeBranch", 30f,
+                       new Entry("ForestTreeBranch", PlantPatches.SharedYieldAndHarvestSubtractKg["WoodLog"],
              new MaterialYield("WoodLog", 1f)
             ),
                 new Entry("SpaceTreeBranch", 0f,
@@ -127,7 +127,7 @@ namespace Rephysicalized
               new MaterialYield("CrudByproduct", 1f)
             ),
 
-              new Entry("DewPalm", 50f,
+              new Entry("DewPalm", PlantPatches.SharedYieldAndHarvestSubtractKg["PalmWood"],
               new MaterialYield("PalmWood", 1f)
             ),
               new Entry("TubeWorm", 200f,
@@ -136,7 +136,7 @@ namespace Rephysicalized
               new Entry("UrchinPlant", 1f,
               new MaterialYield("Urchin", 1f)
             ),
-              new Entry("PlanktonCoral", 40f,
+              new Entry("PlanktonCoral", PlantPatches.SharedYieldAndHarvestSubtractKg["Phosphorite"],
               new MaterialYield("Phosphorite", 1f)
             ),
               new Entry("SeaTree", 0f,

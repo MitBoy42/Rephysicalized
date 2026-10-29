@@ -647,6 +647,14 @@ namespace Rephysicalized
                 public static LocString TOOLTIP = "Radiation speeds up critter metabolism and scale growth at the cost of faster aging and lower happiness. It also increases the chance of laying egg morphs.";
 
             }
+
+            public class REPHYSDDUPES
+            {
+                public static LocString NAME = "Rephysicalized Duplicants";
+                public static LocString TOOLTIP = "Duplicants now conserve mass! What goes in, goes out. Important: This change significantly affects overall gameplay. Duplicants consume 60 times less oxygen, oxygen production buildings and effects are nerfed," +
+                    "and it also makes many critters and plants require oxygen so oxygen consumption of your base still increases.";
+
+            }
             //public class SILICON
             //{
             //    public static LocString NAME = "Silicon";

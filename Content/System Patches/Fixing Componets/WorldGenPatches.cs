@@ -189,6 +189,9 @@ namespace Rephysicalized
              { "UraniumSprinkles", Temperature.Range.VeryVeryCold },
             { "Frozen", Temperature.Range.VeryCold },
             { "FrozenStrange", Temperature.Range.VeryCold },
+                     { "RaptorBasic", Temperature.Range.Cold },
+            { "RaptorMix", Temperature.Range.Cold },
+
          };
     }
 

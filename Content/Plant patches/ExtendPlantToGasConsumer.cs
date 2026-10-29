@@ -130,7 +130,7 @@ namespace Rephysicalized.Content.Plant_patches
     /// WiltCondition via the AtmosphereElement condition (mirrors how IrrigationMonitor reports a dry plot).
     /// The ElementConsumer is intentionally left enabled always - only the *buffer* running dry wilts the plant.
     /// </summary>
-    public sealed class PlantGasConsumer : KMonoBehaviour, ISim4000ms, IWiltCause
+    public sealed class PlantGasConsumer : KMonoBehaviour, ISim1000ms, IWiltCause
     {
         private const float WildConsumptionMultiplier = 0.25f;
 
@@ -139,6 +139,12 @@ namespace Rephysicalized.Content.Plant_patches
 
         [MyCmpGet]
         private ReceptacleMonitor receptacle;
+
+        [MyCmpGet]
+        private WiltCondition _wiltCondition;
+
+        [MyCmpGet]
+        private PlantMassTrackerComponent _massTracker;
 
         [SerializeField]
         private SimHashes consumedElement = SimHashes.Void;
@@ -282,17 +288,29 @@ namespace Rephysicalized.Content.Plant_patches
             tracker.RegisterMonitorStorage(storage, new[] { consumedElement.CreateTag() });
         }
 
-        public void Sim4000ms(float dt)
+        public void Sim1000ms(float dt)
         {
             if (storage == null || consumedElement == SimHashes.Void)
                 return;
 
+            // Do not consume internal gas while the plant is wilted.
+            bool wilted = _wiltCondition != null && _wiltCondition.IsWilting();
+
             ApplyEffectiveConsumptionRate();
-            Consume(consumptionRatePerSecond * dt);
+            float consumed = 0f;
+            if (!wilted)
+                consumed = Consume(consumptionRatePerSecond * dt);
             if (wiltsWhenGasDepleted)
                 UpdateWiltState();
             EnsureConsumerEnabledForRefill();
             RefreshConsumerIfBufferHasRoom();
+
+            if (consumed > 0f)
+            {
+                if (_massTracker == null)
+                    _massTracker = GetComponent<PlantMassTrackerComponent>();
+                _massTracker?.AddMassDelta(consumed);
+            }
         }
 
         /// <summary>
@@ -335,15 +353,16 @@ namespace Rephysicalized.Content.Plant_patches
         }
 
     
-        private void Consume(float mass)
+        private float Consume(float mass)
         {
             if (mass <= 0f)
-                return;
+                return 0f;
 
             var items = storage.items;
             if (items == null)
-                return;
+                return 0f;
 
+            float consumed = 0f;
             for (int i = items.Count - 1; i >= 0 && mass > 0f; i--)
             {
                 var item = items[i];
@@ -356,6 +375,7 @@ namespace Rephysicalized.Content.Plant_patches
 
                 if (pe.Mass <= mass)
                 {
+                    consumed += pe.Mass;
                     mass -= pe.Mass;
                     storage.Remove(item, true);
                     Util.KDestroyGameObject(item);
@@ -363,9 +383,12 @@ namespace Rephysicalized.Content.Plant_patches
                 else
                 {
                     pe.Mass -= mass;
+                    consumed += mass;
                     mass = 0f;
                 }
             }
+
+            return consumed;
 
          
         }

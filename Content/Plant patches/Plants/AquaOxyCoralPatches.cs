@@ -131,7 +131,7 @@ namespace Rephysicalized.Content.Plant_patches
                     new PlantElementAbsorber.ConsumeInfo
                     {
                         tag = SimHashes.Lime.CreateTag(),
-                        massConsumptionRate = 0.025f
+                        massConsumptionRate = 0.016666667f
                     }
                 });
 
@@ -140,7 +140,7 @@ namespace Rephysicalized.Content.Plant_patches
                     new PlantElementAbsorber.ConsumeInfo
                     {
                         tag = SimHashes.SaltWater.CreateTag(),
-                        massConsumptionRate = 0.05f
+                        massConsumptionRate = 0.1f
                     }
              });
             }
