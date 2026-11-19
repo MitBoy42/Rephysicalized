@@ -14,7 +14,7 @@ public class FueledDietController : KMonoBehaviour, ISim4000ms
         [MyCmpGet] private Storage storage;
         [MyCmpGet] private PrimaryElement primaryElement;
 
-        private static readonly EventSystem.IntraObjectHandler<FueledDietController> OnStorageChangeDelegate = new EventSystem.IntraObjectHandler<FueledDietController>((component, data) => component.OnStorageChange(data));
+        private static readonly System.Action<object, object> OnStorageChangeDelegate = (System.Action<object, object>)((component, data) => ((FueledDietController)component).OnStorageChange(data));
 
         public FueledDiet fueledDiet;
 
@@ -130,7 +130,7 @@ public class FueledDietController : KMonoBehaviour, ISim4000ms
                     storage.capacityKg = storageCapacityOverride;
             }
 
-            Subscribe<FueledDietController>(-1697596308, OnStorageChangeDelegate);
+            Subscribe(-1697596308, OnStorageChangeDelegate, this);
 
             EnableInstanceConsumers();
 

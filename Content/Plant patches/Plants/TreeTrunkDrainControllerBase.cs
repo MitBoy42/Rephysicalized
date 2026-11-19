@@ -59,16 +59,15 @@ namespace Rephysicalized
             if (_grower == null)
                 return;
 
-            // HashSet rather than a list: ActionPerBranch can visit the same branch more than once and a
-            // duplicate would otherwise be drained twice in the same tick.
+            // Keep branches unique so a duplicate reference cannot be drained twice in the same tick.
             var branches = HashSetPool<GameObject, TreeTrunkDrainControllerBase>.Allocate();
             try
             {
-                _grower.ActionPerBranch(branch =>
+                foreach (var branch in _grower.GetExistingBranches())
                 {
                     if (branch != null)
                         branches.Add(branch);
-                });
+                }
 
                 int eligibleCount = 0;
                 foreach (var branch in branches)
@@ -130,8 +129,6 @@ namespace Rephysicalized
             if (_trunkPMT != null)
             {
                 _trunkPMT.AddExternalMass(-kg);
-                if (_trunkPE != null)
-                    _trunkPE.Mass = Mathf.Max(1f, _trunkPE.Mass - kg);
             }
             else if (_trunkPE != null)
             {
@@ -148,9 +145,6 @@ namespace Rephysicalized
             if (pmt != null)
             {
                 pmt.AddExternalMass(+kg);
-                var pe = branch.GetComponent<PrimaryElement>();
-                if (pe != null)
-                    pe.Mass = Mathf.Max(1f, pe.Mass + kg);
                 return;
             }
 

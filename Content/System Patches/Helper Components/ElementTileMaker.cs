@@ -19,14 +19,14 @@ public class ElementTileMaker : KMonoBehaviour
 
     [SerializeField] public Storage storage;
 
-    private static readonly EventSystem.IntraObjectHandler<ElementTileMaker> OnStorageChangedDelegate =
-        new EventSystem.IntraObjectHandler<ElementTileMaker>((component, data) => component.OnStorageChanged(data));
+    private static readonly System.Action<object, object> OnStorageChangedDelegate =
+        (System.Action<object, object>)((component, data) => ((ElementTileMaker)component).OnStorageChanged(data));
 
     public override void OnSpawn()
     {
         base.OnSpawn();
         // Hook storage change to attempt emission (GameHashes.OnStorageChange may be -1697596308 in some builds)
-        Subscribe(-1697596308, OnStorageChangedDelegate);
+        Subscribe(-1697596308, OnStorageChangedDelegate, this);
     }
 
     public void OnStorageChanged(object _)

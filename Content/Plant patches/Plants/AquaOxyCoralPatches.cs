@@ -14,17 +14,19 @@ namespace Rephysicalized.Content.Plant_patches
 
     // OxyCoral: consume primary element mass while producing oxygen
     // - Primary element mass decreases by the oxygen bubble mass created each tick
-    // - If remaining primary element mass would drop below 1f, production stops
+    // - Production stops when 5 kg of primary element mass remain
     [HarmonyPatch(typeof(OxyCoral.Instance), nameof(OxyCoral.Instance.ProduceOxygenUpdate))]
     internal static class OxyCoral_ConsumePrimaryElementWhileProducingPatch
     {
-        private const float LIGHT_LUX_SATURATION = 20000f;
-        private const float LIGHT_MULTIPLIER_BASE_ADD = 1f;
+        private const float MIN_PRODUCTION_RATE = 0.1f;
+        private const float MAX_PRODUCTION_RATE = 0.3f;
+        private const float MIN_PRODUCTION_LUX = 2500f;
+        private const float MAX_PRODUCTION_LUX = 10000f;
+        private const float WILD_PRODUCTION_RATE_MODIFIER = 0.25f;
+        private const float MIN_REMAINING_MASS = 5f;
 
-        private static float GetLightMultiplier(OxyCoral.Instance __instance)
+        private static float GetOxygenProductionRate(OxyCoral.Instance __instance)
         {
-            // Light scaling: linear multiplier where lux=0 => 1x, lux=20,000 => 2x.
-            // Uses the maximum light on the output bubble cells (similar to OxyCoral.IsThereEnoughLight()).
             float maxLux = 0f;
             int plantCell = Grid.PosToCell(__instance.transform.GetPosition());
             for (int i = 0; i < __instance.def.OutputBubbleCells.Length; i++)
@@ -37,8 +39,8 @@ namespace Rephysicalized.Content.Plant_patches
                 }
             }
 
-            float t = Mathf.Clamp01(maxLux / LIGHT_LUX_SATURATION);
-            return LIGHT_MULTIPLIER_BASE_ADD + t;
+            float lightProgress = Mathf.InverseLerp(MIN_PRODUCTION_LUX, MAX_PRODUCTION_LUX, maxLux);
+            return Mathf.Lerp(MIN_PRODUCTION_RATE, MAX_PRODUCTION_RATE, lightProgress);
         }
 
         private static bool Prefix(OxyCoral.Instance __instance, float dt)
@@ -47,24 +49,24 @@ namespace Rephysicalized.Content.Plant_patches
                 return true;
 
             var pe = __instance.primaryElement;
-
-            // Keep vanilla behavior for wild oxycorals.
-            if (__instance.IsWild)
-                return true;
-
-            // Skip vanilla implementation and fully reproduce it so we can scale the oxygen bubble mass.
-            float oxygenProductionRate = __instance.def != null ? __instance.def.OxygenProductionRate : 0f;
-            oxygenProductionRate *= GetLightMultiplier(__instance);
+            bool isWild = __instance.IsWild;
+            float oxygenProductionRate = GetOxygenProductionRate(__instance);
+            if (isWild)
+                oxygenProductionRate *= WILD_PRODUCTION_RATE_MODIFIER;
 
             float mass = oxygenProductionRate * dt;
             if (mass <= 0f)
                 return false;
 
-            if (pe.Mass < 5f)
-                return false;
+            if (!isWild)
+            {
+                float availableMass = Mathf.Max(0f, pe.Mass - MIN_REMAINING_MASS);
+                mass = Mathf.Min(mass, availableMass);
+                if (mass <= 0f)
+                    return false;
 
-            // Consume primary element mass that will become the produced oxygen bubble.
-            pe.Mass -= mass;
+                pe.Mass -= mass;
+            }
 
             // Reproduce vanilla bubble spawn logic (random output bubble cell).
             int gameCell = Grid.OffsetCell(Grid.PosToCell((StateMachine.Instance)__instance), __instance.def.OutputBubbleCells[UnityEngine.Random.Range(0, __instance.def.OutputBubbleCells.Length)]);

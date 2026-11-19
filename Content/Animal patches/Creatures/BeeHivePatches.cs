@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 using Klei.AI;
-using System.Reflection;
 using STRINGS;
 using TUNING;
 
@@ -166,11 +165,9 @@ namespace Rephysicalized.Content.AnimalPatches.Creatures
     }
 
     // CO2 mass gain
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(ElementConsumer), "AddMassInternal")]
     internal static class AddMassInternal_Patch
     {
-        private static MethodBase TargetMethod() => AccessTools.Method(typeof(ElementConsumer), "AddMassInternal") ?? AccessTools.Method(typeof(ElementConsumer), "AddMass");
-
         public static void Postfix(ElementConsumer __instance, Sim.ConsumedMassInfo consumed_info)
         {
             if (__instance.elementToConsume != SimHashes.CarbonDioxide || consumed_info.mass <= 0f) return;

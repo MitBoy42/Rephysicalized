@@ -207,10 +207,11 @@ namespace Rephysicalized
                 gameObject,
                 utilityCell,
                 GameScenePartitioner.Instance.objectLayers[conduitType == ConduitType.Gas ? 12 : 16],
-                new System.Action<object>(OnConduitConnectionChanged)
+                OnConduitConnectionChanged,
+                this
             );
             GetConduitManager().AddConduitUpdater(new System.Action<float>(ConduitUpdate), ConduitFlowPriority.Default);
-            OnConduitConnectionChanged(null);
+            OnConduitConnectionChanged(this, null);
         }
 
         public override void OnCleanUp()
@@ -221,7 +222,11 @@ namespace Rephysicalized
         }
 
         // Keep this EXACT as requested (vanilla form with the event hash literal)
-        private void OnConduitConnectionChanged(object data) => this.Trigger(-2094018600, (object)this.IsConnected);
+        private static void OnConduitConnectionChanged(object context, object data)
+        {
+            var consumer = (RephysicalizedConduitConsumer)context;
+            consumer.Trigger(-2094018600, (object)consumer.IsConnected);
+        }
 
         public void SetOnState(bool onState) => isOn = onState;
 

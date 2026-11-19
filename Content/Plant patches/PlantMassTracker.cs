@@ -28,17 +28,20 @@ namespace Rephysicalized
         public string plantPrefabId;
         public List<MaterialYield> yields;
         public float harvestMassSubtractKg;
+        public float harvestBaseYieldKg;
         public string tinkerEffectId;
 
         public PlantMassTrackerConfig(
             string plantPrefabId,
             List<MaterialYield> yields,
             float harvestMassSubtractKg,
-            string tinkerEffectId)
+            string tinkerEffectId,
+            float harvestBaseYieldKg)
         {
             this.plantPrefabId = plantPrefabId;
             this.yields = (yields != null && yields.Count > 0) ? yields : new List<MaterialYield> { new MaterialYield("RotPile", 1f) };
             this.harvestMassSubtractKg = harvestMassSubtractKg;
+            this.harvestBaseYieldKg = harvestBaseYieldKg;
             this.tinkerEffectId = tinkerEffectId;
         }
     }
@@ -73,7 +76,8 @@ namespace Rephysicalized
             string plantPrefabId,
             List<MaterialYield> yields = null,
             float realHarvestSubtractKg = 1f,
-            string tinkerEffectId = "FarmTinker")
+            string tinkerEffectId = "FarmTinker",
+            float harvestBaseYieldKg = 0f)
         {
             if (string.IsNullOrWhiteSpace(plantPrefabId))
             {
@@ -87,7 +91,8 @@ namespace Rephysicalized
                 plantPrefabId,
                 yields,
                 realHarvestSubtractKg,
-                tinkerEffectId);
+                tinkerEffectId,
+                harvestBaseYieldKg);
 
             _configs[plantPrefabId] = config;
         }

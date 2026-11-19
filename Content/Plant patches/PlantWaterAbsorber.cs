@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using System.Collections.Generic;
+using HarmonyLib;
 using UnityEngine;
 
 namespace Rephysicalized.Content.Plant_patches
@@ -282,7 +283,7 @@ namespace Rephysicalized.Content.Plant_patches
     {
         public static void WireLiquidPECs(GameObject plant, Storage plotStorage)
         {
-            if (plant == null || plotStorage == null) return;
+            if (plant == null) return;
 
             var consumers = plant.GetComponents<PassiveElementConsumer>();
             if (consumers == null || consumers.Length == 0) return;
@@ -295,6 +296,16 @@ namespace Rephysicalized.Content.Plant_patches
                 // Only wire liquid consumers
                 var elem = ElementLoader.FindElementByHash(c.elementToConsume);
                 if (elem == null || !elem.IsLiquid) continue;
+
+                if (plotStorage == null)
+                {
+                    c.EnableConsumption(false);
+                    c.enabled = false;
+                    c.storeOnConsume = false;
+                    c.storage = null;
+                    ClearLimiter(plant, c, c.elementToConsume, Mathf.Max(0.1f, c.capacityKG));
+                    continue;
+                }
 
                 // Wire to plot storage and enable
                 c.storeOnConsume = true;
@@ -309,6 +320,19 @@ namespace Rephysicalized.Content.Plant_patches
 
                 // Attach limiter to enforce per-plant cap in the plot storage
                 EnsureLimiter(plant, c, plotStorage, c.elementToConsume, Mathf.Max(0.1f, c.capacityKG));
+            }
+        }
+
+        private static void ClearLimiter(GameObject plant, PassiveElementConsumer consumer, SimHashes element, float capKg)
+        {
+            var existing = plant.GetComponents<LiquidPECStorageLimiter>();
+            if (existing == null) return;
+
+            for (int i = 0; i < existing.Length; i++)
+            {
+                var limiter = existing[i];
+                if (limiter != null && limiter.Consumer == consumer)
+                    limiter.Configure(consumer, null, element, capKg);
             }
         }
 
@@ -343,6 +367,8 @@ namespace Rephysicalized.Content.Plant_patches
     /// </summary>
     public sealed class LiquidPECStorageLimiter : KMonoBehaviour, ISim4000ms
     {
+        private static readonly HashSet<LiquidPECStorageLimiter> activeLimiters = new HashSet<LiquidPECStorageLimiter>();
+
         public PassiveElementConsumer Consumer { get; private set; }
         private Storage _plotStorage;
         private Tag _elementTag;
@@ -354,11 +380,39 @@ namespace Rephysicalized.Content.Plant_patches
 
         public void Configure(PassiveElementConsumer consumer, Storage plotStorage, SimHashes element, float capKg)
         {
+            activeLimiters.Add(this);
             Consumer = consumer;
             _plotStorage = plotStorage;
             _elementHash = element;
             _elementTag = element.CreateTag();
             _capKg = Mathf.Max(0.1f, capKg);
+        }
+
+        public override void OnCleanUp()
+        {
+            activeLimiters.Remove(this);
+            base.OnCleanUp();
+        }
+
+        internal static void DetachFromStorage(Storage storage)
+        {
+            if (storage == null) return;
+
+            foreach (var limiter in activeLimiters)
+            {
+                if (limiter == null || limiter._plotStorage != storage) continue;
+
+                var consumer = limiter.Consumer;
+                if (consumer != null && consumer.storage == storage)
+                {
+                    consumer.EnableConsumption(false);
+                    consumer.enabled = false;
+                    consumer.storeOnConsume = false;
+                    consumer.storage = null;
+                }
+
+                limiter._plotStorage = null;
+            }
         }
 
         public void ApplyNow()
@@ -419,6 +473,27 @@ namespace Rephysicalized.Content.Plant_patches
         }
     }
 
+    [HarmonyPatch(typeof(Storage), nameof(Storage.OnCleanUp))]
+    internal static class Storage_OnCleanUp_LiquidPEC_Patch
+    {
+        [HarmonyPrefix]
+        private static void Prefix(Storage __instance)
+        {
+            LiquidPECStorageLimiter.DetachFromStorage(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(Deconstructable), nameof(Deconstructable.OnCompleteWork))]
+    internal static class Deconstructable_OnCompleteWork_LiquidPEC_Patch
+    {
+        [HarmonyPrefix]
+        private static void Prefix(Deconstructable __instance)
+        {
+            var storage = __instance.GetComponent<Storage>();
+            LiquidPECStorageLimiter.DetachFromStorage(storage);
+        }
+    }
+
     // Irrigation SetStorage hook: wire plant PECs to the plot storage when planted.
     [HarmonyPatch(typeof(IrrigationMonitor.Instance), nameof(IrrigationMonitor.Instance.SetStorage))]
     internal static class IrrigationMonitor_Instance_SetStorage_Patch_LiquidPEC
@@ -426,7 +501,7 @@ namespace Rephysicalized.Content.Plant_patches
         private static void Postfix(IrrigationMonitor.Instance __instance, object obj)
         {
             var storage = obj as Storage;
-            if (storage == null || __instance == null) return;
+            if (__instance == null) return;
 
             LiquidConsumerWireUtil.WireLiquidPECs(__instance.gameObject, storage);
         }

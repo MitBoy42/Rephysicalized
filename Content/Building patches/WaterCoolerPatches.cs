@@ -43,14 +43,14 @@ namespace Rephysicalized.Content.Building_patches
         }
     }
 
-    [HarmonyPatch(typeof(WaterCooler), "AddRequirementDesc")]
-    public static class WaterCooler_UI_Amount_Patch
-    {
-        static void Prefix(ref float mass)
-        {
-            mass = 0.5f;
-        }
-    }
+    // [HarmonyPatch(typeof(WaterCooler), "AddRequirementDesc")]
+    // public static class WaterCooler_UI_Amount_Patch
+    // {
+    //     static void Prefix(ref float mass)
+    //     {
+    //         mass = 0.5f;
+    //     }
+    // }
 
   // Adds SugarWater drinking effect to WaterCooler.
     [HarmonyPatch]

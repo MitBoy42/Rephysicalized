@@ -1,9 +1,9 @@
-
--Add cooling from space radiation?
--Make research mass neutral?
--Make element conversion ratios more realistic?
- 
-
-
--Fix Squid Abysslite poop
--Fix Codex in puft fish and parrot fish. 
+Ore
+UE 60
+Some Fixes 
+The amount of pee dupe makes is equal to the mass dupe has eaten or drank (this does not affect how fast the bladder fills up). Tears an Vomit also subtract from the stored mass. 
+Slight rebalancing of Storage capacity materials - Steel is stronger, Tungsten is weaker.
+Storage capacity modifier affects the new "Tools" Buildings - For example Lead tools will give less than a 15% bonus and Iridium tools will give a stronger than a 15% bonus. 
+Added visual scaler for critters - Critters which accumulated a lot of mass will look bigger. 
+A few decorative plants can now slowly convert polluted oxygen into clean oxygen (20 times slower than deodirizer)
+Stored ores wont dissolve

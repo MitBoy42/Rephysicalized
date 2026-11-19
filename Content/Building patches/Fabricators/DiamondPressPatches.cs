@@ -81,7 +81,31 @@ namespace Rephysicalized
         }
     }
 
-   
+    [HarmonyPatch(typeof(DiamondPressConfig), nameof(DiamondPressConfig.ConfigureBuildingTemplate))]
+    internal static class DiamondPressConfig_AddSandToCoquinaPearlRecipe_Patch
+    {
+        public static void Postfix(GameObject go, Tag prefab_tag)
+        {
+            var inputs = new[]
+            {
+                new ComplexRecipe.RecipeElement(SimHashes.Coquina.CreateTag(), 40f)
+            };
+            var outputs = new[]
+            {
+                new ComplexRecipe.RecipeElement(SimHashes.Pearl.CreateTag(), 20f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature)
+            };
+
+            string recipeId = ComplexRecipeManager.MakeRecipeID(DiamondPressConfig.ID, inputs, outputs);
+            var recipe = ComplexRecipeManager.Get()?.GetRecipe(recipeId);
+            if (recipe == null || recipe.results == null || recipe.results.Any(result => result.material == SimHashes.Sand.CreateTag()))
+                return;
+
+            recipe.results = recipe.results.Append(
+                new ComplexRecipe.RecipeElement(SimHashes.Sand.CreateTag(), 20f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature))
+                .ToArray();
+        }
+    }
+
     [HarmonyPatch(typeof(DiamondPressConfig), nameof(DiamondPressConfig.ConfigureBuildingTemplate))]
    
     
@@ -120,41 +144,41 @@ namespace Rephysicalized
         }
     }
 
-    [HarmonyPatch(typeof(DiamondPressConfig), nameof(DiamondPressConfig.ConfigureBuildingTemplate))]
+    //[HarmonyPatch(typeof(DiamondPressConfig), nameof(DiamondPressConfig.ConfigureBuildingTemplate))]
 
-    public static class DiamondPressConfig_AddPearl_Patch
-    {
-        //   private static bool Prepare() => Dlc5Gate.Enabled;
-        public static void Postfix(GameObject go, Tag prefab_tag)
-        {
-            // Inputs
-            var inputs = new ComplexRecipe.RecipeElement[]
-            {
-            new ComplexRecipe.RecipeElement(SimHashes.Lime.CreateTag(), 90f),
-             new ComplexRecipe.RecipeElement(new Tag[3] { SimHashes.NaturalResin.CreateTag(), SimHashes.Latex.CreateTag(), SimHashes.Resin.CreateTag() } , 10f)
-            };
+    //public static class DiamondPressConfig_AddPearl_Patch
+    //{
+    //    //   private static bool Prepare() => Dlc5Gate.Enabled;
+    //    public static void Postfix(GameObject go, Tag prefab_tag)
+    //    {
+    //        // Inputs
+    //        var inputs = new ComplexRecipe.RecipeElement[]
+    //        {
+    //        new ComplexRecipe.RecipeElement(SimHashes.Lime.CreateTag(), 90f),
+    //         new ComplexRecipe.RecipeElement(new Tag[3] { SimHashes.NaturalResin.CreateTag(), SimHashes.Latex.CreateTag(), SimHashes.Resin.CreateTag() } , 10f)
+    //        };
 
-            // Outputs
-            var outputs = new ComplexRecipe.RecipeElement[]
-            {
-                // PinkRock item (prefab id/tag) at 1 kg
-                new ComplexRecipe.RecipeElement(SimHashes.Pearl.CreateTag(), 100f, ComplexRecipe.RecipeElement.TemperatureOperation.Heated),
+    //        // Outputs
+    //        var outputs = new ComplexRecipe.RecipeElement[]
+    //        {
+    //            // PinkRock item (prefab id/tag) at 1 kg
+    //            new ComplexRecipe.RecipeElement(SimHashes.Pearl.CreateTag(), 100f, ComplexRecipe.RecipeElement.TemperatureOperation.Heated),
 
 
-            };
+    //        };
 
-            // Deterministic recipe ID bound to DiamondPress
-            string recipeID = ComplexRecipeManager.MakeRecipeID(DiamondPressConfig.ID, inputs, outputs);
+    //        // Deterministic recipe ID bound to DiamondPress
+    //        string recipeID = ComplexRecipeManager.MakeRecipeID(DiamondPressConfig.ID, inputs, outputs);
 
-            var recipe = new ComplexRecipe(recipeID, inputs, outputs, 100, 0)
-            {
-                time = 80f,
-                nameDisplay = ComplexRecipe.RecipeNameDisplay.IngredientToResult,
-                description = STRINGS.BUILDINGS.DIAMONDPRESS.PEARL,
-                fabricators = new List<Tag> { TagManager.Create(DiamondPressConfig.ID) }
-            };
-        }
-    }
+    //        var recipe = new ComplexRecipe(recipeID, inputs, outputs, 100, 0)
+    //        {
+    //            time = 80f,
+    //            nameDisplay = ComplexRecipe.RecipeNameDisplay.IngredientToResult,
+    //            description = STRINGS.BUILDINGS.DIAMONDPRESS.PEARL,
+    //            fabricators = new List<Tag> { TagManager.Create(DiamondPressConfig.ID) }
+    //        };
+    //    }
+    //}
 
     // Sets the Diamond Press fabricator heatedTemperature to 320°C (593.15 K)
     [HarmonyPatch(typeof(DiamondPressConfig), nameof(DiamondPressConfig.ConfigureBuildingTemplate))]

@@ -16,7 +16,7 @@ namespace Rephysicalized.Content.System_Patches.Helper_Components
 
         public override string GetTooltip(Amount master, AmountInstance instance)
         {
-            StringBuilder sb = GlobalStringBuilderPool.Alloc();
+            StringBuilder sb = new StringBuilder();
             sb.AppendFormat(master.description, formatter.GetFormattedValue(instance.value));
             sb.Append("\n\n");
             float totalDisplayValue = instance.deltaAttribute.GetTotalDisplayValue();
@@ -28,7 +28,7 @@ namespace Rephysicalized.Content.System_Patches.Helper_Components
                 sb.Append("\n");
                 sb.AppendFormat(UI.MODIFIER_ITEM_TEMPLATE, modifier.GetDescription(), formatter.GetFormattedValue(ToPercent(modifierContribution, instance), formatter.DeltaTimeSlice));
             }
-            return GlobalStringBuilderPool.ReturnAndFree(sb);
+            return sb.ToString();
     }
   }
 

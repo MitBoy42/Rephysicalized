@@ -20,6 +20,7 @@ namespace Rephysicalized.Patches
         [MyCmpGet] private ComplexFabricator fabricator; // not strictly needed, but useful if you want finer-grained checks later
 
         private RadiationEmitter emitter;
+        private int activeChangedHandle = -1;
 
         public override void OnSpawn()
         {
@@ -30,7 +31,7 @@ namespace Rephysicalized.Patches
             ConfigureEmitterDefaults(emitter);
 
             // Subscribe to active state changes (driven by fabrication activity for ComplexFabricator)
-            Subscribe((int)GameHashes.ActiveChanged, OnActiveChanged);
+            activeChangedHandle = Subscribe((int)GameHashes.ActiveChanged, (System.Action<object, object>)((component, data) => ((CentrifugeRadiationDuringFabrication)component).OnActiveChanged(data)), this);
 
             // Initialize emission state to current active state
             SetEmitting(operational != null && operational.IsActive);
@@ -38,7 +39,7 @@ namespace Rephysicalized.Patches
 
         public override void OnCleanUp()
         {
-            Unsubscribe((int)GameHashes.ActiveChanged, OnActiveChanged);
+            Unsubscribe(ref activeChangedHandle);
             base.OnCleanUp();
         }
 

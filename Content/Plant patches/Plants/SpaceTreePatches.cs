@@ -151,11 +151,11 @@ namespace Rephysicalized
                 var unique = HashSetPool<GameObject, SpaceTreeTrunkDrainController>.Allocate();
                 try
                 {
-                    _grower.ActionPerBranch(branch =>
+                    foreach (var branch in _grower.GetExistingBranches())
                     {
                         if (branch != null)
                             unique.Add(branch);
-                    });
+                    }
 
                     if (unique.Count == 0)
                         return;

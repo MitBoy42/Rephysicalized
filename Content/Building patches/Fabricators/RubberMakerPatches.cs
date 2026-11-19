@@ -14,6 +14,26 @@ namespace Rephysicalized.Content.Building_patches.Fabricators
     {
         public static void Postfix(GameObject go, Tag prefab_tag)
         {
+            var buildingElementEmitter = go.GetComponent<BuildingElementEmitter>();
+            if (buildingElementEmitter != null)
+                UnityEngine.Object.DestroyImmediate(buildingElementEmitter);
+
+            var fabricator = go.GetComponent<ComplexFabricator>();
+            if (fabricator != null)
+            {
+                fabricator.storeProduced = true;
+
+                var dropper = go.GetComponent<WorldElementDropper>() ?? go.AddComponent<WorldElementDropper>();
+                dropper.DropSolids = false;
+                dropper.DropLiquids = false;
+                dropper.DropGases = true;
+                dropper.TargetStorage = fabricator.outStorage;
+
+                var dropAllWorkable = go.GetComponent<DropAllWorkable>();
+                if (dropAllWorkable != null)
+                    dropAllWorkable.storages = new Storage[] { fabricator.outStorage };
+            }
+
             var crm = ComplexRecipeManager.Get();
 
             var inputs = new[]
@@ -35,8 +55,26 @@ namespace Rephysicalized.Content.Building_patches.Fabricators
                 new ComplexRecipe.RecipeElement(new Tag[2] { SimHashes.Resin.CreateTag(), SimHashes.Latex.CreateTag() } , 110f) 
             };
 
-            BuildingElementEmitter buildingElementEmitter = go.AddOrGet<BuildingElementEmitter>();
-            buildingElementEmitter.emitRate = 0.25f;
+            recipe.results = new ComplexRecipe.RecipeElement[]
+       {
+                new ComplexRecipe.RecipeElement(SimHashes.Rubber.CreateTag(), 100f),
+         new ComplexRecipe.RecipeElement(SimHashes.CarbonDioxide.CreateTag(), 10f)
+       };
+        }
+    }
+
+    [HarmonyPatch(typeof(ComplexFabricator), "SpawnOrderProduct")]
+    internal static class RubberMaker_DropCarbonDioxidePatch
+    {
+        public static void Postfix(ComplexFabricator __instance)
+        {
+            if (__instance.PrefabID().Name != RubberMakerConfig.ID)
+                return;
+
+            var dropper = __instance.GetComponent<WorldElementDropper>();
+            var storage = __instance.outStorage;
+            if (dropper != null && storage != null)
+                storage.DropAll();
         }
     }
 }

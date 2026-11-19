@@ -117,12 +117,12 @@ namespace Rephysicalized
         }
     }
 
-    [HarmonyPatch(typeof(Electrobank), nameof(Electrobank.GetDescriptors))]
+    [HarmonyPatch(typeof(Electrobank), nameof(Electrobank.CollectDescriptors))]
     internal static class Electrobank_GetDescriptors_CapacityUI_Patch
     {
-        private static void Postfix(Electrobank __instance, ref List<Descriptor> __result)
+        private static void Postfix(Electrobank __instance, GameObject go, List<Descriptor> descriptors)
         {
-            if (__instance == null || __result == null || __result.Count == 0 || !Config.Instance.ElectrobankCapacity)
+            if (__instance == null || descriptors == null || descriptors.Count == 0 || !Config.Instance.ElectrobankCapacity)
                 return;
 
             var prefabId = __instance.GetComponent<KPrefabID>();
@@ -151,7 +151,7 @@ namespace Rephysicalized
             descriptor.SetupDescriptor(
                 string.Format((string)global::STRINGS.UI.BUILDINGEFFECTS.ELECTROBANKS, formattedCapacity),
                 string.Format((string)global::STRINGS.UI.BUILDINGEFFECTS.TOOLTIPS.ELECTROBANKS, formattedCapacity));
-            __result[0] = descriptor;
+            descriptors[0] = descriptor;
         }
     }
 

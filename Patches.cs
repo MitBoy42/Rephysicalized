@@ -54,6 +54,9 @@ namespace Rephysicalized
         }
     }
 
+
+
+
     public static class ModMaterials
     {
 
@@ -89,7 +92,8 @@ namespace Rephysicalized
                 }
             }
         }
-
-
     }
 }
+
+
+    

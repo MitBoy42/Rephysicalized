@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei;
 using Klei.AI;
 using System;
@@ -29,18 +29,18 @@ namespace Rephysicalized.Content.System_Patches
       { SimHashes.Cobalt.CreateTag().ToString(), 1.2f },
       { SimHashes.Cobaltite.CreateTag().ToString(), 1.2f },
       { SimHashes.Niobium.CreateTag().ToString(), 1.2f },
-      { SimHashes.Steel.CreateTag().ToString(), 1.2f },
-      { SimHashes.Nickel.CreateTag().ToString(), 1.4f },
-            { SimHashes.NickelOre.CreateTag().ToString(), 1.4f },
-            { SimHashes.Wolframite.CreateTag().ToString(), 1.4f },
-            { SimHashes.Tungsten.CreateTag().ToString(), 1.4f },
+      { SimHashes.Steel.CreateTag().ToString(), 1.4f },
+      { SimHashes.Nickel.CreateTag().ToString(), 1.3f },
+            { SimHashes.NickelOre.CreateTag().ToString(), 1.3f },
+            { SimHashes.Wolframite.CreateTag().ToString(), 1.3f },
+            { SimHashes.Tungsten.CreateTag().ToString(), 1.3f },
             { SimHashes.TempConductorSolid.CreateTag().ToString(), 1.4f },
             { SimHashes.Iridium.CreateTag().ToString(), 1.6f },
             { "SolidSilver", 1.1f }, 
-            { "Plasteel", 1.5f },
+            { "Plasteel", 1.6f },
             { "AIO_Permendur_Solid", 1.2f },
             { "AIO_Invar_Solid", 1.2f },
-            { "AIO_StainlessSteel_Solid", 1.3f },
+            { "AIO_StainlessSteel_Solid", 1.5f },
             { "AIO_FerroChrome_Solid", 0.6f },
             { "AIO_Chromium_Solid", 0.6f },
             { "SolidFiberGlass", 1.2f }, 
@@ -70,12 +70,37 @@ namespace Rephysicalized.Content.System_Patches
         {
             if (go == null)
                 return 1f;
-            var pe = go.GetComponent<PrimaryElement>();
-            if (pe == null)
-                return 1f;
-            return StorageCapacitySettings.GetMultiplier(pe.ElementID);
+            // Buildings store all their construction materials (primary + secondary)
+            // in Deconstructable.constructionElements, even for multi-material buildings
+            // whose primary element is a non-metal (e.g. Forge tools: Ceramic + metal).
+            var deconstructable = go.GetComponent<Deconstructable>();
+      
+                float best = 1f;
+                bool found = false;
+                foreach (var tag in deconstructable.constructionElements)
+                {
+                    if (tag == null)
+                        continue;
+                    var elem = ElementLoader.GetElement(tag);
+                    if (elem == null)
+                        continue;
+                    string key = elem.id.CreateTag().ToString();
+                    if (!StorageCapacitySettings.Multipliers.ContainsKey(key))
+                        continue;
+                    float m = StorageCapacitySettings.GetMultiplier(elem.id);
+                    if (!found || m > best)
+                    {
+                        best = m;
+                        found = true;
+                    }
+                }
+       
+                    return best;
+     
+
 
         }
+
         public static float GetMultiplier(Element element)
         {
             if (element == null)

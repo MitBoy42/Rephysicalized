@@ -17,7 +17,8 @@ namespace Rephysicalized.Content.Stuff_Patches
 
         public GameObject CreatePrefab()
         {
-            GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(this.ElementID);
+            GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(ModElementRegistration.PlantFiberRP);
+            OreEntity.GetComponent<PrimaryElement>().SetElement(this.ElementID);
 
             var comp = OreEntity.AddComponent<EnviromenmentalPreparation>();
 

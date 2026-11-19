@@ -73,12 +73,15 @@ namespace Rephysicalized
         public bool DebrisDissolving { get; set; }
 
 
-
-
         [Option("STRINGS.MODCONFIG.EROSION.NAME", "STRINGS.MODCONFIG.EROSION.TOOLTIP", null)]
         [JsonProperty]
         public bool Erosion { get; set; }
 
+
+
+        [Option("STRINGS.MODCONFIG.CREATURESIZE.NAME", "STRINGS.MODCONFIG.CREATURESIZE.TOOLTIP", null)]
+        [JsonProperty]
+        public bool CreatureSize { get; set; }
 
 
 
@@ -87,7 +90,7 @@ namespace Rephysicalized
         //[JsonProperty]
         //public bool Silicon { get; set; }
 
- 
+
 
 
         [Option("STRINGS.MODCONFIG.CHEMISTRIER.SWEETLES.NAME", "STRINGS.MODCONFIG.CHEMISTRIER.SWEETLES.TOOLTIP", "STRINGS.MODCONFIG.CHEMISTRIER.NAME")]
@@ -183,12 +186,12 @@ namespace Rephysicalized
 
         public bool ElectrobankCapacity { get; set; }
 
-        ////Rephysicalized Dupes
+        //Rephysicalized Dupes
 
         //[Option("STRINGS.MODCONFIG.REPHYSDUPES.MAIN.NAME", "STRINGS.MODCONFIG.REPHYSDUPES.MAIN.TOOLTIP", "STRINGS.REPHYSDUPES.NAME")]
         //[JsonProperty]
 
-        //public bool RephysDupes { get; set; }
+        public bool RephysDupes { get; set; }
 
         public Config()
         {
@@ -207,7 +210,8 @@ namespace Rephysicalized
             this.TunedUpCrudCreation = true;
             this.DebrisDissolving = true;
             this.Erosion = true;
-   
+            this.CreatureSize = true;
+
             this.IrradiatedCritters = true;
             this.ChemistrierSweetles = true;
             this.ChemistrierSlicksters = true;

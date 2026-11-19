@@ -1,13 +1,10 @@
 ﻿﻿using HarmonyLib;
-using JetBrains.Annotations;
 using Klei.AI;
 using STRINGS;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using UnityEngine;
 using KAttribute = Klei.AI.Attribute;
 
@@ -15,9 +12,7 @@ using KAttribute = Klei.AI.Attribute;
 namespace Rephysicalized
 {
 
-    // Patch tuning + derived constants as early as possible.
-    // BionicOxygenTankMonitor.OXYGEN_TANK_CAPACITY_KG is a static readonly computed once from DUPLICANTSTATS.
-    // If that type initializes before our Db.Initialize patch, the capacity won’t reflect DuplicantOxygenUse.
+    // Apply tuning before Db.Initialize constructs amounts and bionic monitors read it.
     [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
     public static class Rephys_DbInitialize_Patch
     {
@@ -26,11 +21,12 @@ namespace Rephysicalized
         [HarmonyPrefix]
         private static void Prefix()
         {
+     
             ApplyTo(global::TUNING.DUPLICANTSTATS.STANDARD);
             ApplyTo(global::TUNING.DUPLICANTSTATS.BIONICS);
+            global::TUNING.STRESS.VOMIT_AMOUNT = 0.2f;
+   
 
-
-            ForceSetBionicTankCapacityKg();
         }
 
         private static void ApplyTo(global::TUNING.DUPLICANTSTATS stats)
@@ -53,20 +49,6 @@ namespace Rephysicalized
             }
         }
 
-        private static void ForceSetBionicTankCapacityKg()
-        {
-         
-                var capField = typeof(BionicOxygenTankMonitor).GetField(
-                    "OXYGEN_TANK_CAPACITY_KG",
-                    BindingFlags.Public | BindingFlags.Static);
-
-                if (capField == null) return;
-
-                float newCap = 2400f * TUNING.DUPLICANTSTATS.BIONICS.BaseStats.OXYGEN_USED_PER_SECOND;
-
-                capField.SetValue(null, newCap);
-      
-        }
     }
 
 
@@ -262,42 +244,23 @@ namespace Rephysicalized
 
             try
             {
-                bool changed = false;
-
                 if (caloriesDeltaAttribute == null)
                 {
                     var calAmount = Db.Get().Amounts.Calories;
                     if (calAmount != null)
-                    {
-                        var tAmt = Traverse.Create(calAmount);
-                        caloriesDeltaAttribute =
-                            tAmt.Field("deltaAttribute").GetValue<KAttribute>() ??
-                            tAmt.Property("deltaAttribute")?.GetValue<KAttribute>();
-                    }
-
-                    if (caloriesDeltaAttribute == null)
-                    {
-                        caloriesDeltaAttribute =
-                            Db.Get().Attributes.TryGet("CaloriesDelta") ??
-                            Db.Get().Attributes.TryGet("CalorieDelta") ??
-                            Db.Get().Attributes.TryGet("CaloriesBurnRate");
-                    }
-
-                    changed = true;
+                        caloriesDeltaAttribute = calAmount.deltaAttribute;
                 }
 
                 if (caloriesDeltaAttribute != null && caloriesDeltaInst == null)
                 {
                     caloriesDeltaInst = attributes.Get(caloriesDeltaAttribute);
-                    changed = true;
                 }
 
                 if (caloriesDeltaInst != null && caloriesDeltaMod == null)
                 {
                     var displayName = STRINGS.DUPLICANTS.HEALINGMETABOLISM.NAME;
-                    caloriesDeltaMod = new AttributeModifier(caloriesDeltaInst.Attribute.Id, 0f, displayName);
+                    caloriesDeltaMod = new AttributeModifier(caloriesDeltaInst.Attribute.Id, 0f, displayName, is_readonly: false);
                     attributes.Add(caloriesDeltaMod);
-                    changed = true;
                 }
 
                 return caloriesDeltaInst != null && caloriesDeltaMod != null;
@@ -310,29 +273,12 @@ namespace Rephysicalized
 
         private static void SetModifierValue(AttributeModifier mod, float value)
         {
-            if (mod == null) return;
-            var t = Traverse.Create(mod);
-            try { t.Property("Value")?.SetValue(value); return; } catch { }
-            try { t.Field("Value")?.SetValue(value); } catch { }
+            mod?.SetValue(value);
         }
 
         private static float GetModifierValue(AttributeModifier mod)
         {
-            if (mod == null) return 0f;
-            var t = Traverse.Create(mod);
-            try
-            {
-                var p = t.Property("Value");
-                if (p != null) return p.GetValue<float>();
-            }
-            catch { }
-            try
-            {
-                var f = t.Field("Value");
-                if (f != null) return f.GetValue<float>();
-            }
-            catch { }
-            return 0f;
+            return mod != null ? mod.Value : 0f;
         }
     }
 

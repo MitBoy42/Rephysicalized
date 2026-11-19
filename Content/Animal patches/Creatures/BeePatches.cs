@@ -67,17 +67,9 @@ namespace Rephysicalized.Content.AnimalPatches
     // 3) After ElementConsumer.AddMassInternal consumes CO2, add that mass to the Bee
     //    - If tracker is in ConsumedMass mode, use ReportConsumedMass so MASS_RATIO applies.
     //    - Otherwise, bump PrimaryElement.Mass directly.
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(ElementConsumer), "AddMassInternal")]
     internal static class ElementConsumer_AddMassInternal_BeeCO2MassGain_Postfix
     {
-        private static System.Reflection.MethodBase TargetMethod()
-        {
-            var t = typeof(ElementConsumer);
-            var m = AccessTools.Method(t, "AddMassInternal");
-            if (m == null) m = AccessTools.Method(t, "AddMass");
-            return m;
-        }
-
         public static void Postfix(ElementConsumer __instance, Sim.ConsumedMassInfo consumed_info)
         {
             

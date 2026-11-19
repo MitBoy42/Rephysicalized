@@ -11,12 +11,14 @@ namespace Rephysicalized.ModElements
         public static GameObject GetPrefabForRecipe()
         {
             GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(ModElementRegistration.AshByproduct.SimHash);
+            OreEntity.GetComponent<PrimaryElement>().SetElement(ModElementRegistration.AshByproduct.SimHash);
             return OreEntity;
         }
 
         public GameObject CreatePrefab()
         {
             GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(this.ElementID);
+            OreEntity.GetComponent<PrimaryElement>().SetElement(this.ElementID);
             return OreEntity;
         }
 
@@ -31,12 +33,14 @@ namespace Rephysicalized.ModElements
             public static GameObject GetPrefabForRecipe()
             {
                 GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(ModElementRegistration.CrudByproduct.SimHash);
+                OreEntity.GetComponent<PrimaryElement>().SetElement(ModElementRegistration.CrudByproduct.SimHash);
                 return OreEntity;
             }
 
             public GameObject CreatePrefab()
             {
                 GameObject OreEntity = EntityTemplates.CreateSolidOreEntity(this.ElementID);
+                OreEntity.GetComponent<PrimaryElement>().SetElement(this.ElementID);
                 return OreEntity;
             }
 

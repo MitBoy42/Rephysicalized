@@ -145,15 +145,17 @@ namespace Rephysicalized.Patches
     {
         private static readonly Tag SeedTag = new Tag("PinkRockCarved");
 
+        private int uprootedHandle = -1;
+
         public override void OnSpawn()
         {
             base.OnSpawn();
-            Subscribe((int)GameHashes.Uprooted, OnUprooted);
+            uprootedHandle = Subscribe((int)GameHashes.Uprooted, (System.Action<object, object>)((component, data) => ((PinkRockPlantedReturner)component).OnUprooted(data)), this);
         }
 
         public override void OnCleanUp()
         {
-            Unsubscribe((int)GameHashes.Uprooted, OnUprooted);
+            Unsubscribe(ref uprootedHandle);
             base.OnCleanUp();
         }
 

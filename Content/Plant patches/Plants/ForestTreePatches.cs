@@ -172,6 +172,16 @@ namespace Rephysicalized
     /// </summary>
     internal static class ForestTreeBranch_MassTracker
     {
+        [HarmonyPatch(typeof(Crop), nameof(Crop.SpawnConfiguredFruit))]
+        internal static class SuppressVanillaBranchHarvestOutput_Patch
+        {
+            private static bool Prefix(Crop __instance)
+            {
+                var kpid = __instance != null ? __instance.GetComponent<KPrefabID>() : null;
+                return kpid == null || kpid.PrefabTag != (Tag)"ForestTreeBranch";
+            }
+        }
+
         [HarmonyPatch(typeof(ForestTreeBranchConfig), nameof(ForestTreeBranchConfig.CreatePrefab))]
         internal static class CreatePrefab_Patch
         {

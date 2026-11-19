@@ -49,6 +49,8 @@ namespace Rephysicalized
 { "Snail", SimHashes.Mucus }, { "BabySnail", SimHashes.Mucus },
 { "SnailIron", SimHashes.Mucus }, { "BabySnailIron", SimHashes.Mucus },
 { "ParrotFish", SimHashes.Lime }, { "BabyParrotFish", SimHashes.Lime },
+{ "SquirrelAquatic", SimHashes.Coquina }, { "BabySquirrelAquatic", SimHashes.Coquina },
+
 
 { "Pacu", SimHashes.ToxicSand }, { "BabyPacu", SimHashes.ToxicSand },
 { "PacuCleaner", SimHashes.Dirt }, { "BabyPacuCleaner", SimHashes.Dirt },

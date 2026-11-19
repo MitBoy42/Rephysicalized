@@ -67,6 +67,8 @@ namespace Rephysicalized
 
         private const int CALORIES_CONSUMED_EVENT_ID = -2038961714;
 
+        private int caloriesConsumedHandle = -1;
+
         [Serializable]
         public class ExtraDropSpec
         {
@@ -187,12 +189,12 @@ namespace Rephysicalized
             }
             catch { }
 
-            Subscribe(CALORIES_CONSUMED_EVENT_ID, OnCaloriesConsumed);
+            caloriesConsumedHandle = Subscribe(CALORIES_CONSUMED_EVENT_ID, (System.Action<object, object>)((component, data) => ((CreatureMassTracker)component).OnCaloriesConsumed(data)), this);
         }
 
         public override void OnCleanUp()
         {
-            Unsubscribe(CALORIES_CONSUMED_EVENT_ID, OnCaloriesConsumed);
+            Unsubscribe(ref caloriesConsumedHandle);
             base.OnCleanUp();
         }
 
@@ -469,15 +471,16 @@ namespace Rephysicalized
     [AddComponentMenu("KMonoBehaviour/Creatures/CreatureMassTrackerLink")]
     public class CreatureMassTrackerLink : KMonoBehaviour
     {
+        private int spawnedFromHandle = -1;
         public override void OnPrefabInit()
         {
             base.OnPrefabInit();
-            Subscribe((int)GameHashes.SpawnedFrom, OnSpawnedFrom);
+            spawnedFromHandle = Subscribe((int)GameHashes.SpawnedFrom, (System.Action<object, object>)((component, data) => ((CreatureMassTrackerLink)component).OnSpawnedFrom(data)), this);
         }
 
         public override void OnCleanUp()
         {
-            Unsubscribe((int)GameHashes.SpawnedFrom, OnSpawnedFrom);
+            Unsubscribe(ref spawnedFromHandle);
             base.OnCleanUp();
         }
 

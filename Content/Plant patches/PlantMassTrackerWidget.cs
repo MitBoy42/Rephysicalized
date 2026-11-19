@@ -7,7 +7,7 @@ namespace Rephysicalized.Content.ModDb
 {
     // Adds a single "Harvest Drops (Rephysicalized)" panel to plant Codex entries.
     // The yields are read from PlantMassTrackerRegistry for the plant's prefab ID.
-    [HarmonyPatch(typeof(CodexEntryGenerator), "GeneratePlantDescriptionContainers")]
+    [HarmonyPatch(typeof(CodexEntryGenerator_Plants), "GeneratePlantDescriptionContainers")]
     internal static class PlantHarvestCodexPanelPatch
     {
         [HarmonyPostfix]

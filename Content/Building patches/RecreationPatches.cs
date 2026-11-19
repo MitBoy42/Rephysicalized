@@ -1,18 +1,18 @@
 ﻿using HarmonyLib;
+using Klei;
+using Klei.AI;
 using KSerialization;
 using Rephysicalized;
+using Rephysicalized.ModElements;
 using System;
+using System.Collections.Generic;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using TUNING;
-using UnityEngine;
-
-using Klei;
-using Klei.AI;
-using System.Collections.Generic;
 using TUNING;
+using UnityEngine;
 using UnityEngine;
 namespace Rephysicalized
 {
@@ -149,6 +149,31 @@ namespace Rephysicalized
             }
         }
     }
+    [HarmonyPatch(typeof(Trampoline), "ConsumeRubber")]
+    public static class Trampoline_ConsumeRubber_CrudByproductPatch
+    {
+        public static void Postfix(Trampoline.Instance smi)
+        {
+       
+      
+            Vector3 pos = smi.storage.transform.GetPosition();
+                ElementLoader.GetElement(ModElementRegistration.CrudByproduct.Tag).substance.SpawnResource(Grid.CellToPosCBC(Grid.PosToCell(pos), Grid.SceneLayer.Ore), 5f, 293.15f, byte.MaxValue, 0, false);
+  
+        }
+    }
+    [HarmonyPatch(typeof(SandboxBuilding), "ConsumeUse")]
+    public static class SandBoxBuilding_ConsumeUse_Mud
+    {
+        public static void Postfix(Trampoline.Instance smi)
+        {
+
+
+            Vector3 pos = smi.storage.transform.GetPosition();
+            ElementLoader.GetElement(SimHashes.Mud.CreateTag()).substance.SpawnResource(Grid.CellToPosCBC(Grid.PosToCell(pos), Grid.SceneLayer.Ore), 5f, 293.15f, byte.MaxValue, 0, false);
+
+        }
+    }
+
 }
 
 

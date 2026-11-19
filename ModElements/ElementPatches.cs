@@ -42,6 +42,17 @@ namespace Rephysicalized.ModElements
 			public static void Postfix()
 			{
 				ModElements.ModifyExistingElements();
+
+                // Ensure every substance has a valid anim to prevent SpawnResource NREs
+                foreach (var el in ElementLoader.elements)
+                {
+                    if (el != null && el.substance != null && el.substance.anim == null)
+                    {
+                        var anim = Assets.GetAnim("glass_kanim");
+                        el.substance.anim = anim;
+                        el.substance.Anims = new[] { anim };
+                    }
+                }
 			}
 		}
 

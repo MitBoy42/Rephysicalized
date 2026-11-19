@@ -44,14 +44,14 @@ namespace Rephysicalized.Content.System_Patches
         private float workingmass;
         private float debristemp;
         private float celltemp;
-        private static readonly EventSystem.IntraObjectHandler<OreDissolves> OnAbsorbDelegate = new EventSystem.IntraObjectHandler<OreDissolves>((System.Action<OreDissolves, object>)((c, d) => c.OnAbsorb(d)));
-        private static readonly EventSystem.IntraObjectHandler<OreDissolves> OnSplitFromChunkDelegate = new EventSystem.IntraObjectHandler<OreDissolves>((System.Action<OreDissolves, object>)((c, d) => c.OnSplitFromChunk(d)));
+        private static readonly System.Action<object, object> OnAbsorbDelegate = (System.Action<object, object>)((component, data) => ((OreDissolves)component).OnAbsorb(data));
+        private static readonly System.Action<object, object> OnSplitFromChunkDelegate = (System.Action<object, object>)((component, data) => ((OreDissolves)component).OnSplitFromChunk(data));
 
         public override void OnPrefabInit()
         {
             base.OnPrefabInit();
-            this.Subscribe<OreDissolves>(-2064133523, OreDissolves.OnAbsorbDelegate);
-            this.Subscribe<OreDissolves>(1335436905, OreDissolves.OnSplitFromChunkDelegate);
+            this.Subscribe(-2064133523, OreDissolves.OnAbsorbDelegate, this);
+            this.Subscribe(1335436905, OreDissolves.OnSplitFromChunkDelegate, this);
             Element elementByHash = ElementLoader.FindElementByHash(this.absorbedFluid);
             if (elementByHash != null)
                 this.absorbedFluidSHC = elementByHash.specificHeatCapacity;
@@ -78,7 +78,7 @@ namespace Rephysicalized.Content.System_Patches
         {
             if ((UnityEngine.Object)this.pickupable == (UnityEngine.Object)null)
                 this.pickupable = this.GetComponent<Pickupable>();
-            if ((UnityEngine.Object)this.pickupable == (UnityEngine.Object)null || (UnityEngine.Object)this.pickupable.PrimaryElement == (UnityEngine.Object)null || SingletonOptions<Config>.Instance != null && !SingletonOptions<Config>.Instance.DebrisDissolving || this.respectsealed && this.pickupable.KPrefabID.HasTag(GameTags.Sealed))
+            if ((UnityEngine.Object)this.pickupable == (UnityEngine.Object)null || (UnityEngine.Object)this.pickupable.PrimaryElement == (UnityEngine.Object)null || this.pickupable.storage != null || SingletonOptions<Config>.Instance != null && !SingletonOptions<Config>.Instance.DebrisDissolving || this.respectsealed && this.pickupable.KPrefabID.HasTag(GameTags.Sealed))
                 return;
             if ((double)this.OreSHC <= 0.0)
                 this.OreSHC = this.pickupable.PrimaryElement.Element.specificHeatCapacity;

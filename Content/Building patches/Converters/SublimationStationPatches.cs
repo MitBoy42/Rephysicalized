@@ -213,7 +213,7 @@ namespace Rephysicalized
                 var label = BleachStoneTag.ProperName() ?? BleachStoneTag.ToString();
                 var sprite = Def.GetUISprite((object)BleachStoneTag);
                 options[1] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
-                    BleachStoneTag, label, sprite, "Deliver Bleachstone");
+                    BleachStoneTag, label, sprite, "Deliver Bleach Stone");
             }
 
             return options;

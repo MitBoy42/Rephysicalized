@@ -89,14 +89,24 @@ namespace Rephysicalized
             for (int i = 0; i < crops.Count; i++)
             {
                 var cv = crops[i];
-                if (cv.cropId == null)
+                if (cv?.products == null)
                     continue;
 
-                if (!targetAmounts.TryGetValue(cv.cropId, out int amount))
-                    continue;
+                var products = new List<Crop.CropVal.ProductInfo>(cv.products);
+                bool changed = false;
+                for (int productIndex = 0; productIndex < products.Count; productIndex++)
+                {
+                    var product = products[productIndex];
+                    if (!targetAmounts.TryGetValue(product.cropId, out int amount))
+                        continue;
 
-                // Preserve original duration
-                crops[i] = new Crop.CropVal(cv.cropId, cv.cropDuration, amount);
+                    product.quantity = amount;
+                    products[productIndex] = product;
+                    changed = true;
+                }
+
+                if (changed)
+                    crops[i] = new Crop.CropVal(products, cv.cropDuration, cv.renewable);
             }
         }
     }

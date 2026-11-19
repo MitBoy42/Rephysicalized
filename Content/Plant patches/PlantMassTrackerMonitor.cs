@@ -27,6 +27,7 @@ namespace Rephysicalized
         // Config injected by registry
         private List<MaterialYield> _yields = new List<MaterialYield> { new MaterialYield("RotPile", 1f) };
         private float _harvestMassSubtractKg = 1f;
+        private float _harvestBaseYieldKg;
         private string _tinkerEffectId = "FarmTinker";
 
 
@@ -131,6 +132,7 @@ namespace Rephysicalized
             if (config == null) return;
             _yields = new List<MaterialYield>(config.yields ?? new List<MaterialYield> { new MaterialYield("RotPile", 1f) });
             _harvestMassSubtractKg = Mathf.Max(0f, config.harvestMassSubtractKg);
+            _harvestBaseYieldKg = Mathf.Max(0f, config.harvestBaseYieldKg);
             if (!string.IsNullOrEmpty(config.tinkerEffectId))
                 _tinkerEffectId = config.tinkerEffectId;
         }
@@ -263,7 +265,7 @@ namespace Rephysicalized
 
         private void SpawnYieldsAndReset(bool isHarvest)
         {
-            const float baselineSubtractKg = 1f;
+            float baselineSubtractKg = isHarvest && _kPrefabId != null && _kPrefabId.PrefabTag == (Tag)"ForestTreeBranch" ? 0f : 1f;
 
             float effectiveHarvestSubtract = 0f;
             if (isHarvest)
@@ -282,7 +284,7 @@ namespace Rephysicalized
                 if (mutPlant != null && mutPlant.MutationIDs != null)
                 {
                     hasRottenHeaps = mutPlant.MutationIDs.Contains("rottenHeaps");
-                    var yieldAttrId = Db.Get().PlantAttributes.YieldAmount.Id;
+                    var yieldAttrId = Db.Get().PlantAttributes.YieldFactor.Id;
                     foreach (var mutId in mutPlant.MutationIDs)
                     {
                         var mutation = Db.Get().PlantMutations.Get(mutId);
@@ -316,7 +318,8 @@ namespace Rephysicalized
                 net = Mathf.Max(0f, net - _pendingPlantFiberSubtractKg);
             }
 
-            if (net > 0.0001f)
+            float totalMassToYield = net + (isHarvest ? _harvestBaseYieldKg : 0f);
+            if (totalMassToYield > 0.0001f)
             {
                 float tempK = _primaryElement != null ? _primaryElement.Temperature : 293.15f;
 
@@ -331,7 +334,7 @@ namespace Rephysicalized
                 {
                     if (y == null || y.multiplier <= 0f || string.IsNullOrWhiteSpace(y.id)) continue;
 
-                    float mass = net * y.multiplier;
+                    float mass = totalMassToYield * y.multiplier;
                     if (mass <= 0f) continue;
 
                     if (System.Enum.TryParse<SimHashes>(y.id, true, out var simHash)

@@ -45,8 +45,4 @@
 	<ItemGroup>
 	  <Compile Remove="Content\System Patches\WireCapacityUI.cs" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Content\Scrap\" />
-	</ItemGroup>
 </Project>

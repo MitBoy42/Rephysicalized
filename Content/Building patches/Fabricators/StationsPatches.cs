@@ -16,6 +16,7 @@ namespace Rephysicalized
     {
         public static void Postfix(GameObject go, Tag prefab_tag)
         {
+            Tag[] glasses = ElementLoader.FindElementsByTag((Tag)"Glasses");
             var crm = ComplexRecipeManager.Get();
             var vanillaInputs = new[] {   new ComplexRecipe.RecipeElement(GameTags.BasicRefinedMetals, 300f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature, "", inheritElement: true),
                new ComplexRecipe.RecipeElement(GameTags.Fabrics, 2f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature, "")  };
@@ -27,7 +28,7 @@ namespace Rephysicalized
             recipe.ingredients = new[]
             {
             new ComplexRecipe.RecipeElement(GameTags.BasicRefinedMetals, 200f, ComplexRecipe.RecipeElement.TemperatureOperation.AverageTemperature, "", inheritElement: true),
-            new ComplexRecipe.RecipeElement(SimHashes.Glass.CreateTag(), 1f),
+            new ComplexRecipe.RecipeElement(glasses, 1f),
             new ComplexRecipe.RecipeElement(new Tag("Warm_Vest"), 1f),
         };
 
@@ -42,7 +43,7 @@ namespace Rephysicalized
             recipejet.ingredients = new ComplexRecipe.RecipeElement[]
             {
                 new ComplexRecipe.RecipeElement(SimHashes.Steel.CreateTag(), 200f),
-                new ComplexRecipe.RecipeElement(SimHashes.Glass.CreateTag(), 1f),
+                new ComplexRecipe.RecipeElement(glasses, 1f),
                 new ComplexRecipe.RecipeElement(new Tag("Warm_Vest"), 1f),
             };
 
@@ -61,7 +62,7 @@ namespace Rephysicalized
             recipelead.ingredients = new ComplexRecipe.RecipeElement[]
             {
             new ComplexRecipe.RecipeElement(SimHashes.Lead.ToString(), 200f),
-            new ComplexRecipe.RecipeElement(SimHashes.Glass.CreateTag(), 10f),
+            new ComplexRecipe.RecipeElement(glasses, 10f),
             new ComplexRecipe.RecipeElement(new Tag("Warm_Vest"), 1f),
         };
 

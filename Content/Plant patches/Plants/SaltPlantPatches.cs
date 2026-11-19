@@ -6,7 +6,7 @@ namespace Rephysicalized.Content.Plant_patches
 {
     
 
-    // Set vanilla Salt crop yield to 0 so only PMT governs harvest output
+    // Set vanilla Salt crop yield to 30
     [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
     internal static class Salt_ZeroYieldPatch
     {
@@ -16,10 +16,26 @@ namespace Rephysicalized.Content.Plant_patches
             string saltId = SimHashes.Salt.ToString(); 
             for (int i = 0; i < crops.Count; i++)
             {
-                if (crops[i].cropId == saltId)
+                var crop = crops[i];
+                if (crop?.products == null)
+                    continue;
+
+                var products = new List<Crop.CropVal.ProductInfo>(crop.products);
+                bool changed = false;
+                for (int productIndex = 0; productIndex < products.Count; productIndex++)
                 {
-                    var c = crops[i];
-                    crops[i] = new Crop.CropVal(c.cropId, c.cropDuration, 30);
+                    var product = products[productIndex];
+                    if (product.cropId != saltId)
+                        continue;
+
+                    product.quantity = 30f;
+                    products[productIndex] = product;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    crops[i] = new Crop.CropVal(products, crop.cropDuration, crop.renewable);
                     break;
                 }
             }

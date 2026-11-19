@@ -9,5 +9,4 @@ Steam Release: https://steamcommunity.com/sharedfiles/filedetails/?id=3609531831
 This repository is built on https://github.com/Sgt-Imalas/Sgt_Imalas-Oni-Mods.
 
 
-Current mod version works with U57 
-
+Current mod version works with U60

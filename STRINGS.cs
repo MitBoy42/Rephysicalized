@@ -234,7 +234,7 @@ namespace Rephysicalized
             public static partial class TOOLTIP
             {
 
-                public static LocString CAPACITY = (LocString)("Making some buildings with this material will modify their " + UI.PRE_KEYWORD + "Storage Capacity" + UI.PST_KEYWORD + " by {0}.");
+                public static LocString CAPACITY = (LocString)("Making some buildings with this material will modify their " + UI.PRE_KEYWORD + "Storage Capacity" + UI.PST_KEYWORD + " by {0}. It will also modify the effectiveness of the 'tools' buildings.");
             }
         }
 
@@ -640,6 +640,11 @@ namespace Rephysicalized
                 public static LocString TOOLTIP = "Wild plants will consume mass from natural tiles they are planted on over time, until the tile breaks.";
 
             }
+            public class CREATURESIZE
+            {
+                public static LocString NAME = "Critter Mass affects Size";
+                public static LocString TOOLTIP = "Critter's mass affects their visual size. Adults start at 0.9 of their normal size and may grow to 1.3 times their original size, if the conditions were ideal.";
+            }
 
             public class IRRADIATEDCRITTERS
             {
@@ -650,7 +655,7 @@ namespace Rephysicalized
 
             public class REPHYSDDUPES
             {
-                public static LocString NAME = "Rephysicalized Duplicants";
+                public static LocString NAME = "Rephysicalized Duplicants CURRENTLY NOT WORKING";
                 public static LocString TOOLTIP = "Duplicants now conserve mass! What goes in, goes out. Important: This change significantly affects overall gameplay. Duplicants consume 60 times less oxygen, oxygen production buildings and effects are nerfed," +
                     "and it also makes many critters and plants require oxygen so oxygen consumption of your base still increases.";
 
@@ -767,7 +772,7 @@ public static LocString REPHYSICALIZED = (LocString)"Rephysicalized";
                         "If you are playing with Rephysicalized Metal Ores enabled, the amount of Metal needed to make Conductive Wires is reduced, to balance out smaller metal yeild from ores." +
                         "Uranium now has a realistic melting temperature.\n\n "  +
                     "Battery capacity is affected by metal you are using - metals with better irl electric conductivity will give better capacity." +
-                        "Many metals also received Storage Capacity modifier. Storage Capacity is loosely based on the metal's fatigue resistance, Metals with better resistance can handle higher loads, which allows for higher storage capacity."
+                        "Many metals also received Storage Capacity modifier. Storage Capacity is loosely based on the metal's fatigue resistance, Metals with better resistance can handle higher loads, which allows for higher storage capacity. It also affects the effectiveness of forge, cooking and tinkering tools."
                         ;
 
 

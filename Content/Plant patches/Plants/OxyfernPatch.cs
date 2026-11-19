@@ -62,6 +62,7 @@ namespace Rephysicalized
         private ReceptacleMonitor receptacle;
         private ElementConsumer gasConsumer;
         private ElementConverter converter;
+        private WiltCondition wiltCondition;
         private float baseOxygenElementRate = OxyfernTuning.VANILLA_O2_OUTPUT_ELEMENT;
         private float lastCo2Rate = -1f;
         private float lastO2Rate = -1f;
@@ -72,6 +73,7 @@ namespace Rephysicalized
 
             receptacle = GetComponent<ReceptacleMonitor>();
             converter = GetComponent<ElementConverter>();
+            wiltCondition = GetComponent<WiltCondition>();
             gasConsumer = GetComponents<ElementConsumer>().FirstOrDefault(c => c != null && c.elementToConsume == SimHashes.CarbonDioxide);
 
             if (converter?.outputElements != null)
@@ -103,6 +105,10 @@ namespace Rephysicalized
         {
             if (converter == null)
                 return;
+
+            // Irrigation and fertilization are handled by separate plant monitors, so their shortages
+            // must also stop the gas converter instead of allowing CO2-to-O2 conversion to continue.
+            converter.enabled = wiltCondition == null || !wiltCondition.IsWilting();
 
             int cell = Grid.PosToCell(transform.GetPosition());
             float lux = Grid.IsValidCell(cell) ? Grid.LightIntensity[cell] : 0f;

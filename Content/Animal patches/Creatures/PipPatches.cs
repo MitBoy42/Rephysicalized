@@ -34,6 +34,7 @@ namespace Rephysicalized
         private static readonly Tag BasicFabricPlant = "BasicFabricPlant".ToTag(); // Thimble Reed
 
         private static readonly Tag PoopTag = SimHashes.Dirt.CreateTag();
+        private static readonly Tag CaviarTag = "Caviar".ToTag();
 
         private static Diet BuildDiet(float kgConsumedPerDay, float kgPoopPerDay, float caloriesPerDay)
         {
@@ -74,14 +75,24 @@ namespace Rephysicalized
             var tag = kpid != null ? kpid.PrefabTag : Tag.Invalid;
 
             bool isHug = tag == new Tag(SquirrelHugConfig.ID) || tag == new Tag(BabySquirrelHugConfig.ID);
+            bool isMerm = tag == new Tag(SquirrelAquaticConfig.ID) || tag == new Tag(BabySquirrelAquaticConfig.ID);
+
+            if (isMerm)
+            {
+                ApplyAquaticDiet(prefab);
+                return;
+            }
 
             // Per-requested tuning
             float kgConsumedPerDay = isHug ? 11f : 21f;
             float kgPoopPerDay = isHug ? 10f : 20f;
 
-            // Build and assign diet to CreatureCalorieMonitor only
+            // Keep plant ingestion on CreatureCalorieMonitor and Caviar on SolidConsumer.
             var cals = prefab.AddOrGetDef<CreatureCalorieMonitor.Def>();
-            cals.diet = BuildDiet(kgConsumedPerDay, kgPoopPerDay, CaloriesPerDay);
+            var caviarInfos = BuildNoPoopCaviarInfos(cals.diet);
+            var dietInfos = new List<Diet.Info>(BuildDiet(kgConsumedPerDay, kgPoopPerDay, CaloriesPerDay).infos);
+            dietInfos.AddRange(caviarInfos);
+            cals.diet = new Diet(dietInfos.ToArray());
 
             // Minimum calories before pooping scales with produced mass ratio
             float caloriesPerKg = CaloriesPerDay / Mathf.Max(kgConsumedPerDay, 0.0001f);
@@ -91,7 +102,65 @@ namespace Rephysicalized
             // Critical: SolidConsumer should NOT share the plant diet (prevents double-eating)
             var solid = prefab.GetDef<SolidConsumerMonitor.Def>();
             if (solid != null)
-                solid.diet = new Diet(Array.Empty<Diet.Info>());
+                solid.diet = new Diet(caviarInfos);
+        }
+
+        private static Diet.Info[] BuildNoPoopCaviarInfos(Diet vanillaDiet)
+        {
+            if (vanillaDiet?.infos == null)
+                return Array.Empty<Diet.Info>();
+
+            var caviarInfos = new List<Diet.Info>();
+            foreach (var info in vanillaDiet.infos)
+            {
+                if (info.consumedTags.Contains(CaviarTag))
+                    caviarInfos.Add(CopyDietInfo(info, Tag.Invalid, 0f));
+            }
+
+            return caviarInfos.ToArray();
+        }
+
+        private static Diet.Info CopyDietInfo(Diet.Info info, Tag producedElement, float producedConversionRate)
+        {
+            return new Diet.Info(
+                new HashSet<Tag>(info.consumedTags),
+                producedElement,
+                info.caloriesPerKg,
+                producedConversionRate,
+                disease_per_kg_produced: info.diseasePerKgProduced,
+                produce_solid_tile: info.produceSolidTile,
+                food_type: info.foodType,
+                emmit_disease_on_cell: info.emmitDiseaseOnCell,
+                eat_anims: info.eatAnims
+            );
+        }
+
+        private static void ApplyAquaticDiet(GameObject prefab)
+        {
+            var calorieMonitor = prefab.GetDef<CreatureCalorieMonitor.Def>();
+            var vanillaDiet = calorieMonitor?.diet;
+            if (vanillaDiet?.infos == null)
+                return;
+
+            var infos = new Diet.Info[vanillaDiet.infos.Length];
+            for (int i = 0; i < infos.Length; i++)
+            {
+                var info = vanillaDiet.infos[i];
+                bool isCaviarDiet = info.consumedTags.Contains(CaviarTag);
+                Tag producedElement = isCaviarDiet ? Tag.Invalid : info.producedElement;
+                float producedConversionRate = isCaviarDiet
+                    ? 0f
+                    : info.producedConversionRate * 19f / 20f;
+
+                infos[i] = CopyDietInfo(info, producedElement, producedConversionRate);
+            }
+
+            var diet = new Diet(infos);
+            calorieMonitor.diet = diet;
+
+            var solidConsumer = prefab.GetDef<SolidConsumerMonitor.Def>();
+            if (solidConsumer != null)
+                solidConsumer.diet = diet;
         }
     }
 

@@ -64,17 +64,18 @@ namespace Rephysicalized
     public sealed class ResumeO2ConsumptionOnStorageChange : KMonoBehaviour
     {
         private ElementConsumer _ec;
+        private int storageChangeHandle = -1;
 
         public override void OnSpawn()
         {
             base.OnSpawn();
             _ec = GetComponent<ElementConsumer>();
-            Subscribe((int)GameHashes.OnStorageChange, OnStorageChanged);
+            storageChangeHandle = Subscribe((int)GameHashes.OnStorageChange, (System.Action<object, object>)((component, data) => ((ResumeO2ConsumptionOnStorageChange)component).OnStorageChanged(data)), this);
         }
 
         public override void OnCleanUp()
         {
-            Unsubscribe((int)GameHashes.OnStorageChange, OnStorageChanged);
+            Unsubscribe(ref storageChangeHandle);
             base.OnCleanUp();
         }
 

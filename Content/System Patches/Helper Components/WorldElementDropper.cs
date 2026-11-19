@@ -25,16 +25,21 @@ namespace Rephysicalized
 		[SerializeField]
 		public CellOffset SpawnOffset = CellOffset.none;
 
+		private int storageChangeHandle = -1;
+
+		private static readonly System.Action<object, object> OnStorageChangedDelegate =
+			(System.Action<object, object>)((component, data) => ((WorldElementDropper)component).OnStorageChanged(data));
+
 		public override void OnCleanUp()
 		{
 			base.OnCleanUp();
-			this.Unsubscribe((int)GameHashes.OnStorageChange, OnStorageChanged);
+			this.Unsubscribe(ref storageChangeHandle);
 
 		}
 		public override void OnSpawn()
 		{
 			base.OnSpawn();
-			this.Subscribe((int)GameHashes.OnStorageChange, OnStorageChanged);
+			storageChangeHandle = this.Subscribe((int)GameHashes.OnStorageChange, OnStorageChangedDelegate, this);
 		}
 		void OnStorageChanged(object data)
 		{

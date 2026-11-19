@@ -15,11 +15,18 @@ namespace Rephysicalized
         {
             public string Id;
             public float RealHarvestSubtractKg;
+            public float HarvestBaseYieldKg;
             public MaterialYield[] Yields;
             public Entry(string id, float sub, params MaterialYield[] yields)
+                : this(id, sub, 0f, yields)
+            {
+            }
+
+            public Entry(string id, float sub, float harvestBaseYieldKg, params MaterialYield[] yields)
             {
                 Id = id;
                 RealHarvestSubtractKg = sub;
+                HarvestBaseYieldKg = harvestBaseYieldKg;
                 Yields = yields;
             }
         }
@@ -112,7 +119,7 @@ namespace Rephysicalized
              new MaterialYield("WoodLog", 0.4f)
             ),
 
-                       new Entry("ForestTreeBranch", PlantPatches.SharedYieldAndHarvestSubtractKg["WoodLog"],
+                       new Entry("ForestTreeBranch", 30f, 30f,
              new MaterialYield("WoodLog", 1f)
             ),
                 new Entry("SpaceTreeBranch", 0f,
@@ -159,7 +166,8 @@ namespace Rephysicalized
                 PlantMassTrackerRegistry.ApplyToCrop(
                     plantPrefabId: e.Id,
                     yields: new List<MaterialYield>(e.Yields),
-                    realHarvestSubtractKg: e.RealHarvestSubtractKg
+                    realHarvestSubtractKg: e.RealHarvestSubtractKg,
+                    harvestBaseYieldKg: e.HarvestBaseYieldKg
                 );
             }
         }

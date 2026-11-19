@@ -166,6 +166,7 @@ namespace Rephysicalized
         [SerializeField] public Storage target;
 
         private bool hasSpawned;
+        private int targetStorageChangeHandle = -1;
 
         // Safe helper to assign or auto-find the plastic storage
         public void SetOrFindTarget(Storage preferred)
@@ -173,15 +174,16 @@ namespace Rephysicalized
             if (preferred != null)
             {
                 // If we were already subscribed to a different target, unsubscribe
-                if (target != null && target != preferred)
+                if (target != null && target != preferred && targetStorageChangeHandle >= 0)
                 {
-                    Unsubscribe(target.gameObject, (int)GameHashes.OnStorageChange, OnTargetStorageChanged);
+                    target.gameObject.Unsubscribe(targetStorageChangeHandle);
+                    targetStorageChangeHandle = -1;
                 }
                 target = preferred;
                 // Subscribe to the new target if we're spawned already
-                if (hasSpawned)
+                if (hasSpawned && target != null)
                 {
-                    Subscribe(target.gameObject, (int)GameHashes.OnStorageChange, OnTargetStorageChanged);
+                    targetStorageChangeHandle = target.gameObject.Subscribe((int)GameHashes.OnStorageChange, (System.Action<object, object>)((component, data) => ((DropWhenFullStorage)component).OnTargetStorageChanged(data)), this);
                 }
                 return;
             }
@@ -199,9 +201,9 @@ namespace Rephysicalized
                 }
             }
 
-            if (hasSpawned && target != null)
+            if (hasSpawned && target != null && targetStorageChangeHandle < 0)
             {
-                Subscribe(target.gameObject, (int)GameHashes.OnStorageChange, OnTargetStorageChanged);
+                targetStorageChangeHandle = target.gameObject.Subscribe((int)GameHashes.OnStorageChange, (System.Action<object, object>)((component, data) => ((DropWhenFullStorage)component).OnTargetStorageChanged(data)), this);
             }
         }
 
@@ -217,15 +219,16 @@ namespace Rephysicalized
 
             if (target != null)
             {
-                Subscribe(target.gameObject, (int)GameHashes.OnStorageChange, OnTargetStorageChanged);
+                targetStorageChangeHandle = target.gameObject.Subscribe((int)GameHashes.OnStorageChange, (System.Action<object, object>)((component, data) => ((DropWhenFullStorage)component).OnTargetStorageChanged(data)), this);
             }
         }
 
         public override void OnCleanUp()
         {
-            if (target != null)
+            if (target != null && targetStorageChangeHandle >= 0)
             {
-                Unsubscribe(target.gameObject, (int)GameHashes.OnStorageChange, OnTargetStorageChanged);
+                target.gameObject.Unsubscribe(targetStorageChangeHandle);
+                targetStorageChangeHandle = -1;
             }
             base.OnCleanUp();
         }

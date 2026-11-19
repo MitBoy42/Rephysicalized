@@ -82,14 +82,15 @@ namespace Rephysicalized
                 gameObject,
                 extents,
                 GameScenePartitioner.Instance.solidChangedLayer,
-                OnBelowSolidChanged
+                OnBelowSolidChanged,
+                this
             );
         }
 
-        private void OnBelowSolidChanged(object data)
+        private static void OnBelowSolidChanged(object context, object data)
         {
             // Re-evaluate whenever the below cell changes solid state
-            TryDeconstructIfUnstableAndUnsupported();
+            ((UnstableFarmTileChecker)context).TryDeconstructIfUnstableAndUnsupported();
         }
 
         private void TryDeconstructIfUnstableAndUnsupported()

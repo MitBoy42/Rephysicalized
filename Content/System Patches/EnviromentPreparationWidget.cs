@@ -120,8 +120,8 @@ namespace Rephysicalized.Content.ModDb
             TryAppendSourcePanels(__result, def.BuildingComplete);
         }
 
-        [HarmonyPatch(typeof(CodexEntryGenerator), "GeneratePlantEntries")]
-        [HarmonyPostfix]
+        // [HarmonyPatch(typeof(CodexEntryGenerator), "GeneratePlantEntries")]
+        // [HarmonyPostfix]
         private static void PlantEntries_Postfix(Dictionary<string, CodexEntry> __result)
         {
             if (__result == null) return;

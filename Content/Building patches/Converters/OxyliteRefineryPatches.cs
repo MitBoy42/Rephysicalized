@@ -25,6 +25,9 @@ namespace Rephysicalized
 
                 AddStorageFilter(storage, SimHashes.Gold.CreateTag());
                 AddStorageFilter(storage, SimHashes.Iridium.CreateTag());
+
+                // Ensure enough room for delivered inputs plus outputs
+                storage.capacityKg = 40f;
             }
 
             go.AddOrGet<OxyliteRefineryDeliverySelector>();
@@ -81,12 +84,16 @@ namespace Rephysicalized
 
             manualDeliveryKg.capacity = 20f;
 
+            var storage2 = go.GetComponent<Storage>();
+            if (storage2 != null)
+                storage2.capacityKg = 40f;
+
             elementConverter.outputElements = outputs.ToArray();
 
             // Ensure ElementDropper exists and is set up to drop GoldAmalgam
             var elementDropper = go.AddComponent<ElementDropper>();
-          
-            
+
+
             elementDropper.emitTag = new Tag("GoldAmalgam");
             elementDropper.emitMass = 5f;
             elementDropper.emitOffset = new Vector3(0.0f, 0.0f, 0.0f);
@@ -121,7 +128,8 @@ namespace Rephysicalized
         private static bool IsPrimaryRefineryConverter(ElementConverter converter)
         {
             return converter.GetComponent<OxyliteRefinery>() != null &&
-                converter.GetComponent<ElementConverter>() == converter;
+                converter.GetComponent<ElementConverter>() == converter &&
+                converter.GetComponents<ElementConverter>().Length > 1;
         }
     }
 
@@ -147,7 +155,8 @@ namespace Rephysicalized
         private static bool IsPrimaryRefineryConverter(ElementConverter converter)
         {
             return converter.GetComponent<OxyliteRefinery>() != null &&
-                converter.GetComponent<ElementConverter>() == converter;
+                converter.GetComponent<ElementConverter>() == converter &&
+                converter.GetComponents<ElementConverter>().Length > 1;
         }
     }
 

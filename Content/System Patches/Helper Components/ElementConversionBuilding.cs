@@ -91,10 +91,7 @@ namespace Rephysicalized.Content.System_Patches.Helper_Components
         [SerializeField]
         public bool ShowWorkingStatus = true;
 
-        public static readonly EventSystem.IntraObjectHandler<ElementConversionBuilding> OnConduitConnectionChangedDelegate = new EventSystem.IntraObjectHandler<ElementConversionBuilding>(delegate (ElementConversionBuilding component, object data)
-        {
-            component.OnConduitConnectionChanged(data);
-        });
+        public static readonly System.Action<object, object> OnConduitConnectionChangedDelegate = (System.Action<object, object>)((component, data) => ((ElementConversionBuilding)component).OnConduitConnectionChanged(data));
 
         public override void OnSpawn()
         {
@@ -124,7 +121,7 @@ namespace Rephysicalized.Content.System_Patches.Helper_Components
             deliveryComponents = GetComponents<ManualDeliveryKG>();
             if (consumer != null)
                 OnConduitConnectionChanged(BoxedBools.Box(consumer.IsConnected));
-            Subscribe((int)GameHashes.ConduitConnectionChanged, OnConduitConnectionChangedDelegate);
+            Subscribe((int)GameHashes.ConduitConnectionChanged, OnConduitConnectionChangedDelegate, this);
             base.smi.StartSM();
         }
         public bool HasEnoughMassToStartConverting()

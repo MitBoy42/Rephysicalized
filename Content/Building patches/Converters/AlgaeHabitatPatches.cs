@@ -277,6 +277,7 @@ namespace Rephysicalized
         private Storage algaeStorage;
         private AlgaeHabitat habitat;
         private bool needsCheck = false;
+        private int storageChangeHandle = -1;
 
 
         public override void OnSpawn()
@@ -284,7 +285,7 @@ namespace Rephysicalized
             base.OnSpawn();
             habitat = GetComponent<AlgaeHabitat>();
             algaeStorage = habitat.GetAlgaeStorage();
-            Subscribe((int)GameHashes.OnStorageChange, OnStorageChanged);
+            storageChangeHandle = Subscribe((int)GameHashes.OnStorageChange, (System.Action<object, object>)((component, data) => ((AlgaeHarvestMonitor)component).OnStorageChanged(data)), this);
         }
 
         private void OnStorageChanged(object data)
@@ -313,7 +314,7 @@ namespace Rephysicalized
 
         public override void OnCleanUp()
         {
-            Unsubscribe((int)GameHashes.OnStorageChange, OnStorageChanged);
+            Unsubscribe(ref storageChangeHandle);
             base.OnCleanUp();
         }
     }
