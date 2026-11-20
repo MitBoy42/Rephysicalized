@@ -32,10 +32,10 @@ namespace Rephysicalized
                 // Adjust outputs
                 elementConverter.outputElements = new ElementConverter.OutputElement[]
                 {
-                new ElementConverter.OutputElement(0.300f, SimHashes.Oxygen, 348.15f, outputElementOffsety: 1f),
+                new ElementConverter.OutputElement(0.500f, SimHashes.Oxygen, 348.15f, outputElementOffsety: 1f),
                 new ElementConverter.OutputElement(0.03f, SimHashes.ChlorineGas, 348.15f, outputElementOffsety: 1f),
                 new ElementConverter.OutputElement(0.220f, SimHashes.Sand, 348.15f, storeOutput: true, outputElementOffsety: 1f),
-                   new ElementConverter.OutputElement(0.450f, SimHashes.IronOre, 348.15f, storeOutput: true, outputElementOffsety: 1f)
+                   new ElementConverter.OutputElement(0.250f, SimHashes.IronOre, 348.15f, storeOutput: true, outputElementOffsety: 1f)
                 };
                 ElementDropper elementDropper = go.AddComponent<ElementDropper>();
                 elementDropper.emitMass = 24f;

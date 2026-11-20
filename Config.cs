@@ -198,7 +198,7 @@ namespace Rephysicalized
             this.WaterGeyserOutput = 0.25f;
             this.SolidMassMult = 0.25f;
             this.CometMassMult = 0.5f;
-            this.DuplicantOxygenUse = 0.8f;
+            this.DuplicantOxygenUse = 1f;
             this.MetalElectroBankCost = 1f;
             this.BuildingFoundationTemperatureExchange = false;
             this.LightsInUtility = false;

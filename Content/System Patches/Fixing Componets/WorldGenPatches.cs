@@ -87,7 +87,11 @@ namespace Rephysicalized
                     if (float.IsNaN(m) || m <= 0f)
                         continue;
 
-                    if (_isMetalByIdx[elemIdx])
+                    if (elem.id == SimHashes.Algae || elem.id == SimHashes.OxyRock)
+                    {
+                        cell.mass = m * 0.5f;
+                    }
+                    else if (_isMetalByIdx[elemIdx])
                     {
                         cell.mass = m * (0.25f + (MassMultiplier / 2f));
                     }
@@ -119,7 +123,11 @@ namespace Rephysicalized
                         if (float.IsNaN(m) || m <= 0f)
                             continue;
 
-                        if (_isMetalByIdx[elemIdx])
+                        if (elem.id == SimHashes.Algae || string.Equals(elem.id.ToString(), "OxyRock", StringComparison.OrdinalIgnoreCase))
+                        {
+                            bw.mass = m * 0.5f;
+                        }
+                        else if (_isMetalByIdx[elemIdx])
                         {
                             bw.mass = m * (0.25f + (MassMultiplier / 2f));
                         }

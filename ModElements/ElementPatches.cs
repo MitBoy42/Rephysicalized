@@ -236,7 +236,7 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
                 SetHighTempSecondary(__result, nameof(SimHashes.MoltenSucrose), ashByproductId, 0.2f);
 
                 SetHighTempPrimary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Oxygen));
-                SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Iron), 0.6f);
+                SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Iron), 0.33f);
               
 
             
