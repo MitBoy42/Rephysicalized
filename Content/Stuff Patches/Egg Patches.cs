@@ -1,4 +1,4 @@
-ï»¿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using System;
 using System.Collections.Generic;
@@ -88,7 +88,7 @@ namespace Rephysicalized.Content.Eggs
         {
             var sm = __instance;
 
-            // Overlay: every second, enforce â€œno incubation/viability deltasâ€ while in cryostasis
+            // Overlay: every second, enforce “no incubation/viability deltas” while in cryostasis
             sm.root.Update((smi, dt) =>
             {
                 bool cryo = IsCryo(smi);

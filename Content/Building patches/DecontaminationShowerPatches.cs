@@ -1,4 +1,4 @@
-﻿using Database;          // Db.Get()
+using Database;          // Db.Get()
 using HarmonyLib;
 using Klei;
 using Klei.AI;          // Effects

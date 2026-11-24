@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 using STRINGS; // Ensure UI.FormatAsLink and LocString resolve to vanilla STRINGS.UI
@@ -35,6 +35,11 @@ namespace Rephysicalized
                 {
                     public static LocString NAME = "High Irradiation";
                     public static LocString TOOLTIP = "This critter is experiencing severe radiation poisoning. It also has a significantly higher chance of laying morph eggs";
+                }
+                public class ANIMALSUFFOCATING
+                {
+                    public static LocString NAME = "Suffocating";
+                    public static LocString TOOLTIP = "This critter has run out of oxygen";
                 }
 
 
@@ -653,11 +658,13 @@ namespace Rephysicalized
 
             }
 
-            public class REPHYSDDUPES
+            public class REALBREATHING
             {
-                public static LocString NAME = "Rephysicalized Duplicants CURRENTLY NOT WORKING";
-                public static LocString TOOLTIP = "Duplicants now conserve mass! What goes in, goes out. Important: This change significantly affects overall gameplay. Duplicants consume 60 times less oxygen, oxygen production buildings and effects are nerfed," +
-                    "and it also makes many critters and plants require oxygen so oxygen consumption of your base still increases.";
+                public static LocString NAME = "Realistic Breathing UNFINISHED";
+                public static LocString TOOLTIP = "THIS IS UNFINISHED AND NOT WORKING RIGHT Duplicants now conserve mass! What goes in, goes out." +
+                    "\n\n Important: This change significantly affects overall gameplay." +
+                    "\n\n Duplicants consume way less oxygen, oxygen production buildings and effects are nerfed," +
+                    "\n\n and it also makes many critters and plants require oxygen so oxygen consumption of your base still increases overtime.";
 
             }
             //public class SILICON

@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Rephysicalized.Patches;
 using System;
 using System.Collections.Generic;
@@ -180,7 +180,7 @@ namespace Rephysicalized
     //    }
     //}
 
-    // Sets the Diamond Press fabricator heatedTemperature to 320°C (593.15 K)
+    // Sets the Diamond Press fabricator heatedTemperature to 320�C (593.15 K)
     [HarmonyPatch(typeof(DiamondPressConfig), nameof(DiamondPressConfig.ConfigureBuildingTemplate))]
     internal static class DiamondPressHeatedTempPatch
     {

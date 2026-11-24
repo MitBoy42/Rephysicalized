@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei;
 using KSerialization;
 using Rephysicalized;

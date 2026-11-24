@@ -1,4 +1,4 @@
-﻿//using RonivansLegacy_ChemicalProcessing.Content.Scripts;
+//using RonivansLegacy_ChemicalProcessing.Content.Scripts;
 using System;
 using System.Collections.Generic;
 using System.Linq;

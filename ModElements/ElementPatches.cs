@@ -1,8 +1,9 @@
-﻿using Database;
+using Database;
 using ElementData;
 using ElementUtilNamespace;
 using HarmonyLib;
 using Klei.AI;
+using Rephysicalized.Content.System_Patches;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -236,10 +237,15 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
                 SetHighTempSecondary(__result, nameof(SimHashes.MoltenSucrose), ashByproductId, 0.2f);
 
                 SetHighTempPrimary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Oxygen));
-                SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Iron), 0.33f);
-              
-
-            
+             
+                if (!Config.Instance.RealBreathing) //Classic Implementation
+                {
+                    SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Iron), 0.33f);
+                }
+                else
+                {
+                    SetHighTempSecondary(__result, nameof(SimHashes.Rust), nameof(SimHashes.Iron), 0.933f);
+                }
 
                 SetHighTempSecondary(__result, nameof(SimHashes.LiquidGunk), nameof(SimHashes.RefinedCarbon), 0.20f);
 
@@ -252,6 +258,7 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
                 SetSublimation(__result, nameof(SimHashes.ToxicMud), 1f, 0.02f);
                 SetSublimation(__result, nameof(SimHashes.ToxicSand), 1f, 0.02f);
                 SetSublimation(__result, nameof(SimHashes.Corium), 1f, 0.2f);
+               
                 SetMolarMass(__result, nameof(SimHashes.RefinedLipid), 451f);
 
 
@@ -282,6 +289,13 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
                     SetHighTempSecondary(__result, nameof(SimHashes.ZincOre), nameof(SimHashes.Sulfur), 1f - 0.67f);
                 }
 
+                if (Config.Instance.RealBreathing) //Massively decreasing sublimation rate of elements if real breathing is enabled
+                {
+                    SetSublimationProbability(__result, nameof(SimHashes.DirtyWater), 0.0002f);
+                    SetSublimationProbability(__result, nameof(SimHashes.OxyRock), 0.02f);
+                    SetSublimationProbability(__result, nameof(SimHashes.ToxicSand), 0.0001f);
+                    SetSublimationProbability(__result, nameof(SimHashes.ToxicMud), 0.001f);
+                }
 
 
             }
@@ -316,6 +330,15 @@ public static class Patch_UnstableGroundManager_AddAshByproductFX
             entry.sublimateEfficiency = SublimateEfficiency;
 
             entry.sublimateRate = SublimateRate;
+
+        }
+        private static void SetSublimationProbability(List<ElementEntry> entries, string elementId, float SublimateProbability)
+        {
+            var entry = entries?.FirstOrDefault(e => e.elementId == elementId);
+            if (entry == null)
+                return;
+
+            entry.sublimateProbability = SublimateProbability;
 
         }
         private static void SetMolarMass(List<ElementEntry> entries, string elementId, float molarMass)

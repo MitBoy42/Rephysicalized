@@ -1,4 +1,4 @@
-ï»¿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using Klei.CustomSettings;
 using System;
@@ -149,7 +149,7 @@ tracker?.AddExternalMass(MassGainKg);
                 // SpawnResource(Vector3 position, float mass, float temperature, byte disease_idx, int disease_count, bool prevent_merge = false, bool skip_spawn_effects = false)
                 GameObject debris = el.substance.SpawnResource(position, massKg, temp, diseaseIdx, diseaseCount, prevent_merge: false);
 
-                // Optional: ensure it uses the elementâ€™s disease settings if diseaseIdx invalid
+                // Optional: ensure it uses the element’s disease settings if diseaseIdx invalid
                 if (debris != null)
                 {
                     var pe = debris.GetComponent<PrimaryElement>();
@@ -321,10 +321,10 @@ tracker?.AddExternalMass(MassGainKg);
 
         private static string CreatureFormatter(Tag tag, float amount, bool continuous)
         {
-            // Display the creatureâ€™s proper name; ignore amount/continuous for clarity
+            // Display the creature’s proper name; ignore amount/continuous for clarity
             try
             {
-                // ProperName() is available on Tag via Kleiâ€™s extensions
+                // ProperName() is available on Tag via Klei’s extensions
                 return tag.ProperName();
             }
             catch

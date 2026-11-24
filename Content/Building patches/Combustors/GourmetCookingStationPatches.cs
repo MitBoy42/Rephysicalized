@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Rephysicalized.Content.System_Patches;
 using Rephysicalized.ModElements;
 using System;

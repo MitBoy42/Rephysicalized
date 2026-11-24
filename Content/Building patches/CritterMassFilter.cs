@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using KSerialization;
 using System;
 using System.Collections.Generic;

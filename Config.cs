@@ -1,4 +1,4 @@
-﻿
+
 
 using Newtonsoft.Json;
 using PeterHan.PLib.Options;
@@ -186,12 +186,17 @@ namespace Rephysicalized
 
         public bool ElectrobankCapacity { get; set; }
 
-        //Rephysicalized Dupes
+      //  Rephysicalized Breathing. This one if Full On realistic breathing for dupes, which means dupes do not destroy oxygen. In IRL, people consume only about 0.5-0.8 kg
+      //of Oxygen per day, for dupes the default consumption will be 1.2kg per day. This is 50 times less than normal, so there needs to be a rebalance of all oxygen-related 
+      //production. To scale oxygen consumption back, likely many animals and some plants will now consume oxygen as well. In addition oxygen producing buildings are rebalanced
+      // to make probably like 10x oxygen. In addition, offgassing mechanic needs to be adjusted, as well as concentration of oxygen in Rust. It would likely require making oxygen
+      // producing buildings not fully convert their inputs into oxygen as well. 
+ 
 
-        //[Option("STRINGS.MODCONFIG.REPHYSDUPES.MAIN.NAME", "STRINGS.MODCONFIG.REPHYSDUPES.MAIN.TOOLTIP", "STRINGS.REPHYSDUPES.NAME")]
-        //[JsonProperty]
+        [Option("STRINGS.MODCONFIG.REALBREATHING.NAME", "STRINGS.MODCONFIG.REALBREATHING.TOOLTIP", "STRINGS.MODCONFIG.REALBREATHING.NAME")]
+        [JsonProperty]
 
-        public bool RephysDupes { get; set; }
+        public bool RealBreathing { get; set; }
 
         public Config()
         {
@@ -235,7 +240,7 @@ namespace Rephysicalized
             ChargerSpeed = true;
             ElectrobankCapacity = true;
 
-            //RephysDupes = true;
+            RealBreathing = false;
 
             //  this.Silicon = true;
         }

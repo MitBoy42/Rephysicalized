@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -292,8 +292,8 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.triggeringElements = comp.triggeringElements ?? new List<SimHashes>();
             comp.triggeringElements.Clear();
             comp.triggeringElements.Add(SimHashes.RefinedLipid);
-            float friesMul = Rephysicalized.FoodDensityRebalance.IngredientMultiplier["FriesCarrot".ToTag()];
-            float carrotMul = Rephysicalized.FoodDensityRebalance.IngredientMultiplier[CarrotConfig.ID.ToTag()];
+            float friesMul = Rephysicalized.FoodDensityRebalance.IngredientMultiplier["FriesCarrot".ToTag()].Multiplier;
+            float carrotMul = Rephysicalized.FoodDensityRebalance.IngredientMultiplier[CarrotConfig.ID.ToTag()].Multiplier;
             comp.elementConsumedRatio = 1.0f / friesMul;
             comp.massConversionRatio = 1f * friesMul / carrotMul;
 
@@ -355,7 +355,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             var comp = __result.AddComponent<EnviromenmentalPreparation>();
             comp.temperature = CookTemperatureK;
             comp.ID = FOOD.FOOD_TYPES.GRILLED_PRICKLEFRUIT.Id;
-            comp.massConversionRatio = 1.0f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()]; // GRILLED_PRICKLEFRUIT
+            comp.massConversionRatio = 1.0f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()].Multiplier; // GRILLED_PRICKLEFRUIT
         }
         [HarmonyPatch(typeof(WormBasicFruitConfig), nameof(WormBasicFruitConfig.CreatePrefab))]
         [HarmonyPostfix]
@@ -391,7 +391,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             var comp = __result.AddComponent<EnviromenmentalPreparation>();
             comp.temperature = CookTemperatureK;
             comp.ID = FOOD.FOOD_TYPES.SWAMP_DELIGHTS.Id;
-            comp.massConversionRatio = 1.0f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[SwampFruitConfig.ID.ToTag()]; // SWAMP_DELIGHTS
+            comp.massConversionRatio = 1.0f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[SwampFruitConfig.ID.ToTag()].Multiplier; // SWAMP_DELIGHTS
         }
         [HarmonyPatch(typeof(WormSuperFruitConfig), nameof(WormSuperFruitConfig.CreatePrefab))]
         [HarmonyPostfix]
@@ -436,7 +436,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.triggeringElements = comp.triggeringElements ?? new List<SimHashes>();
             comp.triggeringElements.Clear();
             comp.triggeringElements.Add(SimHashes.SugarWater);
-            comp.massConversionRatio = 1f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()];
+            comp.massConversionRatio = 1f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()].Multiplier;
             comp.elementConsumedRatio = 5f;
             comp.pressureThreshold = 2000f;
         }
@@ -644,7 +644,7 @@ namespace Rephysicalized.Content.Stuff_Patches
             comp.triggeringElements.Clear();
             comp.triggeringElements.Add(SimHashes.CarbonDioxide);
             comp.ID = "SmokedFish";
-            comp.massConversionRatio = 4f / 6f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier["JawboFillet".ToTag()]; ;
+            comp.massConversionRatio = 4f / 6f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier["JawboFillet".ToTag()].Multiplier; ;
             comp.pressureThreshold = 4f;
             comp.time = 600;
             comp.elementConsumedRatio = 0.2f;

@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using PeterHan.PLib.Options;
 using Rephysicalized.Content.System_Patches.Helper_Components;
 using Rephysicalized.ModElements;

@@ -1,4 +1,4 @@
-ï»¿using HarmonyLib;
+using HarmonyLib;
 using Rephysicalized.ModElements;
 using System;
 using System.Collections.Generic;
@@ -62,7 +62,7 @@ namespace Rephysicalized.Content.Building_patches
         private const float GlassMassKg = 100f;
 
 
-        // Weâ€™ll wrap the original call by intercepting the BuildingDef after itâ€™s created and overwrite its mass/materials.
+        // We’ll wrap the original call by intercepting the BuildingDef after it’s created and overwrite its mass/materials.
         public static void Postfix(ref BuildingDef __result)
         {
  

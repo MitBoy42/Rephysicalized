@@ -1,4 +1,4 @@
-﻿using Epic.OnlineServices;
+using Epic.OnlineServices;
 using HarmonyLib;
 using KSerialization;
 using System;

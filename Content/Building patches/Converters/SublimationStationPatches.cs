@@ -1,4 +1,4 @@
-﻿
+
 using HarmonyLib; 
 using KSerialization; 
 using System.Collections.Generic; 
@@ -37,31 +37,40 @@ namespace Rephysicalized
                     GameObject.DestroyImmediate(existingConverters[i]);
             }
 
-            Tag baseInputTag = OrganicOverhaulIntegration.IsPresent()
-                ? SimHashes.ToxicMud.CreateTag()
-                : SimHashes.ToxicSand.CreateTag();
 
             // Converter 1: base input -> Polluted Oxygen
             var sandConverter = go.AddComponent<ElementConverter>();
+       
             sandConverter.consumedElements = new[]
             {
-            new ElementConverter.ConsumedElement(baseInputTag, 1f)
+            new ElementConverter.ConsumedElement(SimHashes.ToxicSand.CreateTag(), 1f)
         };
-            var sandOutputs = new List<ElementConverter.OutputElement>
+            if (Config.Instance.RealBreathing)
             {
-                new ElementConverter.OutputElement(0.66f, SimHashes.ContaminatedOxygen, 303.15f)
-            };
-            if (!OrganicOverhaulIntegration.IsPresent())
+                // Real breathing: output is polluted oxygen and sand
+                var sandOutputs = new List<ElementConverter.OutputElement>
+                {
+                    new ElementConverter.OutputElement(0.66f, SimHashes.ContaminatedOxygen, 303.15f),
+                    new ElementConverter.OutputElement(0.34f, SimHashes.Sand, 0.0f, storeOutput: true, diseaseWeight: 0.25f)
+                };
+                sandConverter.outputElements = sandOutputs.ToArray();
+            }
+            else
             {
-                sandOutputs.Add(new ElementConverter.OutputElement(
-                    0.34f, SimHashes.Sand, 0.0f, storeOutput: true, diseaseWeight: 0.25f));
-
-                var sandDropper = go.AddOrGet<ElementDropper>();
+                // Classic: output is oxygen and chlorine gas
+                var classicOutputs = new List<ElementConverter.OutputElement>
+                {
+                    new ElementConverter.OutputElement(0.066f, SimHashes.ContaminatedOxygen, 303.15f),
+                    new ElementConverter.OutputElement(0.934f, SimHashes.Sand, 0.0f, storeOutput: true, diseaseWeight: 0.25f)
+                };
+                sandConverter.outputElements = classicOutputs.ToArray();
+            }
+        
+            var sandDropper = go.AddOrGet<ElementDropper>();
                 sandDropper.emitTag = SimHashes.Sand.CreateTag();
                 sandDropper.emitMass = 40f;
                 sandDropper.emitOffset = Vector3.zero;
-            }
-            sandConverter.outputElements = sandOutputs.ToArray();
+       
 
             // Converter 2: Bleachstone -> Chlorine Gas
             var bleachConverter = go.AddComponent<ElementConverter>();
@@ -80,7 +89,7 @@ namespace Rephysicalized
 
             var fetcher = go.AddOrGet<ManualDeliveryKG>();
             fetcher.SetStorage(storage);
-            fetcher.RequestedItemTag = baseInputTag;
+            fetcher.RequestedItemTag = SimHashes.ToxicSand.CreateTag();
 
             fetcher.capacity = 600f;
             fetcher.refillMass = 240f;
@@ -91,9 +100,7 @@ namespace Rephysicalized
             // Allow both inputs in storage
             if (storage.storageFilters == null)
                 storage.storageFilters = new List<Tag>();
-            if (!storage.storageFilters.Contains(baseInputTag))
-                storage.storageFilters.Add(baseInputTag);
-            if (!storage.storageFilters.Contains(SimHashes.BleachStone.CreateTag()))
+                storage.storageFilters.Add(SimHashes.ToxicSand.CreateTag());
                 storage.storageFilters.Add(SimHashes.BleachStone.CreateTag());
         }
     }
@@ -158,8 +165,6 @@ namespace Rephysicalized
     {
         public static readonly Tag ToxicSandTag = SimHashes.ToxicSand.CreateTag();
         public static readonly Tag BleachStoneTag = SimHashes.BleachStone.CreateTag();
-        public static readonly Tag ToxicMudTag = SimHashes.ToxicMud.CreateTag();
-
 
 
         [KSerialization.Serialize] public Tag selectedDeliveryTag = default;
@@ -176,7 +181,7 @@ namespace Rephysicalized
         public override void OnPrefabInit()
         {
             base.OnPrefabInit();
-            Tag baseInputTag = OrganicOverhaulIntegration.IsPresent() ? ToxicMudTag : ToxicSandTag;
+            Tag baseInputTag = ToxicSandTag;
             if (!selectedDeliveryTag.IsValid ||
                 (selectedDeliveryTag != baseInputTag && selectedDeliveryTag != BleachStoneTag))
                 selectedDeliveryTag = baseInputTag;
@@ -191,37 +196,28 @@ namespace Rephysicalized
         public FewOptionSideScreen.IFewOptionSideScreen.Option[] GetOptions()
         {
             var options = new FewOptionSideScreen.IFewOptionSideScreen.Option[2];
-            Tag baseInputTag = OrganicOverhaulIntegration.IsPresent() ? ToxicMudTag : ToxicSandTag;
+            Tag baseInputTag = ToxicSandTag;
 
-            if (!OrganicOverhaulIntegration.IsPresent())
-            {
+         
                 var label = baseInputTag.ProperName() ?? baseInputTag.ToString();
                 var sprite = Def.GetUISprite((object)baseInputTag);
                 options[0] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
                     baseInputTag, label, sprite, "Deliver Polluted Dirt");
-            }
+      
         
-            else
-            {
-                var label = baseInputTag.ProperName() ?? baseInputTag.ToString();
-                var sprite = Def.GetUISprite((object)baseInputTag);
-                options[0] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
-                    baseInputTag, label, sprite, "Deliver Polluted Mud");
-            }
-             
-            {
-                var label = BleachStoneTag.ProperName() ?? BleachStoneTag.ToString();
-                var sprite = Def.GetUISprite((object)BleachStoneTag);
+         
+                var labelbleach = BleachStoneTag.ProperName() ?? BleachStoneTag.ToString();
+                var spritebleach = Def.GetUISprite((object)BleachStoneTag);
                 options[1] = new FewOptionSideScreen.IFewOptionSideScreen.Option(
-                    BleachStoneTag, label, sprite, "Deliver Bleach Stone");
-            }
+                    BleachStoneTag, labelbleach, spritebleach, "Deliver Bleach Stone");
+            
 
             return options;
         }
 
         public void OnOptionSelected(FewOptionSideScreen.IFewOptionSideScreen.Option option)
         {
-            Tag baseInputTag = OrganicOverhaulIntegration.IsPresent() ? ToxicMudTag : ToxicSandTag;
+            Tag baseInputTag = ToxicSandTag;
             if ((option.tag != baseInputTag && option.tag != BleachStoneTag) || option.tag == selectedDeliveryTag)
                 return;
 
@@ -254,7 +250,7 @@ namespace Rephysicalized
             {
                 if (storage.storageFilters == null)
                     storage.storageFilters = new List<Tag>();
-                Tag baseInputTag = OrganicOverhaulIntegration.IsPresent() ? ToxicMudTag : ToxicSandTag;
+                Tag baseInputTag =  ToxicSandTag;
                 if (!storage.storageFilters.Contains(baseInputTag))
                     storage.storageFilters.Add(baseInputTag);
                 if (!storage.storageFilters.Contains(BleachStoneTag))

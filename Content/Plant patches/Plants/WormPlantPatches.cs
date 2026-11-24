@@ -1,4 +1,4 @@
-Ôªøusing System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
@@ -27,7 +27,7 @@ namespace Rephysicalized.Content.Plants
         private static readonly Dictionary<int, SaveEntry> saved = new Dictionary<int, SaveEntry>();
         private static readonly Dictionary<int, PendingEntry> pending = new Dictionary<int, PendingEntry>();
 
-        // Consider a replacement to be the ‚Äúsame plant‚Äù in the same cell within this window (seconds).
+        // Consider a replacement to be the ìsame plantî in the same cell within this window (seconds).
         private const float TTL_SECONDS = 2.0f;
 
         // Dedupe window to avoid multiple saves for the same destroy sequence (seconds)

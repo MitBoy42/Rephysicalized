@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -8,6 +8,18 @@ using UnityEngine;
 
 namespace Rephysicalized
 {
+    internal sealed class IngredientMultiplierInfo
+    {
+        public float Multiplier { get; }
+        public string PlantId { get; }
+
+        public IngredientMultiplierInfo(float multiplier, string plantId = null)
+        {
+            Multiplier = multiplier;
+            PlantId = plantId;
+        }
+    }
+
     // Central config: add more foods here later
     // 1. Increase amount in crops
     // 2. Decrease calorie amount
@@ -16,34 +28,22 @@ namespace Rephysicalized
     // 5. Check rephysicalized cooking (Not being set up here)
     public static class FoodDensityRebalance
     {
-        // SINGLE central place for multipliers: { "CropTag", multiplier }
+        // SINGLE central place for multipliers: { "CropTag", multiplier, optional plant ID }
         // Adding new food: add entry here. Auto-generates crop/calories/stego/recipes.
-        internal static readonly Dictionary<Tag, float> IngredientMultiplier = new Dictionary<Tag, float>
+        internal static readonly Dictionary<Tag, IngredientMultiplierInfo> IngredientMultiplier = new Dictionary<Tag, IngredientMultiplierInfo>
         {
-            { PrickleFruitConfig.ID.ToTag(), 5f },
-            { SwampFruitConfig.ID.ToTag(), 5f },
-            { CarrotConfig.ID.ToTag(), 4f },
-            { "FriesCarrot".ToTag(), 6f },
-            { "MushBar".ToTag(), 5f },
-            { "FriedMushBar".ToTag(), 5f },
-          { "JawboFillet".ToTag(), 0.5f },
-       { "PrehistoricPacuFillet".ToTag(), 0.5f },
+            { PrickleFruitConfig.ID.ToTag(), new IngredientMultiplierInfo(5f, PrickleFlowerConfig.ID) },
+            { SwampFruitConfig.ID.ToTag(), new IngredientMultiplierInfo(5f, SwampHarvestPlantConfig.ID) },
+            { CarrotConfig.ID.ToTag(), new IngredientMultiplierInfo(4f, CarrotPlantConfig.ID) },
+            { "FriesCarrot".ToTag(), new IngredientMultiplierInfo(6f) },
+            { "MushBar".ToTag(), new IngredientMultiplierInfo(5f) },
+            { "FriedMushBar".ToTag(), new IngredientMultiplierInfo(5f) },
+            { "JawboFillet".ToTag(), new IngredientMultiplierInfo(0.5f) },
+            { "PrehistoricPacuFillet".ToTag(), new IngredientMultiplierInfo(0.5f) },
        //One only affects  food and the other affects recipes
 
-
-
-
-
-
         };
 
-        // Crops with configs (skip others)
-        internal static readonly string[] CropIds = new[]
-        {
-            PrickleFruitConfig.ID,
-            SwampFruitConfig.ID,
-            CarrotConfig.ID
-        };
 
         // Fabricator IDs (Tags) to scale; names must match building IDs
         internal static readonly Tag MicrobeMusher = TagManager.Create("MicrobeMusher");
@@ -52,45 +52,6 @@ namespace Rephysicalized
         internal static readonly Tag Smoker = TagManager.Create("Smoker");
         internal static readonly Tag Deepfryer = TagManager.Create("Deepfryer");
         internal static readonly Tag SushiBar = TagManager.Create("SushiBar");
-    }
-
-    internal static class CropValAccess
-    {
-        private static readonly Type CropValType = typeof(Crop.CropVal);
-
-        private static FieldInfo FindField(params string[] names)
-        {
-            foreach (var n in names)
-            {
-                var fi = AccessTools.Field(CropValType, n);
-                if (fi != null) return fi;
-            }
-            return null;
-        }
-
-        private static readonly FieldInfo FI_Id =
-            FindField("cropId", "crop_id");
-        private static readonly FieldInfo FI_Duration =
-            FindField("cropDuration", "time");
-        private static readonly FieldInfo FI_Amount =
-            FindField("cropAmount", "numProduced");
-
-        public static bool TryRead(Crop.CropVal val, out string id, out float duration, out int amount)
-        {
-            id = null;
-            duration = 0f;
-            amount = 0;
-
-            object boxed = val;
-
-            if (FI_Id == null || FI_Duration == null || FI_Amount == null)
-                return false;
-
-            id = (string)FI_Id.GetValue(boxed);
-            duration = (float)FI_Duration.GetValue(boxed);
-            amount = (int)FI_Amount.GetValue(boxed);
-            return true;
-        }
     }
 
     // Run crop and food changes after the database has initialized to ensure types are ready
@@ -106,40 +67,39 @@ namespace Rephysicalized
 
             try
             {
-                // CROPS: AUTO increase amounts ONLY for foods with crops
-                var list = CROPS.CROP_TYPES;
-                if (list != null)
+                // Scale linked plant harvests directly so their prefab configs use the updated yield.
+                foreach (var kv in FoodDensityRebalance.IngredientMultiplier)
                 {
-                    // Helper to rewrite a crop entry
-                    void RewriteCropAmount(string cropId, float multiplier)
-                    {
-                        for (int i = 0; i < list.Count; i++)
-                        {
-                            var cv = list[i];
-                            if (!CropValAccess.TryRead(cv, out var id, out var duration, out var amount))
-                                continue;
+                    if (string.IsNullOrEmpty(kv.Value.PlantId))
+                        continue;
 
-                            if (!string.Equals(id, cropId, StringComparison.Ordinal))
-                                continue;
-
-                            int baseAmt = amount <= 0 ? 1 : amount;
-                            int newAmount = Mathf.RoundToInt(baseAmt * multiplier);
-                            list[i] = new Crop.CropVal(id, duration, newAmount);
-                            return;
-                        }
-                    }
-
-            foreach (var cropId in FoodDensityRebalance.CropIds)
-            {
-                if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(cropId.ToTag(), out float mul))
-                    RewriteCropAmount(cropId, mul);
-            }
-                }
-                else
-                {
+                    ScaleHarvest(GetPlantHarvest(kv.Value.PlantId), kv.Value.Multiplier);
                 }
 
-// FOOD: AUTO divide calories by multiplier
+                //// Keep product matching for multiplier entries without a plant link.
+                //var crops = TUNING.CROPS.CROP_TYPES;
+                //if (crops != null)
+                //{
+                //    for (int i = 0; i < crops.Count; i++)
+                //    {
+                //        var crop = crops[i];
+                //        if (crop?.products == null)
+                //            continue;
+
+                //        for (int productIndex = 0; productIndex < crop.products.Count; productIndex++)
+                //        {
+                //            var product = crop.products[productIndex];
+                //            if (!FoodDensityRebalance.IngredientMultiplier.TryGetValue(product.cropId.ToTag(), out var multiplierInfo)
+                //                || !string.IsNullOrEmpty(multiplierInfo.PlantId))
+                //                continue;
+
+                //            product.quantity *= multiplierInfo.Multiplier;
+                //            crop.products[productIndex] = product;
+                //        }
+                //    }
+                //}
+
+                // FOOD: AUTO divide calories by multiplier
                 foreach (var kv in FoodDensityRebalance.IngredientMultiplier)
                 {
                     // Map tag to FOOD.FOOD_TYPES (handle UPPERCASE)
@@ -152,13 +112,38 @@ namespace Rephysicalized
                     var foodTypeField = AccessTools.Field(typeof(FOOD.FOOD_TYPES), foodKey);
                     if (foodTypeField?.GetValue(null) is EdiblesManager.FoodInfo foodInfo)
                     {
-                        AdjustFoodCalories(foodInfo, kv.Value, foodKey);
+                        AdjustFoodCalories(foodInfo, kv.Value.Multiplier, foodKey);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[PricklefruitRebalance] Db.Initialize crop/food patch failed: {ex}");
+            }
+        }
+
+        private static Crop.CropVal GetPlantHarvest(string plantId)
+        {
+            if (plantId == PrickleFlowerConfig.ID)
+                return PrickleFlowerConfig.HARVEST;
+            if (plantId == SwampHarvestPlantConfig.ID)
+                return SwampHarvestPlantConfig.HARVEST;
+            if (plantId == CarrotPlantConfig.ID)
+                return CarrotPlantConfig.HARVEST;
+
+            return null;
+        }
+
+        private static void ScaleHarvest(Crop.CropVal crop, float multiplier)
+        {
+            if (crop?.products == null)
+                return;
+
+            for (int i = 0; i < crop.products.Count; i++)
+            {
+                var product = crop.products[i];
+                product.quantity *= multiplier;
+                crop.products[i] = product;
             }
         }
 
@@ -253,10 +238,10 @@ namespace Rephysicalized
                         var ing = ings[i];
 
                         // Exact match on material
-                        if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(ing.material, out var mul) && mul > 0f)
+                        if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(ing.material, out var multiplierInfo) && multiplierInfo.Multiplier > 0f)
                         {
                             float old = ing.amount;
-                            ing.amount = old * mul;
+                            ing.amount = old * multiplierInfo.Multiplier;
                             ings[i] = ing;
                             changed = true;
                             changedIngredients++;
@@ -270,8 +255,8 @@ namespace Rephysicalized
                             float maxMul = 0f;
                             foreach (var t in ing.possibleMaterials)
                             {
-                                if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(t, out var m) && m > maxMul)
-                                    maxMul = m;
+                                if (FoodDensityRebalance.IngredientMultiplier.TryGetValue(t, out var possibleMultiplierInfo) && possibleMultiplierInfo.Multiplier > maxMul)
+                                    maxMul = possibleMultiplierInfo.Multiplier;
                             }
                             if (maxMul > 0f)
                             {
@@ -302,10 +287,10 @@ namespace Rephysicalized
                     for (int i = 0; i < res.Length; i++)
                     {
                         var r = res[i];
-                        if (!alreadyProcessedResults && FoodDensityRebalance.IngredientMultiplier.TryGetValue(r.material, out var mul) && mul > 0f)
+                        if (!alreadyProcessedResults && FoodDensityRebalance.IngredientMultiplier.TryGetValue(r.material, out var multiplierInfo) && multiplierInfo.Multiplier > 0f)
                         {
                             float old = r.amount;
-                            r.amount = old * mul;
+                            r.amount = old * multiplierInfo.Multiplier;
                             res[i] = r;
                             changed = true;
                             resultsChanged = true;

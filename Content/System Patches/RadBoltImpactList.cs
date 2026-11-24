@@ -1,4 +1,4 @@
-﻿using Rephysicalized.ModElements;
+using Rephysicalized.ModElements;
 using System;
 using System.Collections.Generic;
 using UnityEngine;

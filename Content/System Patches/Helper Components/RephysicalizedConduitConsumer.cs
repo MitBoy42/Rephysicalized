@@ -1,4 +1,4 @@
-﻿using STRINGS;
+using STRINGS;
 using STRINGS;
 using System;
 using System.Collections.Generic;

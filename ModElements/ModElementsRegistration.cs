@@ -1,4 +1,4 @@
-﻿using ElementUtilNamespace;
+using ElementUtilNamespace;
 using HarmonyLib;
 using Klei.AI;
 using System;

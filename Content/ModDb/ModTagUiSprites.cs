@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei;
 using PeterHan.PLib.UI;
 using System;

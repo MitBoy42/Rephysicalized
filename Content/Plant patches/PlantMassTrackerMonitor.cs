@@ -1,4 +1,4 @@
-﻿﻿using HarmonyLib;
+using HarmonyLib;
 using Database;
 using KSerialization;
 using Klei.AI;

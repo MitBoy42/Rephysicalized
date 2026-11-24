@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -111,7 +111,7 @@ namespace Rephysicalized.Content.ModDb
             TryAppendAllForOutputId(entry.id);
         }
 
-        // Generators – ensure source panels for generated entries too (covers cases AddEntry timing differs)
+        // Generators � ensure source panels for generated entries too (covers cases AddEntry timing differs)
         [HarmonyPatch(typeof(CodexEntryGenerator), "GenerateSingleBuildingEntry")]
         [HarmonyPostfix]
         private static void BuildingEntry_Postfix(ref CodexEntry __result, BuildingDef def)

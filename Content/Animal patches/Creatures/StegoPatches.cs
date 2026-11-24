@@ -117,7 +117,7 @@ namespace Rephysicalized
             var mainFoodOverrides = new Dictionary<Tag, float>
             {
                 { TagManager.Create(VineFruitConfig.ID), 50f },
-                { TagManager.Create(PrickleFruitConfig.ID), 246f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()] },
+                { TagManager.Create(PrickleFruitConfig.ID), 246f / Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()].Multiplier },
                 { TagManager.Create(SwampFruitConfig.ID), 283f * 1.5f },
             };
 

@@ -1,9 +1,5 @@
-﻿using HarmonyLib;
-
+using HarmonyLib;
 using System.Collections.Generic;
-using System;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using TUNING;
 using UnityEngine;
@@ -19,7 +15,7 @@ namespace Rephysicalized
         public static void Prefix()
         {
             const string key = "STRINGS.BUILDINGS.PREFABS.ALGAEHABITAT.EFFECT";
-            Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Massively increases efficiency under light. At 50 000 Lux or higher, it will consume 150g/s of CO2 and produce no Polluted Water waste.</b>");
+            Strings.Add(key, Strings.Get(key) + "\n\n<b>REPHYSICALIZED: Massively increases efficiency under light and produces Algae. At 50 000 Lux or higher, it will consume 120g/s of CO2 and produce no Polluted Water waste.</b>");
         }
     }
 
@@ -63,6 +59,15 @@ namespace Rephysicalized
         public static float ALGAE_CAPACITY = 120f;
         public static float ALGAE_OUTPUT_RATE = 0.001f;
 
+        static AlgaeHabitatTuning()
+        {
+            if (!Config.Instance.RealBreathing)
+                return;
+
+            OXYGEN_RATE = 0.001f;
+            WATER_RATE = 0.1f;
+            PWATER_OUTPUT_RATE = 0.099f;
+        }
     }
 
     [HarmonyPatch(typeof(AlgaeHabitatConfig), nameof(AlgaeHabitatConfig.ConfigureBuildingTemplate))]
@@ -531,10 +536,20 @@ namespace Rephysicalized
                 .Update("GeneratingOxygen", (AlgaeHabitat.SMInstance smi, float dt) =>
                 {
                     int cell = Grid.PosToCell(smi.master.transform.GetPosition());
-                    float CO2multiplier = Mathf.Min(1.0f + Grid.LightIntensity[cell] * 0.003f, 150f);
+                    float CO2multiplier = Mathf.Min(1.0f + Grid.LightIntensity[cell] * 0.0024f, 120f);
                     float Algaemultiplier = Mathf.Min(1.0f + Grid.LightIntensity[cell] * 0.0024f, 120f);
-                    float Oxygenmultiplier = Mathf.Min(1.0f + Grid.LightIntensity[cell] * 0.000145f, 8.25f);
-                    float Dirtymultiplier = Mathf.Max(1.0f - (Grid.LightIntensity[cell] * 0.00002f), 0f);
+                    float Oxygenmultiplier;
+                    float Dirtymultiplier;
+                    if (Config.Instance.RealBreathing) //Different values for RealBreathing, way smaller oxygen production overall.
+                    {
+                        Oxygenmultiplier = Mathf.Min(1.0f + Grid.LightIntensity[cell] * 0.00078f, 40f);
+                        Dirtymultiplier = Mathf.Max(1.0f - (Grid.LightIntensity[cell] * 0.000008f), 0.6f);
+                    }
+                    else // Normal vatiant
+                    {
+                        Oxygenmultiplier = Mathf.Min(1.0f + Grid.LightIntensity[cell] * 0.00013f, 7.5f);
+                        Dirtymultiplier = Mathf.Max(1.0f - (Grid.LightIntensity[cell] * 0.00002f), 0f);
+                    }
 
                     var converters = smi.master.GetComponents<ElementConverter>();
                     foreach (var converter in converters)
@@ -592,8 +607,6 @@ namespace Rephysicalized
                     smi => !smi.HasEnoughMass(SimHashes.CarbonDioxide.CreateTag()))
                 .EventTransition(GameHashes.OnStorageChange, __instance.gotWater,
                     smi => smi.HasEnoughMass(GameTags.Water) && smi.HasEnoughMass(SimHashes.CarbonDioxide.CreateTag()));
-
-
 
             // Return false to prevent the original InitializeStates from running
             return false;

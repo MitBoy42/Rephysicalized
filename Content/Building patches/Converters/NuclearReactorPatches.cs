@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using STRINGS;
 using System;
 using System.Collections;

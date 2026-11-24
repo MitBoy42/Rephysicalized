@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Rephysicalized.Content.Plant_patches;
 using System.Collections.Generic;
 using System.Reflection.Emit;

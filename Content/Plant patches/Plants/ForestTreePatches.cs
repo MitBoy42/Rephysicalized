@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using System.Collections.Generic;
 using System.Reflection.Emit;
@@ -151,7 +151,7 @@ namespace Rephysicalized
 
                     // ONI formats a per-cycle mass from a per-second rate via GameUtil.
                     float perSecond = entry.massConsumptionRate * usageMultiplier;
-                    header += "\n    • " + name + " " + GameUtil.GetFormattedMass(perSecond, GameUtil.TimeSlice.PerCycle);
+                    header += "\n    � " + name + " " + GameUtil.GetFormattedMass(perSecond, GameUtil.TimeSlice.PerCycle);
                 }
 
                 __result = header;

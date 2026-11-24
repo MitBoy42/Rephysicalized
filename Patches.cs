@@ -1,4 +1,4 @@
-﻿using Database;
+using Database;
 using HarmonyLib;
 using Klei.AI;
 using Rephysicalized.Content.System_Patches;

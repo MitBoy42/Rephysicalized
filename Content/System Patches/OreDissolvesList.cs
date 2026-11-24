@@ -1,4 +1,4 @@
-﻿
+
 using Rephysicalized.Content.System_Patches;
 using System;
 using System.Collections.Generic;
@@ -261,7 +261,16 @@ namespace Rephysicalized.Content.System_Patches
         {
             GameObject solidOreEntity = OrePrefabHelpers.GetOrCreateOrePrefab(this.ElementID);
             var oreDissolves = solidOreEntity.AddComponent<OreDissolves>(); ; ;
-            oreDissolves.usedoreratio = 0.33f;
+
+            if (!Config.Instance.RealBreathing) //Classic Implementation
+            {
+                oreDissolves.usedoreratio = 0.33f;
+            }
+            else 
+            {
+                oreDissolves.usedoreratio = 0.066f;
+            }
+
             oreDissolves.conversionspeed = 0.02f;
             oreDissolves.minmass = 10f;
             oreDissolves.emittedore = SimHashes.Rust;

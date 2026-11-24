@@ -1,4 +1,4 @@
-ï»¿using HarmonyLib;
+using HarmonyLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -62,7 +62,7 @@ public static class ExtendFoundationTemperatureExtents_ForAllBuildings
                     return;
                 }
 
-                // Prefer Rotatableâ€™s notion of current orientation
+                // Prefer Rotatable’s notion of current orientation
                 var rot = __instance.GetComponent<Rotatable>();
                 Orientation orientation = rot != null ? rot.GetOrientation() : building.Orientation;
 
@@ -158,12 +158,12 @@ public static class ExtendFoundationTemperatureExtents_ForAllBuildings
         }
 
         // Orientation mapping for rotatable foundations:
-        // Derived from Rotatable.GetRotatedCellOffset 90Â° steps.
+        // Derived from Rotatable.GetRotatedCellOffset 90° steps.
         private static Vector2Int DirForFoundationRotatable(Orientation o)
         {
             switch (o)
             {
-                case Orientation.R90: return Left;   // 90Â° cw rotates "down" to "left"
+                case Orientation.R90: return Left;   // 90° cw rotates "down" to "left"
                 case Orientation.R180: return Up;
                 case Orientation.R270: return Right;
                 case Orientation.FlipH: return Right;

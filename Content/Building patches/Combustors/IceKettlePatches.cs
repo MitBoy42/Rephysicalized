@@ -1,4 +1,4 @@
-Ôªøusing HarmonyLib;
+using HarmonyLib;
 using Rephysicalized.Content.System_Patches;
 using Rephysicalized.ModElements;
 using System;
@@ -17,7 +17,7 @@ namespace Rephysicalized.Content.Building_patches
         public const float AshPerWood = 0.9645f;        
         public const float AshTempK = 273.15f + 40f;    
 
-        // Elements/tags ‚Äì adjust if your mod uses custom IDs
+        // Elements/tags ñ adjust if your mod uses custom IDs
         public static readonly Tag OxidizerGasTag = SimHashes.Oxygen.CreateTag(); // replace with ModTags.OxidizerGas if you have one
         public static readonly Tag AshTag = ModElementRegistration.AshByproduct.Tag;  // provided by your mod registry
 
@@ -99,7 +99,7 @@ namespace Rephysicalized.Content.Building_patches
         }
     }
 
-    // Extend ‚Äúcan run‚Äù condition: require oxidizer for next batch (0.1065 √ó required wood)
+    // Extend ìcan runî condition: require oxidizer for next batch (0.1065 ? required wood)
     [HarmonyPatch(typeof(IceKettle), nameof(IceKettle.HasEnoughFuelForNextBacth))]
     public static class IceKettle_CanRun_ExtendWithOxidizer
     {

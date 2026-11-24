@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using HarmonyLib;
 
 namespace Rephysicalized
@@ -42,7 +42,7 @@ namespace Rephysicalized
             new Entry("SeaLettuce", 12f,
                 new MaterialYield("Mud", 1f)
             ),
-            new Entry("PrickleFlower", 1f * Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()],
+            new Entry("PrickleFlower", 1f * Rephysicalized.FoodDensityRebalance.IngredientMultiplier[PrickleFruitConfig.ID.ToTag()].Multiplier,
                 new MaterialYield("Mud", 0.96f),
                 new MaterialYield("Oxygen", 0.04f)
             ),
@@ -55,7 +55,7 @@ namespace Rephysicalized
                 new MaterialYield("CarbonDioxide", 0.5f)
             ),
             new Entry("SpiceVine", 4f, new MaterialYield("ToxicMud", 1f)),
-            new Entry("SwampHarvestPlant", 1f * Rephysicalized.FoodDensityRebalance.IngredientMultiplier[SwampFruitConfig.ID.ToTag()],
+            new Entry("SwampHarvestPlant", 1f * Rephysicalized.FoodDensityRebalance.IngredientMultiplier[SwampFruitConfig.ID.ToTag()].Multiplier,
                 new MaterialYield("ToxicMud", 0.8f),
                 new MaterialYield("Sulfur", 0.2f)
             ),
@@ -77,7 +77,7 @@ namespace Rephysicalized
                 new MaterialYield("Sand", 0.95f),
                 new MaterialYield("CarbonDioxide", 0.05f)
             ),
-                new Entry("CarrotPlant", 1f *  Rephysicalized.FoodDensityRebalance.IngredientMultiplier[CarrotConfig.ID.ToTag()],
+                new Entry("CarrotPlant", 1f * Rephysicalized.FoodDensityRebalance.IngredientMultiplier[CarrotConfig.ID.ToTag()].Multiplier,
                 new MaterialYield("Ice", 0.99f),
                 new MaterialYield("CarbonDioxide", 0.01f) 
             ),

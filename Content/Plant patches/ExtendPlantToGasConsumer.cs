@@ -64,31 +64,50 @@ namespace Rephysicalized.Content.Plant_patches
 
         public static GameObject Extend(GameObject template, PlantGasConsumerInfo info)
         {
-            if (template == null)
+            if (template == null || info == null)
                 return null;
-      
 
-            var element = ElementLoader.FindElementByTag(info.elementTag);
-         
+            bool consumesOxidizer = info.elementTag == ModTags.OxidizerGas;
+            var element = consumesOxidizer ? null : ElementLoader.FindElementByTag(info.elementTag);
+            if (!consumesOxidizer && element == null)
+            {
+                Debug.LogError($"Cannot add plant gas consumer: no element has tag '{info.elementTag}'.");
+                return template;
+            }
+
             // Internal gas buffer lives on the plant itself, NOT on the farm plot it is planted in.
-            // capacityKg also gates the ElementConsumer via its own capacityKG, so drawing pauses
+            // capacityKg also gates the refill consumer, so drawing pauses
             // once the buffer is full and resumes automatically when this component drains it.
             var storage = template.GetComponent<PlantGasConsumerStorage>();
             if (storage == null)
                 storage = template.AddOrGet<PlantGasConsumerStorage>();
             storage.Configure(info);
 
-            var consumer = template.AddOrGet<ElementConsumer>();
-            consumer.elementToConsume = element.id;
-            consumer.configuration = ElementConsumer.Configuration.Element;
-            consumer.consumptionRate = info.massConsumptionRate;
-            consumer.capacityKG = info.storageCapacityKg;
-            consumer.consumptionRadius = info.consumptionRadius;
-            consumer.sampleCellOffset = info.consumerSampleOffset;
-            consumer.showInStatusPanel = true;
-            consumer.isRequired = false;
-            consumer.ignoreActiveChanged = true;
-            consumer.storeOnConsume = false;
+            if (consumesOxidizer)
+            {
+                var consumer = template.AddOrGet<DualGasElementConsumer>();
+                consumer.consumptionRate = info.massConsumptionRate * Mathf.Max(1f, info.drawRateMultiplier);
+                consumer.capacityKG = info.storageCapacityKg;
+                consumer.consumptionRadius = info.consumptionRadius;
+                consumer.sampleCellOffset = info.consumerSampleOffset;
+                consumer.showInStatusPanel = true;
+                consumer.isRequired = true;
+                consumer.storage = storage;
+            }
+            else
+            {
+                var consumer = template.AddOrGet<ElementConsumer>();
+                consumer.elementToConsume = element.id;
+                consumer.configuration = ElementConsumer.Configuration.Element;
+                consumer.consumptionRate = info.massConsumptionRate;
+                consumer.capacityKG = info.storageCapacityKg;
+                consumer.consumptionRadius = info.consumptionRadius;
+                consumer.sampleCellOffset = info.consumerSampleOffset;
+                consumer.showInStatusPanel = true;
+                consumer.isRequired = false;
+                consumer.ignoreActiveChanged = true;
+                consumer.storeOnConsume = false;
+            }
 
             var monitor = template.AddOrGet<PlantGasConsumer>();
             monitor.Configure(info);
@@ -150,13 +169,16 @@ namespace Rephysicalized.Content.Plant_patches
         private SimHashes consumedElement = SimHashes.Void;
 
         [SerializeField]
+        private Tag consumedElementTag;
+
+        [SerializeField]
         private float consumptionRatePerSecond = 0.02f;
 
         [SerializeField]
         private float baseConsumptionRatePerSecond;
 
         [SerializeField]
-        private float drawRateMultiplier = 4f;
+        private float drawRateMultiplier = 10f;
 
         [SerializeField]
         private float requiredMassKg = 0.05f;
@@ -190,7 +212,7 @@ namespace Rephysicalized.Content.Plant_patches
         /// <summary>
         /// Changes the plant's base gas consumption at runtime, e.g. to scale with light.
         ///
-        /// Wild-state scaling is applied to this base rate, and the ElementConsumer refill rate is
+            // Wild-state scaling is applied to this base rate, and the refill rate is
         /// retuned to preserve the configured draw ratio.
         /// </summary>
         public void SetConsumptionRate(float kgPerSecond)
@@ -214,21 +236,32 @@ namespace Rephysicalized.Content.Plant_patches
             consumptionRatePerSecond = effectiveRate;
 
             var consumer = GetComponent<ElementConsumer>();
-            if (consumer == null)
-                return;
-
             float desired = consumptionRatePerSecond * Mathf.Max(1f, drawRateMultiplier);
-            if (!rateChanged && Mathf.Approximately(consumer.consumptionRate, desired))
-                return;
+            if (consumer != null)
+            {
+                if (!rateChanged && Mathf.Approximately(consumer.consumptionRate, desired))
+                    return;
 
-            consumer.consumptionRate = desired;
-            consumer.EnableConsumption(true);
-            consumer.RefreshConsumptionRate();
+                consumer.consumptionRate = desired;
+                consumer.EnableConsumption(true);
+                consumer.RefreshConsumptionRate();
+                return;
+            }
+
+            var oxidizerConsumer = GetComponent<DualGasElementConsumer>();
+            if (oxidizerConsumer != null &&
+                (rateChanged || !Mathf.Approximately(oxidizerConsumer.consumptionRate, desired)))
+            {
+                oxidizerConsumer.consumptionRate = desired;
+                oxidizerConsumer.isRequired = true;
+            }
         }
 
         internal void Configure(PlantGasConsumerInfo info)
         {
-            consumedElement = ElementLoader.GetElementID(info.elementTag);
+            var element = ElementLoader.FindElementByTag(info.elementTag);
+            consumedElement = element != null ? element.id : SimHashes.Void;
+            consumedElementTag = info.elementTag;
             baseConsumptionRatePerSecond = info.massConsumptionRate;
             consumptionRatePerSecond = info.massConsumptionRate;
             if (info.drawRateMultiplier > 0f)
@@ -249,34 +282,45 @@ namespace Rephysicalized.Content.Plant_patches
                 receptacle = GetComponent<ReceptacleMonitor>();
 
             var consumer = GetComponent<ElementConsumer>();
-            if (consumer == null)
+            var oxidizerConsumer = GetComponent<DualGasElementConsumer>();
+            if (consumer == null && oxidizerConsumer == null)
                 return;
 
-            consumedElement = consumer.elementToConsume;
+            float capacityKg;
+            if (consumer != null)
+            {
+                consumedElement = consumer.elementToConsume;
+                consumedElementTag = consumedElement.CreateTag();
+                capacityKg = consumer.capacityKG;
+                if (baseConsumptionRatePerSecond <= 0f)
+                    baseConsumptionRatePerSecond = consumptionRatePerSecond > 0f
+                        ? consumptionRatePerSecond
+                        : consumer.consumptionRate;
+                consumer.storeOnConsume = true;
+                consumer.storage = storage;
+                consumer.EnableConsumption(true);
+            }
+            else
+            {
+                capacityKg = oxidizerConsumer.capacityKG;
+                oxidizerConsumer.storage = storage;
+                oxidizerConsumer.isRequired = true;
+                if (baseConsumptionRatePerSecond <= 0f)
+                    baseConsumptionRatePerSecond = consumptionRatePerSecond;
+            }
 
-
-
-            if (baseConsumptionRatePerSecond <= 0f)
-                baseConsumptionRatePerSecond = consumptionRatePerSecond > 0f
-                    ? consumptionRatePerSecond
-                    : consumer.consumptionRate;
-
-
-            requiredMassKg = Mathf.Clamp(requiredMassKg, 0f, Mathf.Max(0f, consumer.capacityKG * 0.5f));
+            requiredMassKg = Mathf.Clamp(requiredMassKg, 0f, Mathf.Max(0f, capacityKg * 0.5f));
 
             if (string.IsNullOrEmpty(wiltStateString))
                 wiltStateString = STRINGS.STATUSITEMS.NOGAS;
 
-            consumer.storeOnConsume = true;
-            consumer.storage = storage;
-            consumer.EnableConsumption(true);
             ApplyEffectiveConsumptionRate();
             RegisterWithMassTracker();
         }
 
         private void RegisterWithMassTracker()
         {
-            if (storage == null || consumedElement == SimHashes.Void)
+            if (storage == null || consumedElementTag == null)
                 return;
 
             var go = gameObject;
@@ -285,12 +329,12 @@ namespace Rephysicalized.Content.Plant_patches
             if (PlantMassTrackerRegistry.TryGetConfig(go.GetComponent<KPrefabID>().PrefabID().Name, out var cfg))
                 tracker.InitializeFromConfig(cfg);
 
-            tracker.RegisterMonitorStorage(storage, new[] { consumedElement.CreateTag() });
+            tracker.RegisterMonitorStorage(storage, new[] { consumedElementTag });
         }
 
         public void Sim1000ms(float dt)
         {
-            if (storage == null || consumedElement == SimHashes.Void)
+            if (storage == null || consumedElementTag == null)
                 return;
 
             // Do not consume internal gas while the plant is wilted.
@@ -331,18 +375,25 @@ namespace Rephysicalized.Content.Plant_patches
                 return;
 
             var consumer = GetComponent<ElementConsumer>();
-            if (consumer == null)
+            if (consumer != null)
+            {
+                // EnableConsumption early-outs when already enabled, so this is cheap to call every tick.
+                consumer.EnableConsumption(true);
                 return;
+            }
 
-            // EnableConsumption early-outs when already enabled, so this is cheap to call every tick.
-            consumer.EnableConsumption(true);
+            var oxidizerConsumer = GetComponent<DualGasElementConsumer>();
+            if (oxidizerConsumer != null)
+                oxidizerConsumer.isRequired = true;
         }
 
 
         private void RefreshConsumerIfBufferHasRoom()
         {
             var consumer = GetComponent<ElementConsumer>();
-            if (consumer == null || consumer.capacityKG <= 0f)
+            if (consumer == null)
+                return;
+            if (consumer.capacityKG <= 0f)
                 return;
 
             if (AvailableMass >= consumer.capacityKG)
@@ -370,7 +421,7 @@ namespace Rephysicalized.Content.Plant_patches
                     continue;
 
                 var pe = item.GetComponent<PrimaryElement>();
-                if (pe == null || pe.ElementID != consumedElement)
+                if (pe == null || !MatchesConsumedGas(pe))
                     continue;
 
                 if (pe.Mass <= mass)
@@ -392,6 +443,16 @@ namespace Rephysicalized.Content.Plant_patches
 
          
         }
+
+        private bool MatchesConsumedGas(PrimaryElement primaryElement)
+        {
+            if (consumedElement != SimHashes.Void)
+                return primaryElement.ElementID == consumedElement;
+
+            var element = ElementLoader.FindElementByHash(primaryElement.ElementID);
+            return element != null && element.HasTag(consumedElementTag);
+        }
+
         private void UpdateWiltState()
         {
             bool starved = Starved;

@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using Rephysicalized.ModElements;
 using System;

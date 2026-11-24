@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: Rephysicalized.Content.System_Patches.OreDissolves
 // Assembly: Rephysicalized, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 23D92239-9033-4FF1-BE3A-A22401005D7D

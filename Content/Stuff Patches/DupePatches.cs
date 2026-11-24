@@ -1,4 +1,4 @@
-﻿﻿using HarmonyLib;
+using HarmonyLib;
 using Klei.AI;
 using STRINGS;
 using System;
@@ -33,22 +33,58 @@ namespace Rephysicalized
         {
             if (stats == null) return;
 
-            var sec = stats.Secretions;
-            if (sec != null)
-            {
-                sec.PEE_PER_FLOOR_PEE = 5f;
-                sec.PEE_PER_TOILET_PEE = 5f;
-            }
+            //var sec = stats.Secretions;
+            //if (sec != null)
+            //{
+            //    sec.PEE_PER_FLOOR_PEE = 5f;
+            //    sec.PEE_PER_TOILET_PEE = 5f;
+            //}
 
             var baseStats = stats.BaseStats;
-            if (baseStats != null)
+            baseStats.MAX_CALORIES = 6_000_000f;
+            if (!Config.Instance.RealBreathing) // Without breathing change
             {
                 baseStats.OXYGEN_USED_PER_SECOND = baseStats.OXYGEN_USED_PER_SECOND * Config.Instance.DuplicantOxygenUse;
-                baseStats.OXYGEN_TO_CO2_CONVERSION = baseStats.OXYGEN_USED_PER_SECOND / Config.Instance.DuplicantOxygenUse / 2.5f;
-                baseStats.MAX_CALORIES = 6_000_000f;
+                baseStats.OXYGEN_TO_CO2_CONVERSION = baseStats.OXYGEN_USED_PER_SECOND / Config.Instance.DuplicantOxygenUse / 5f;
+            }  
+            else  //With breathing change. 
+            {
+                baseStats.OXYGEN_USED_PER_SECOND = baseStats.OXYGEN_USED_PER_SECOND / 50f;
+                baseStats.OXYGEN_TO_CO2_CONVERSION = 1;
             }
+       
+            
         }
 
+        internal static float GetBionicOxygenTankCapacity()
+        {
+            return BionicOxygenTankMonitor.OXYGEN_TANK_CAPACITY_IN_SECONDS *
+                global::TUNING.DUPLICANTSTATS.BIONICS.BaseStats.OXYGEN_USED_PER_SECOND;
+        }
+
+        [HarmonyPostfix]
+        private static void Postfix(Db __instance)
+        {
+            var oxygenTankAmount = __instance?.Amounts?.BionicOxygenTank;
+            if (oxygenTankAmount?.maxAttribute != null)
+                oxygenTankAmount.maxAttribute.BaseValue = GetBionicOxygenTankCapacity();
+        }
+
+    }
+
+    [HarmonyPatch(typeof(BionicMinionConfig), nameof(BionicMinionConfig.CreatePrefab))]
+    public static class BionicMinionConfig_CreatePrefab_OxygenTankCapacity_Patch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(GameObject __result)
+        {
+            if (__result == null) return;
+
+            var oxygenTankStorage = __result.GetComponents<Storage>()
+                .FirstOrDefault(storage => storage.storageID == GameTags.StoragesIds.BionicOxygenTankStorage);
+            if (oxygenTankStorage != null)
+                oxygenTankStorage.capacityKg = Rephys_DbInitialize_Patch.GetBionicOxygenTankCapacity();
+        }
     }
 
 

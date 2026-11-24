@@ -33,25 +33,31 @@ namespace Rephysicalized
     public void Sim200ms(float dt)
 {
     if (isRequired)
-        ConsumeBreathableGases();
+        ConsumeBreathableGases(dt);
 }
 
-        private void ConsumeBreathableGases()
+        private void ConsumeBreathableGases(float dt)
         {
+            if (dt <= 0f || consumptionRate <= 0f)
+                return;
+
             int cell = Grid.PosToCell(transform.GetPosition() + sampleCellOffset);
             // One list for every consumer (Sim200ms runs on the main thread); GetRadialCells clears it.
             List<int> cells = radialCells;
             GridUtil.GetRadialCells(cell, consumptionRadius, cells);
-            float totalConsumed = 0f;
+            float storedOxidizer = storage != null ? storage.GetMassAvailable(ModTags.OxidizerGas) : 0f;
+            float remainingCapacity = Mathf.Max(0f, capacityKG - storedOxidizer);
+            float remainingRate = consumptionRate * dt;
             foreach (int c in cells)
             {
+                if (remainingRate <= 0f || remainingCapacity <= 0f)
+                    break;
+
                 Element element = Grid.Element[c];
                 if (element.HasTag(ModTags.OxidizerGas) && Grid.Mass[c] > 0f)
                 {
                     SimHashes gas = element.id;
-                    // element.tag is the tag CreateTag would rebuild (ElementLoader), without an Enum.ToString per cell.
-                    float available = this.storage != null ? this.storage.GetMassAvailable(element.tag) : 0f;
-                    float toConsume = Mathf.Min(consumptionRate * Time.deltaTime, Grid.Mass[c], capacityKG - available);
+                    float toConsume = Mathf.Min(remainingRate, Mathf.Min(Grid.Mass[c], remainingCapacity));
                     if (toConsume > 0f)
                     {
                         SimMessages.ConsumeMass(c, gas, toConsume, consumptionRadius);
@@ -59,7 +65,8 @@ namespace Rephysicalized
                         {
                             this.storage.AddGasChunk(gas, toConsume, Grid.Temperature[c], byte.MaxValue, 0, true);
                         }
-                        totalConsumed += toConsume;
+                        remainingRate -= toConsume;
+                        remainingCapacity -= toConsume;
                     }
                 }
             }

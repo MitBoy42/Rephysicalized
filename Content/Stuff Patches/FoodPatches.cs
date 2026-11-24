@@ -1,4 +1,4 @@
-﻿using ElementUtilNamespace;
+using ElementUtilNamespace;
 using HarmonyLib;
 using Rephysicalized.ModElements;
 using System;

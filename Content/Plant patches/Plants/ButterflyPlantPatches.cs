@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -122,7 +122,7 @@ namespace Rephysicalized
             if (!added)
                 spawnPE.Mass += massToTransfer;
 
-            // 3) Adjust the plant mass tracker so it doesn’t re-apply the removed mass.
+            // 3) Adjust the plant mass tracker so it doesn�t re-apply the removed mass.
             // Use AddMassDelta with a delta that brings tracked mass down by the same amount, clamped to >= 1 kg.
             var pmt = plantCrop.GetComponent<Rephysicalized.PlantMassTrackerComponent>();
             if (pmt != null)

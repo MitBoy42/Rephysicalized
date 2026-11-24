@@ -1,4 +1,4 @@
-﻿using Database;
+using Database;
 using ElementData;
 using HarmonyLib;
 using Klei.AI;
@@ -171,7 +171,7 @@ namespace Rephysicalized
                 return;
 
             float inputDamage = TileFracturePerTick;
-            float amount = inputDamage / element.strength; // mirrors Comet’s approach: input scaled by element strength
+            float amount = inputDamage / element.strength; // mirrors Comet�s approach: input scaled by element strength
 
             WorldDamage.Instance.ApplyDamage(
                 cell,

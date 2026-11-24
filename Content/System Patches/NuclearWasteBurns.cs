@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
@@ -51,7 +51,7 @@ namespace Rephysicalized
       tooltip: STRINGS.STATUSITEMS.ACIDBURNSCRITTER.TOOLTIP,
       icon: "status_item_exclamation",
       icon_type: StatusItem.IconType.Exclamation,
-      notification_type: NotificationType.Bad,   // not used since we won’t add notifications
+      notification_type: NotificationType.Bad,   // not used since we won�t add notifications
       allow_multiples: false,
       render_overlay: OverlayModes.None.ID,
   

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Database;
 using HarmonyLib;
 using Rephysicalized;

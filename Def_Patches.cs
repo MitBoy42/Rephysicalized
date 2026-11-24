@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Rephysicalized.Content.ModDb;
 using System;
 using System.Collections.Generic;
