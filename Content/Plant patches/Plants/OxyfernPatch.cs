@@ -26,10 +26,20 @@ namespace Rephysicalized
         public const float WILD_CO2_RATE = 0.002f;
         public const float WILD_O2_RATE = 0.002f;
 
+
         // Rates reached once the plant is fully lit.
         public const float LUX_SATURATION = 50000f;
         public const float TARGET_CO2_RATE = 0.05f;
         public const float TARGET_O2_RATE = 0.08f;
+
+        //Rates with RealBreathing Enabled, for replanted (domesticated) and wild plants respectively. In addition, produces ModElementRegistration.PlantfiberRP when domesticated
+        public const float DOMESTIC_CO2_RATE_REALBREATHING = 0.001f;
+        public const float DOMESTIC_O2_RATE_REALBREATHING = 0.001f;
+        public const float DOMESTIC_PLANTFIBER_RATE_REALBREATHING = 0.03f;
+        public const float WILD_CO2_RATE_REALBREATHING = 0.0002f;
+        public const float WILD_O2_RATE_REALBREATHING = 0.0002f;
+        public const float TARGET_O2_RATE_REALBREATHING = 0.01f;
+        public const float TARGET_PLANTFIBER_RATE_REALBREATHING = 0.07f;
 
         // Vanilla Oxygen output mass, used as the multiplier baseline.
         public const float VANILLA_O2_OUTPUT_ELEMENT = 0.03125f;

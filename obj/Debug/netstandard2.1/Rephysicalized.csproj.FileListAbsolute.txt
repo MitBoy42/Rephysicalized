@@ -52,3 +52,21 @@ D:\Мастерская Творческого Потенциала\Sgt_Imalas-O
 D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.dll
 D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.pdb
 D:\Мастерская Творческого Потенциала\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysic.F0F5DBA7.Up2Date
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.deps.json
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.dll
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\Rephysicalized.pdb
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\mod.yaml
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\mod_info.yaml
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\LauncherMetadata.json
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\PLib.dll
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.dll
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\bin\Debug\netstandard2.1\UtilLibs.pdb
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.csproj.AssemblyReference.cache
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.GeneratedMSBuildEditorConfig.editorconfig
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.AssemblyInfoInputs.cache
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.AssemblyInfo.cs
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.csproj.CoreCompileInputs.cache
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.sourcelink.json
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysic.F0F5DBA7.Up2Date
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.dll
+D:\Workshop\Sgt_Imalas-Oni-Mods-master\Rephysicalized\obj\Debug\netstandard2.1\Rephysicalized.pdb

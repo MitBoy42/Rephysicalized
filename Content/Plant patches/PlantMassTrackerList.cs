@@ -35,10 +35,10 @@ namespace Rephysicalized
         {
             // Basic plants
             new Entry("BasicSingleHarvestPlant", 1f,
-                new MaterialYield("RotPile", 0.9f),
-                new MaterialYield("CarbonDioxide", 0.1f)
+                new MaterialYield("RotPile", 1f)
+
             ),
-   
+
             new Entry("SeaLettuce", 12f,
                 new MaterialYield("Mud", 1f)
             ),
@@ -47,8 +47,8 @@ namespace Rephysicalized
                 new MaterialYield("Oxygen", 0.04f)
             ),
             new Entry("ColdWheat", 18f,
-                new MaterialYield("Mud", 0.99f),
-                new MaterialYield("CarbonDioxide", 0.01f)
+                new MaterialYield("Mud", 1f)
+
             ),
             new Entry("MushroomPlant", 1f,
                 new MaterialYield("RotPile", 0.5f),
@@ -60,6 +60,7 @@ namespace Rephysicalized
                 new MaterialYield("Sulfur", 0.2f)
             ),
                 new Entry("BeanPlant", 12f, new MaterialYield("ToxicMud", 0.96f), new MaterialYield("Methane", 0.04f)),
+
                 new Entry("SaltPlant", 30f,
                 new MaterialYield("Salt", 1f)
             ),
@@ -74,16 +75,16 @@ namespace Rephysicalized
                 new MaterialYield("BleachStone", 0.25f)
             ),
                 new Entry("SuperWormPlant", 8f,
-                new MaterialYield("Sand", 0.95f),
-                new MaterialYield("CarbonDioxide", 0.05f)
+                new MaterialYield("Sand", 1f)
+
             ),
                 new Entry("CarrotPlant", 1f * Rephysicalized.FoodDensityRebalance.IngredientMultiplier[CarrotConfig.ID.ToTag()].Multiplier,
-                new MaterialYield("Ice", 0.99f),
-                new MaterialYield("CarbonDioxide", 0.01f) 
+                new MaterialYield("Ice", 1f)
+
             ),
             new Entry("HardSkinBerryPlant", 1f,
-                new MaterialYield("RotPile", 0.8f),
-                new MaterialYield("CarbonDioxide", 0.20f)
+                new MaterialYield("RotPile", 1f)
+
             ),
             new Entry("SwampLily", 2f,
                 new MaterialYield("Sand", 0.80f),
@@ -91,7 +92,7 @@ namespace Rephysicalized
             ),
             new Entry("BasicFabricPlant", 1f,
                 new MaterialYield("ToxicMud", 0.98f),
-                new MaterialYield("ContaminatedOxygen", 0.02f) 
+                new MaterialYield("ContaminatedOxygen", 0.02f)
             ),
                 new Entry("GardenFoodPlant", 1f, new MaterialYield("DirtyWater", 0.5f), new MaterialYield("Shale", 0.5f)),
                 new Entry("KelpPlant", PlantPatches.SharedYieldAndHarvestSubtractKg["Kelp"], new MaterialYield("Kelp", 1f)),
@@ -101,8 +102,14 @@ namespace Rephysicalized
                 new Entry("GasGrass", PlantPatches.SharedYieldAndHarvestSubtractKg["PlantFiber"], new MaterialYield("PlantFiber", 1f)),
 
                 new Entry("ColdBreather", 0f, new MaterialYield("PlantFiber", 1f)),
-                new Entry("BlueGrass", PlantPatches.SharedYieldAndHarvestSubtractKg["OxyRock"],
-                new MaterialYield("Oxyrock", 1f)
+
+            new Entry("BlueGrass", PlantPatches.SharedYieldAndHarvestSubtractKg["OxyRock"],
+                Config.Instance.RealBreathing //If RealBreathing is enabled then you dont get as much Oxyrock
+                    ? new MaterialYield[] { new MaterialYield("Mud", 0.9f), new MaterialYield("Oxyrock", 0.1f) }
+                    : new MaterialYield[] { new MaterialYield("Oxyrock", 1f) }
+             
+       
+
             ),
                 new Entry("DewDripperPlant", PlantPatches.SharedYieldAndHarvestSubtractKg["DewDrip"],
                 new MaterialYield("DewDrip", 1f)
@@ -140,7 +147,7 @@ namespace Rephysicalized
               new Entry("TubeWorm", 200f,
               new MaterialYield("ToxicMud", 1f)
             ),
-              new Entry("UrchinPlant", 1f,
+              new Entry("UrchinPlant", PlantPatches.SharedYieldAndHarvestSubtractKg["Urchin"],
               new MaterialYield("Urchin", 1f)
             ),
               new Entry("PlanktonCoral", PlantPatches.SharedYieldAndHarvestSubtractKg["Phosphorite"],

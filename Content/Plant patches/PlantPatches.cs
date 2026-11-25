@@ -9,8 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Rephysicalized
-{
+namespace Rephysicalized {
 
 
     [HarmonyPatch(typeof(EntityTemplates))]
@@ -34,12 +33,15 @@ namespace Rephysicalized
             var pe = template.GetComponent<PrimaryElement>();
             if (pe.ElementID == SimHashes.Creature)
             {
-  
+
+
                 pe.SetElement(ModElementRegistration.PlantFiberRP);
-      
+
+
             }
         }
     }
+
 
     // Shared floats between PlantPatches (crop yield amounts) and PlantMassTracker list
     // (real harvest subtract kg). Keyed by the crop/output id.
@@ -48,67 +50,65 @@ namespace Rephysicalized
         public static readonly Dictionary<string, float> SharedYieldAndHarvestSubtractKg =
             new Dictionary<string, float>(StringComparer.Ordinal)
         {
-            { "DewDrip", 20f },
+            { "DewDrip", 10f },
             { "Kelp", 10f },
             { "WoodLog", 30f },
-            { "OxyRock", 20f },
+            { "OxyRock", Config.Instance.RealBreathing ? 2f : 20f },
             { "PlantFiber", 50f },
-            { "PalmWood", 300f },
+            { "PalmWood", 350f },
             { "Phosphorite", 40f },
+            { "Urchin", 50f },
         };
     }
 
 
-    // Consolidated: adjust yields for specific crop IDs in one pass, no PlantFiber special case.
+    // Consolidated: adjust yields for specific crop IDs in one pass
+    // Directly modifies each plant config's HARVEST CropVal (shared reference with plant prefabs)
+    // instead of TUNING.CROPS.CROP_TYPES, which only affects tuning UI data.
     [HarmonyPatch(typeof(Db), nameof(Db.Initialize))]
     internal static class Consolidated_Crop_Yield_Patch
     {
+        static Consolidated_Crop_Yield_Patch()
+        {
+            Debug.Log("[Consolidated_Crop_Yield_Patch] Static constructor - class loaded");
+        }
 
         private static void Postfix()
         {
+            Debug.Log("[Consolidated_Crop_Yield_Patch] Postfix started");
 
-            var crops = TUNING.CROPS.CROP_TYPES;
-            if (crops == null || crops.Count == 0)
+            // Set each plant config's HARVEST product quantity directly.
+            // Since CropVal is a reference type shared with plant prefab Crop components,
+            // modifying it here changes the actual harvest amounts.
+            SetHarvestQuantity(DewDripperPlantConfig.HARVEST, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["DewDrip"]);                  // DewDrip
+            SetHarvestQuantity(KelpPlantConfig.HARVEST, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["Kelp"]);                            // Kelp
+            SetHarvestQuantity(ForestTreeConfig.HARVEST, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["WoodLog"]);      // WoodLog
+            SetHarvestQuantity(GasGrassConfig.HARVEST, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["PlantFiber"]);                       // GasGrass
+            SetHarvestQuantity(DewPalmConfig.HARVEST, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["PalmWood"]);                        // DewPalm
+            SetHarvestQuantity(UrchinPlantConfig.HARVEST, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["Urchin"]); //PlanktonCoral
+            SetHarvestQuantity(PlanktonCoralConfig.HARVEST, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["Phosphorite"]); //PlanktonCoral
+
+        }
+
+        private static void SetHarvestQuantity(Crop.CropVal harvest, int amount)
+        {
+            if (harvest?.products == null)
+            {
+                Debug.LogWarning("[Consolidated_Crop_Yield_Patch] SetHarvestQuantity: harvest or products is null");
                 return;
+            }
 
-            // Target amounts per cropId; durations are preserved from existing values.
-            var targetAmounts = new Dictionary<string, int>
+           
+
+            for (int i = 0; i < harvest.products.Count; i++)
             {
-                { DewDripConfig.ID, (int)PlantPatches.SharedYieldAndHarvestSubtractKg["DewDrip"] },                  // DewDrip
-                { "SwampLily", 10 },                       // Balm Lily (SwampLily)
-                { "Kelp", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["Kelp"] },                            // Kelp
-                { SimHashes.WoodLog.ToString(), (int)PlantPatches.SharedYieldAndHarvestSubtractKg["WoodLog"] },      // WoodLog
-                { SimHashes.OxyRock.ToString(), (int)PlantPatches.SharedYieldAndHarvestSubtractKg["OxyRock"] },      // OxyRock
-                { "PlantFiber", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["PlantFiber"] },                       // GasGrass
-                { "PalmWood", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["PalmWood"] },                        // DewPalm
-            { "PlantMeat", 1 }, //CritterTrapPlant
-              { "Urchin", 50 }, //UrchinPlant
-             { "Phosphorite", (int)PlantPatches.SharedYieldAndHarvestSubtractKg["Phosphorite"] } //PlanktonCoral
-            };
-        
-            for (int i = 0; i < crops.Count; i++)
-            {
-                var cv = crops[i];
-                if (cv?.products == null)
-                    continue;
-
-                var products = new List<Crop.CropVal.ProductInfo>(cv.products);
-                bool changed = false;
-                for (int productIndex = 0; productIndex < products.Count; productIndex++)
-                {
-                    var product = products[productIndex];
-                    if (!targetAmounts.TryGetValue(product.cropId, out int amount))
-                        continue;
-
-                    product.quantity = amount;
-                    products[productIndex] = product;
-                    changed = true;
-                }
-
-                if (changed)
-                    crops[i] = new Crop.CropVal(products, cv.cropDuration, cv.renewable);
+                var product = harvest.products[i];
+                product.quantity = amount;
+                harvest.products[i] = product;
             }
         }
+
+     
     }
 
     // All plants start at 1 kg when placed

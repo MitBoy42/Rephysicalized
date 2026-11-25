@@ -1,11 +1,35 @@
+using HarmonyLib;
+using KSerialization;
+using STRINGS;
 using System;
 using System.Collections.Generic;
-using KSerialization;
 using UnityEngine;
-using STRINGS;
 
 namespace Rephysicalized.Content.Plant_patches
 {
+
+    [HarmonyPatch(typeof(CodexEntryGenerator_Elements), "CollectSharedConversionIO")]
+    internal static class PlantGasConsumerCodexPatch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(GameObject prefab, HashSet<ElementUsage> inSet)
+        {
+            var gasConsumer = prefab.GetComponent<PlantGasConsumer>();
+            if (gasConsumer == null || gasConsumer.ConsumedElementTag != ModTags.OxidizerGas || gasConsumer.BaseConsumptionRate <= 0f)
+                return;
+
+            foreach (var usage in inSet)
+            {
+                if (usage.tag != ModTags.OxidizerGas)
+                    continue;
+
+                usage.amount += gasConsumer.BaseConsumptionRate;
+                return;
+            }
+
+            inSet.Add(new ElementUsage(ModTags.OxidizerGas, gasConsumer.BaseConsumptionRate, true));
+        }
+    }
 
     /// Flow:
     ///   environment cell --(ElementConsumer)--> Storage on the plant --(this component)--> plant growth
@@ -139,7 +163,15 @@ namespace Rephysicalized.Content.Plant_patches
             allowItemRemoval = true;
             useGunForDelivery = false;
             doDiseaseTransfer = true;
+            // Store both OxidizerGas and ContaminatedOxidizerGas tags to allow both clean and contaminated oxygen
             storageFilters = new List<Tag> { info.elementTag };
+            if (info.elementTag == ModTags.OxidizerGas)
+            {
+                // Add ContaminatedOxidizerGas tag so both clean and contaminated oxygen can be stored
+                // ContaminatedOxygen in ONI has both OxidizerGas and ContaminatedOxidizerGas tags
+                var contaminatedOxidizerTag = SimHashes.ContaminatedOxygen.CreateTag();
+                storageFilters.Add(contaminatedOxidizerTag);
+            }
             SetDefaultStoredItemModifiers(Storage.StandardSealedStorage);
         }
     }
@@ -181,7 +213,7 @@ namespace Rephysicalized.Content.Plant_patches
         private float drawRateMultiplier = 10f;
 
         [SerializeField]
-        private float requiredMassKg = 0.05f;
+        private float requiredMassKg = 0.02f;
 
         [SerializeField]
         private string wiltStateString = STRINGS.STATUSITEMS.NOGAS;
@@ -204,8 +236,11 @@ namespace Rephysicalized.Content.Plant_patches
 
         public SimHashes ConsumedElement => consumedElement;
 
+        public Tag ConsumedElementTag => consumedElementTag;
 
         public float InternalConsumptionRate => consumptionRatePerSecond;
+
+        public float BaseConsumptionRate => baseConsumptionRatePerSecond;
 
         public bool WiltsWhenGasDepleted => wiltsWhenGasDepleted;
 
@@ -259,8 +294,18 @@ namespace Rephysicalized.Content.Plant_patches
 
         internal void Configure(PlantGasConsumerInfo info)
         {
-            var element = ElementLoader.FindElementByTag(info.elementTag);
-            consumedElement = element != null ? element.id : SimHashes.Void;
+            // For OxidizerGas tag, don't set consumedElement so that tag-based matching
+            // is used instead of element ID matching. This allows both Oxygen and
+            // Contaminated Oxygen to be matched since they both have the OxidizerGas tag.
+            if (info.elementTag != ModTags.OxidizerGas)
+            {
+                var element = ElementLoader.FindElementByTag(info.elementTag);
+                consumedElement = element != null ? element.id : SimHashes.Void;
+            }
+            else
+            {
+                consumedElement = SimHashes.Void;
+            }
             consumedElementTag = info.elementTag;
             baseConsumptionRatePerSecond = info.massConsumptionRate;
             consumptionRatePerSecond = info.massConsumptionRate;

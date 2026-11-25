@@ -183,11 +183,11 @@
   "project": {
     "version": "1.0.7",
     "restore": {
-      "projectUniqueName": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+      "projectUniqueName": "D:\\Workshop\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
       "projectName": "Rephysicalized",
-      "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
+      "projectPath": "D:\\Workshop\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\Rephysicalized.csproj",
       "packagesPath": "C:\\Users\\MitBoy\\.nuget\\packages\\",
-      "outputPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\obj\\",
+      "outputPath": "D:\\Workshop\\Sgt_Imalas-Oni-Mods-master\\Rephysicalized\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -206,10 +206,11 @@
       },
       "frameworks": {
         "netstandard2.1": {
+          "framework": "netstandard2.1",
           "targetAlias": "netstandard2.1",
           "projectReferences": {
-            "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
-              "projectPath": "D:\\Мастерская Творческого Потенциала\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj"
+            "D:\\Workshop\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj": {
+              "projectPath": "D:\\Workshop\\Sgt_Imalas-Oni-Mods-master\\UtilLibs\\UtilLibs.csproj"
             }
           }
         }
@@ -228,6 +229,7 @@
     },
     "frameworks": {
       "netstandard2.1": {
+        "framework": "netstandard2.1",
         "targetAlias": "netstandard2.1",
         "dependencies": {
           "ILRepack.Lib.MSBuild.Task": {

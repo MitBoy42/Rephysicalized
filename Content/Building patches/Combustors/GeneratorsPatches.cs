@@ -437,6 +437,7 @@ namespace Rephysicalized
                 }
 
 
+
             // Attach a custom initializer that will run once the building is fully initialized
             go.AddComponent<GasAndLiquidInitializer>();
             var gasSecondaryInput = go.AddComponent<ConduitSecondaryInput>();
@@ -474,6 +475,12 @@ namespace Rephysicalized
                 gasConsumer.wrongElementResult = ConduitConsumer.WrongElementResult.Dump;
                 gasConsumer.alwaysConsume = true;
                 gasConsumer.useSecondaryInput = true;
+
+                // Add DualGasElementConsumer for both oxygen and contaminated oxygen
+                var dualGasConsumer = go.AddOrGet<DualGasElementConsumer>();
+                dualGasConsumer.consumptionRate = 0.6f;
+                dualGasConsumer.sampleCellOffset = new Vector3(0f, 1f);
+                dualGasConsumer.storage = storage;
 
                 // Register the gas input with its network
                 var gasNetworkManager = Conduit.GetNetworkManager(ConduitType.Gas);

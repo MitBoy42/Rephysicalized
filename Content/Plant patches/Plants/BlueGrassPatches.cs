@@ -10,9 +10,11 @@ namespace Rephysicalized
     {
         // Base CO2 consumption (kg/s) at 0 lux. Wild-state scaling is applied by PlantGasConsumer.
         public const float BASE_DOMESTICATED = 1f / 500f; // 0.002 kg/s
-
         public const float LUX_SATURATION = 100000f;
-        public const float MAX_FACTOR = 100f; // 1x at 0 lux -> 100x at 200k lux
+        public const float MAX_FACTOR = 100f; // 1x at 0 lux -> 100x at 100k lux
+
+        //FLoats when dealing With RealBreathing. Since Alveovera is producing Oxyrock instead of Oxygen the likely way to fix this would be to have it drop PlantFiber.
+        // This is implemented in PlantMassTrackerList.cs. 
 
         public const float BUFFER_CAPACITY_KG = 1f;
 
